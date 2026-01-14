@@ -249,6 +249,19 @@ function doGet(e) {
     }
   }
   
+  // Add base64 data for each image to bypass CORS
+  manifest.images = manifest.images.map(img => {
+    try {
+      const file = DriveApp.getFileById(img.id);
+      const blob = file.getBlob();
+      const base64 = Utilities.base64Encode(blob.getBytes());
+      img.base64Data = 'data:' + img.mimeType + ';base64,' + base64;
+    } catch(err) {
+      img.base64Data = null;
+    }
+    return img;
+  });
+  
   // Return JSONP or JSON based on callback parameter
   const callback = e.parameter.callback;
   const output = JSON.stringify(manifest);

@@ -7944,8 +7944,12 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 const img = gmailImportState.images[index];
                 
                 try {
-                    // Fetch the image
-                    const response = await fetch(img.directUrl);
+                    // Use base64 data directly to avoid CORS issues
+                    if (!img.base64Data) {
+                        throw new Error('No base64 data available');
+                    }
+                    
+                    const response = await fetch(img.base64Data);
                     const blob = await response.blob();
                     
                     // Create a File object
