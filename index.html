@@ -7724,6 +7724,47 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
         // Gmail Import Functionality
         // ==========================================
         
+        // JSONP helper function to bypass CORS
+        function fetchWithJsonp(url, timeout = 15000) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const script = document.createElement('script');
+                
+                // Set timeout
+                const timeoutId = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Request timeout'));
+                }, timeout);
+                
+                // Cleanup function
+                function cleanup() {
+                    clearTimeout(timeoutId);
+                    delete window[callbackName];
+                    if (script.parentNode) {
+                        script.parentNode.removeChild(script);
+                    }
+                }
+                
+                // Define callback
+                window[callbackName] = function(data) {
+                    cleanup();
+                    resolve(data);
+                };
+                
+                // Handle script error
+                script.onerror = function() {
+                    cleanup();
+                    reject(new Error('Failed to load script'));
+                };
+                
+                // Add callback parameter to URL
+                const separator = url.includes('?') ? '&' : '?';
+                script.src = url + separator + 'callback=' + callbackName;
+                
+                document.body.appendChild(script);
+            });
+        }
+        
         // Configuration - UPDATE THIS with your Apps Script Web App URL
         const GMAIL_CONFIG = {
             // After deploying the Apps Script, paste the Web App URL here:
@@ -7802,8 +7843,8 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             `;
             
             try {
-                const response = await fetch(GMAIL_CONFIG.webAppUrl);
-                const data = await response.json();
+                // Use JSONP to avoid CORS issues with Google Apps Script
+                const data = await fetchWithJsonp(GMAIL_CONFIG.webAppUrl);
                 
                 gmailImportState.images = data.images || [];
                 renderGmailImages();
