@@ -7990,7 +7990,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 extractedData: null
             });
             
-            renderFlights();
+            renderFlightCards();
             
             // Process with Gemini if API key exists
             if (state.apiKey) {
@@ -8010,7 +8010,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 extractedData: null
             });
             
-            renderHotels();
+            renderHotelCards();
             
             // Process with Gemini if API key exists
             if (state.apiKey) {
@@ -8031,7 +8031,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 isManual: false
             });
             
-            renderServices();
+            renderServiceCards();
             
             // Process with Gemini if API key exists
             if (state.apiKey) {
