@@ -47,9 +47,9 @@
         .header {
             background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
             color: var(--white);
-            padding: 15px 20px;
+            padding: 8px 15px;
             text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -66,10 +66,10 @@
         }
         
         .logo {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: 800;
             color: var(--gold);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
         }
         
         .api-key-section {
@@ -109,19 +109,35 @@
             background: var(--success);
         }
         
-        /* Main Layout */
+        /* Main Layout - Split View */
         .main-layout {
             display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
+            grid-template-columns: 55% 45%;
+            gap: 15px;
+            max-width: 100%;
+            margin: 0;
+            padding: 10px 15px;
+            height: calc(100vh - 70px);
+            overflow: hidden;
         }
         
-        @media (max-width: 1000px) {
+        @media (max-width: 1200px) {
+            .main-layout {
+                grid-template-columns: 50% 50%;
+            }
+        }
+        
+        @media (max-width: 900px) {
             .main-layout {
                 grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+            }
+            
+            .inputs-column,
+            .preview-column {
+                height: auto !important;
+                overflow: visible !important;
             }
             
             .pricing-sidebar {
@@ -130,32 +146,74 @@
             }
         }
         
-        /* Main Content */
+        /* Inputs Column - Left Side */
+        .inputs-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-left: 5px;
+            scrollbar-width: thin;
+        }
+        
+        .inputs-column::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .inputs-column::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 3px;
+        }
+        
+        /* Preview Column - Right Side */
+        .preview-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 5px;
+            scrollbar-width: thin;
+        }
+        
+        .preview-column::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .preview-column::-webkit-scrollbar-thumb {
+            background: var(--navy);
+            border-radius: 3px;
+        }
+        
+        /* Legacy main-content support */
         .main-content {
             display: flex;
             flex-direction: column;
-            gap: 25px;
+            gap: 12px;
         }
         
         /* Section Cards */
         .section-card {
             background: var(--white);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            padding: 12px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
         }
         
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid var(--gold);
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--gold);
         }
         
         .section-title {
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             color: var(--navy);
             display: flex;
             align-items: center;
@@ -166,14 +224,15 @@
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
             color: var(--navy);
             border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
+            padding: 6px 12px;
+            border-radius: 20px;
             font-weight: 600;
+            font-size: 0.8rem;
             cursor: pointer;
             font-family: 'Heebo', sans-serif;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
             transition: all 0.3s;
         }
         
@@ -236,9 +295,9 @@
         /* Editable Card Styles */
         .editable-card {
             background: white;
-            border-radius: 12px;
-            border: 2px solid var(--gray);
-            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--gray);
+            padding: 10px;
             transition: all 0.3s;
         }
         
@@ -648,13 +707,13 @@
         /* Drop Zone for new images */
         .drop-zone-mini {
             border: 2px dashed var(--gray);
-            border-radius: 12px;
-            padding: 30px 20px;
+            border-radius: 8px;
+            padding: 15px 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             background: var(--gray-light);
-            min-height: 150px;
+            min-height: 80px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -682,36 +741,37 @@
         
         /* Pricing Sidebar */
         .pricing-sidebar {
-            position: sticky;
-            top: 80px;
-            height: fit-content;
+            position: relative;
+            top: auto;
+            flex-shrink: 0;
         }
         
         .pricing-card {
             background: var(--white);
-            border-radius: 15px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
             overflow: hidden;
         }
         
         .pricing-header {
             background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
             color: var(--white);
-            padding: 20px;
+            padding: 12px 15px;
             text-align: center;
         }
         
         .pricing-header h3 {
             color: var(--gold);
-            font-size: 1.2rem;
+            font-size: 1rem;
         }
         
         .pricing-content {
-            padding: 20px;
+            padding: 10px 12px;
         }
         
         .pricing-table {
             width: 100%;
+            font-size: 0.8rem;
             border-collapse: collapse;
             font-size: 0.85rem;
         }
@@ -789,7 +849,7 @@
         
         /* Commission Section */
         .commission-section {
-            padding: 15px 20px;
+            padding: 8px 12px;
             background: var(--gray-light);
             border-top: 1px solid var(--gray);
         }
@@ -797,8 +857,8 @@
         .commission-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         
         .commission-row label {
@@ -848,7 +908,7 @@
         
         /* Editable Final Price */
         .final-price-section {
-            padding: 15px 20px;
+            padding: 10px 12px;
             background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
         }
         
@@ -856,7 +916,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
             flex-wrap: wrap;
         }
         
@@ -918,14 +978,15 @@
         
         /* Client Name Input */
         .client-section {
-            padding: 15px 20px;
+            padding: 8px 12px;
             border-top: 1px solid var(--gray);
         }
         
         .client-section label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             font-weight: 500;
+            font-size: 0.8rem;
             color: var(--navy);
         }
         
@@ -944,7 +1005,7 @@
         
         /* Generate Button */
         .generate-section {
-            padding: 20px;
+            padding: 10px 12px;
         }
         
         .generate-btn {
@@ -952,8 +1013,8 @@
             background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
             color: var(--white);
             border: none;
-            padding: 15px;
-            font-size: 1.1rem;
+            padding: 10px;
+            font-size: 0.95rem;
             font-weight: 600;
             border-radius: 10px;
             cursor: pointer;
@@ -974,11 +1035,14 @@
         /* Proposal Section */
         .proposal-section {
             display: none;
-            margin-top: 30px;
+            margin-top: 0;
+            flex: 1;
+            min-height: 200px;
         }
         
         .proposal-section.visible {
-            display: block;
+            display: flex;
+            flex-direction: column;
         }
         
         .proposal-container {
@@ -2957,323 +3021,6 @@
         .pricing-card {
             will-change: transform, box-shadow;
         }
-
-        /* 41. GMAIL IMPORT STYLES */
-        .gmail-import-section {
-            background: linear-gradient(135deg, #EA4335 0%, #FBBC04 50%, #34A853 100%);
-            border-radius: 15px;
-            padding: 3px;
-            margin-bottom: 20px;
-        }
-
-        .gmail-import-inner {
-            background: var(--white);
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .gmail-import-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .gmail-import-icon {
-            font-size: 2.5rem;
-        }
-
-        .gmail-import-text h3 {
-            color: var(--navy);
-            font-size: 1.1rem;
-            margin-bottom: 4px;
-        }
-
-        .gmail-import-text p {
-            color: var(--gray-dark);
-            font-size: 0.85rem;
-        }
-
-        .gmail-import-btn {
-            background: linear-gradient(135deg, #EA4335 0%, #c5221f 100%);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-            font-family: 'Heebo', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-            font-size: 1rem;
-        }
-
-        .gmail-import-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(234, 67, 53, 0.4);
-        }
-
-        .gmail-import-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .gmail-import-btn .loading-spinner {
-            border-color: rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-        }
-
-        /* Gmail Images Modal */
-        .gmail-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .gmail-modal.visible {
-            display: flex;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .gmail-modal-content {
-            background: var(--white);
-            border-radius: 15px;
-            max-width: 900px;
-            width: 100%;
-            max-height: 80vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            animation: bounceIn 0.4s ease-out;
-        }
-
-        .gmail-modal-header {
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
-            color: white;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .gmail-modal-header h3 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 1.2rem;
-        }
-
-        .gmail-modal-close {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: background 0.2s;
-        }
-
-        .gmail-modal-close:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        .gmail-modal-body {
-            padding: 20px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .gmail-images-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-        }
-
-        .gmail-image-item {
-            position: relative;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 3px solid var(--gray);
-            cursor: pointer;
-            transition: all 0.3s;
-            aspect-ratio: 1;
-        }
-
-        .gmail-image-item:hover {
-            border-color: var(--gold);
-            transform: scale(1.03);
-        }
-
-        .gmail-image-item.selected {
-            border-color: var(--success);
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
-        }
-
-        .gmail-image-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .gmail-image-item .check-mark {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 24px;
-            height: 24px;
-            background: var(--success);
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .gmail-image-item.selected .check-mark {
-            display: flex;
-        }
-
-        .gmail-image-item .image-info {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            color: white;
-            padding: 20px 8px 8px;
-            font-size: 0.7rem;
-        }
-
-        .gmail-modal-footer {
-            padding: 15px 20px;
-            background: var(--gray-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--gray);
-        }
-
-        .gmail-modal-footer .selected-count {
-            color: var(--navy);
-            font-weight: 600;
-        }
-
-        .gmail-modal-footer .import-selected-btn {
-            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
-            color: var(--navy);
-            border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-        .gmail-modal-footer .import-selected-btn:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-gold);
-        }
-
-        .gmail-modal-footer .import-selected-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .gmail-empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--gray-dark);
-        }
-
-        .gmail-empty-state .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        .gmail-setup-required {
-            background: rgba(255, 193, 7, 0.1);
-            border: 2px solid var(--warning);
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .gmail-setup-required h4 {
-            color: var(--navy);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .gmail-setup-required ol {
-            margin-right: 20px;
-            color: var(--gray-dark);
-            font-size: 0.9rem;
-        }
-
-        .gmail-setup-required li {
-            margin-bottom: 8px;
-        }
-
-        .gmail-setup-required code {
-            background: var(--gray-light);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        /* Type selection in import */
-        .import-type-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .import-type-btn {
-            padding: 8px 16px;
-            border: 2px solid var(--gray);
-            border-radius: 20px;
-            background: white;
-            cursor: pointer;
-            font-family: 'Heebo', sans-serif;
-            transition: all 0.2s;
-        }
-
-        .import-type-btn:hover {
-            border-color: var(--gold);
-        }
-
-        .import-type-btn.active {
-            background: var(--gold);
-            border-color: var(--gold);
-            color: var(--navy);
-            font-weight: 600;
-        }
     </style>
 </head>
 <body>
@@ -3314,24 +3061,8 @@
     
     <!-- Main Layout -->
     <div class="main-layout">
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Gmail Import Section -->
-            <div class="gmail-import-section">
-                <div class="gmail-import-inner">
-                    <div class="gmail-import-info">
-                        <div class="gmail-import-icon">📧</div>
-                        <div class="gmail-import-text">
-                            <h3>ייבוא תמונות מ-Gmail</h3>
-                            <p>ייבא תמונות מקבצים מצורפים ישירות מהמייל שלך</p>
-                        </div>
-                    </div>
-                    <button class="gmail-import-btn" onclick="openGmailImport()">
-                        <span>📥</span> ייבא תמונות
-                    </button>
-                </div>
-            </div>
-
+        <!-- Inputs Column -->
+        <div class="inputs-column">
             <!-- Flights Section -->
             <div class="section-card">
                 <div class="section-header">
@@ -3406,31 +3137,12 @@
                 </div>
             </div>
             
-            <!-- Proposal Preview -->
-            <section class="proposal-section" id="proposalSection">
-                <div class="proposal-container" id="proposalContent">
-                    <!-- Generated proposal will appear here -->
-                </div>
-                
-                <div class="share-buttons">
-                    <button class="share-btn save" onclick="saveCurrentProposal()">
-                        💾 שמור הצעה
-                    </button>
-                    <button class="share-btn whatsapp" onclick="shareWhatsApp()">
-                        📱 שתף בוואטסאפ
-                    </button>
-                    <button class="share-btn print" onclick="printProposal()">
-                        🖨️ הדפס / PDF
-                    </button>
-                    <button class="share-btn copy" onclick="copyProposal()">
-                        📋 העתק הצעה
-                    </button>
-                </div>
-            </section>
         </div>
         
-        <!-- Pricing Sidebar -->
-        <div class="pricing-sidebar">
+        <!-- Preview Column (Pricing + Proposal) -->
+        <div class="preview-column">
+            <!-- Pricing Sidebar -->
+            <div class="pricing-sidebar">
             <div class="pricing-card">
                 <div class="pricing-header">
                     <h3>💰 טבלת מחירים</h3>
@@ -3528,6 +3240,29 @@
                 </div>
             </div>
         </div>
+            
+            <!-- Proposal Preview -->
+            <section class="proposal-section" id="proposalSection">
+                <div class="proposal-container" id="proposalContent">
+                    <!-- Generated proposal will appear here -->
+                </div>
+                
+                <div class="share-buttons">
+                    <button class="share-btn save" onclick="saveCurrentProposal()">
+                        💾 שמור הצעה
+                    </button>
+                    <button class="share-btn whatsapp" onclick="shareWhatsApp()">
+                        📱 שתף בוואטסאפ
+                    </button>
+                    <button class="share-btn print" onclick="printProposal()">
+                        🖨️ הדפס / PDF
+                    </button>
+                    <button class="share-btn copy" onclick="copyProposal()">
+                        📋 העתק הצעה
+                    </button>
+                </div>
+            </section>
+        </div>
     </div>
     
     <!-- Edit Modal -->
@@ -3547,32 +3282,6 @@
         </div>
     </div>
     
-    <!-- Gmail Import Modal -->
-    <div class="gmail-modal" id="gmailModal">
-        <div class="gmail-modal-content">
-            <div class="gmail-modal-header">
-                <h3>📧 ייבוא תמונות מ-Gmail</h3>
-                <button class="gmail-modal-close" onclick="closeGmailModal()">✕</button>
-            </div>
-            <div class="gmail-modal-body" id="gmailModalBody">
-                <!-- Setup instructions or images will appear here -->
-            </div>
-            <div class="gmail-modal-footer">
-                <span class="selected-count" id="selectedCount">נבחרו: 0 תמונות</span>
-                <div style="display: flex; gap: 10px;">
-                    <select id="importTargetType" style="padding: 10px; border-radius: 20px; border: 2px solid var(--gray);">
-                        <option value="flight">✈️ טיסות</option>
-                        <option value="hotel">🏨 מלונות</option>
-                        <option value="service">🎫 שירותים</option>
-                    </select>
-                    <button class="import-selected-btn" onclick="importSelectedImages()" id="importSelectedBtn" disabled>
-                        <span>📥</span> ייבא נבחרים
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Enhanced Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
@@ -7719,350 +7428,6 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 }
             });
         })();
-
-        // ==========================================
-        // Gmail Import Functionality
-        // ==========================================
-        
-        // JSONP helper function to bypass CORS
-        function fetchWithJsonp(url, timeout = 15000) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                const script = document.createElement('script');
-                
-                // Set timeout
-                const timeoutId = setTimeout(() => {
-                    cleanup();
-                    reject(new Error('Request timeout'));
-                }, timeout);
-                
-                // Cleanup function
-                function cleanup() {
-                    clearTimeout(timeoutId);
-                    delete window[callbackName];
-                    if (script.parentNode) {
-                        script.parentNode.removeChild(script);
-                    }
-                }
-                
-                // Define callback
-                window[callbackName] = function(data) {
-                    cleanup();
-                    resolve(data);
-                };
-                
-                // Handle script error
-                script.onerror = function() {
-                    cleanup();
-                    reject(new Error('Failed to load script'));
-                };
-                
-                // Add callback parameter to URL
-                const separator = url.includes('?') ? '&' : '?';
-                script.src = url + separator + 'callback=' + callbackName;
-                
-                document.body.appendChild(script);
-            });
-        }
-        
-        // Configuration - UPDATE THIS with your Apps Script Web App URL
-        const GMAIL_CONFIG = {
-            // After deploying the Apps Script, paste the Web App URL here:
-            webAppUrl: 'https://script.google.com/macros/s/AKfycbwUKsQcNOhkQuXDOJlMr3yJW1XgzFYR6yYs8oYmhK5EicWYoaw5sFDSOCGs98vLj0b1Kw/exec', // e.g., 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec'
-            isConfigured: false
-        };
-        
-        // State for Gmail import
-        const gmailImportState = {
-            images: [],
-            selectedImages: new Set(),
-            isLoading: false
-        };
-        
-        function openGmailImport() {
-            const modal = document.getElementById('gmailModal');
-            const body = document.getElementById('gmailModalBody');
-            
-            modal.classList.add('visible');
-            
-            // Check if configured
-            if (!GMAIL_CONFIG.webAppUrl || GMAIL_CONFIG.webAppUrl === '') {
-                showSetupInstructions(body);
-                return;
-            }
-            
-            // Fetch images from the Web App
-            fetchGmailImages();
-        }
-        
-        function closeGmailModal() {
-            const modal = document.getElementById('gmailModal');
-            modal.classList.remove('visible');
-            gmailImportState.selectedImages.clear();
-            updateSelectedCount();
-        }
-        
-        function showSetupInstructions(container) {
-            container.innerHTML = `
-                <div class="gmail-setup-required">
-                    <h4>⚙️ הגדרה נדרשת</h4>
-                    <p style="margin-bottom: 15px;">כדי לייבא תמונות מ-Gmail, יש להגדיר את הסקריפט של Google:</p>
-                    <ol>
-                        <li>לך ל-<a href="https://script.google.com" target="_blank">Google Apps Script</a></li>
-                        <li>צור פרויקט חדש והעתק את הקוד מהקובץ <code>gmail-to-drive-script.js</code></li>
-                        <li>הרץ את הפונקציה <code>setup()</code> ואשר הרשאות</li>
-                        <li>לחץ "Deploy" → "New Deployment" → "Web App"</li>
-                        <li>בחר "Anyone" ב-"Who has access" ולחץ "Deploy"</li>
-                        <li>העתק את ה-URL והדבק אותו בקוד (משתנה <code>GMAIL_CONFIG.webAppUrl</code>)</li>
-                    </ol>
-                </div>
-                
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="color: var(--gray-dark); margin-bottom: 15px;">או - הוסף תמונות ידנית מתיקייה ב-Google Drive:</p>
-                    <button class="add-btn" onclick="promptDriveFolderUrl()" style="margin: 0 auto;">
-                        <span>📁</span> הזן קישור לתיקייה ב-Drive
-                    </button>
-                </div>
-                
-                <div style="margin-top: 30px; padding: 20px; background: var(--gray-light); border-radius: 10px;">
-                    <h4 style="margin-bottom: 10px; color: var(--navy);">💡 אפשרות מהירה - גרור תמונות</h4>
-                    <p style="color: var(--gray-dark); font-size: 0.9rem;">אתה יכול גם פשוט לגרור תמונות ישירות מהמחשב או מהדפדפן לאזורי הטיסות/מלונות באתר!</p>
-                </div>
-            `;
-        }
-        
-        async function fetchGmailImages() {
-            const body = document.getElementById('gmailModalBody');
-            gmailImportState.isLoading = true;
-            
-            body.innerHTML = `
-                <div style="text-align: center; padding: 40px;">
-                    <div class="loading-spinner gold" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
-                    <p>טוען תמונות מ-Gmail...</p>
-                </div>
-            `;
-            
-            try {
-                // Use JSONP to avoid CORS issues with Google Apps Script
-                const data = await fetchWithJsonp(GMAIL_CONFIG.webAppUrl);
-                
-                gmailImportState.images = data.images || [];
-                renderGmailImages();
-                
-            } catch (error) {
-                console.error('Error fetching Gmail images:', error);
-                body.innerHTML = `
-                    <div class="gmail-empty-state">
-                        <div class="empty-icon">❌</div>
-                        <h3>שגיאה בטעינת התמונות</h3>
-                        <p>${error.message}</p>
-                        <button class="add-btn" onclick="fetchGmailImages()" style="margin-top: 15px;">
-                            <span>🔄</span> נסה שוב
-                        </button>
-                    </div>
-                `;
-            } finally {
-                gmailImportState.isLoading = false;
-            }
-        }
-        
-        function renderGmailImages() {
-            const body = document.getElementById('gmailModalBody');
-            const images = gmailImportState.images;
-            
-            if (images.length === 0) {
-                body.innerHTML = `
-                    <div class="gmail-empty-state">
-                        <div class="empty-icon">📭</div>
-                        <h3>אין תמונות</h3>
-                        <p>הוסף תווית <strong>"LordTickets"</strong> למיילים עם תמונות</p>
-                        <p style="margin-top: 10px; font-size: 0.85rem; color: var(--gray-dark);">
-                            התמונות יופיעו כאן אוטומטית תוך מספר דקות
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '<div class="gmail-images-grid">';
-            
-            images.forEach((img, index) => {
-                const isSelected = gmailImportState.selectedImages.has(index);
-                const date = img.emailDate ? new Date(img.emailDate).toLocaleDateString('he-IL') : '';
-                
-                html += `
-                    <div class="gmail-image-item ${isSelected ? 'selected' : ''}" onclick="toggleGmailImage(${index})">
-                        <img src="${img.thumbnailUrl || img.directUrl}" alt="${img.name}" 
-                             onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖼️</text></svg>'">
-                        <div class="check-mark">✓</div>
-                        <div class="image-info">
-                            ${img.emailSubject ? img.emailSubject.substring(0, 30) : img.name}<br>
-                            ${date}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            html += '</div>';
-            body.innerHTML = html;
-        }
-        
-        function toggleGmailImage(index) {
-            if (gmailImportState.selectedImages.has(index)) {
-                gmailImportState.selectedImages.delete(index);
-            } else {
-                gmailImportState.selectedImages.add(index);
-            }
-            
-            // Update UI
-            const items = document.querySelectorAll('.gmail-image-item');
-            items[index].classList.toggle('selected');
-            
-            updateSelectedCount();
-        }
-        
-        function updateSelectedCount() {
-            const count = gmailImportState.selectedImages.size;
-            document.getElementById('selectedCount').textContent = `נבחרו: ${count} תמונות`;
-            document.getElementById('importSelectedBtn').disabled = count === 0;
-        }
-        
-        async function importSelectedImages() {
-            const selectedIndices = Array.from(gmailImportState.selectedImages);
-            const targetType = document.getElementById('importTargetType').value;
-            
-            if (selectedIndices.length === 0) {
-                showToast('❌ בחר תמונות לייבוא');
-                return;
-            }
-            
-            const btn = document.getElementById('importSelectedBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loading-spinner"></span> מייבא...';
-            
-            for (const index of selectedIndices) {
-                const img = gmailImportState.images[index];
-                
-                try {
-                    // Fetch the image
-                    const response = await fetch(img.directUrl);
-                    const blob = await response.blob();
-                    
-                    // Create a File object
-                    const file = new File([blob], img.name, { type: img.mimeType || 'image/jpeg' });
-                    
-                    // Process based on target type
-                    if (targetType === 'flight') {
-                        await processFlightFile(file);
-                    } else if (targetType === 'hotel') {
-                        await processHotelFile(file);
-                    } else if (targetType === 'service') {
-                        await processServiceFile(file);
-                    }
-                    
-                } catch (error) {
-                    console.error('Error importing image:', error);
-                    showToast('❌ שגיאה בייבוא: ' + img.name);
-                }
-            }
-            
-            btn.disabled = false;
-            btn.innerHTML = '<span>📥</span> ייבא נבחרים';
-            
-            showToast(`✅ יובאו ${selectedIndices.length} תמונות`);
-            closeGmailModal();
-        }
-        
-        // Helper function to process files (if not already defined)
-        async function processFlightFile(file) {
-            const grid = document.getElementById('flightsGrid');
-            const id = 'flight_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            // Add to state
-            state.flights.push({
-                id: id,
-                file: file,
-                status: 'processing',
-                extractedData: null
-            });
-            
-            renderFlights();
-            
-            // Process with Gemini if API key exists
-            if (state.apiKey) {
-                await extractFlightData(id, file);
-            }
-        }
-        
-        async function processHotelFile(file) {
-            const grid = document.getElementById('hotelsGrid');
-            const id = 'hotel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            // Add to state
-            state.hotels.push({
-                id: id,
-                file: file,
-                status: 'processing',
-                extractedData: null
-            });
-            
-            renderHotels();
-            
-            // Process with Gemini if API key exists
-            if (state.apiKey) {
-                await extractHotelData(id, file);
-            }
-        }
-        
-        async function processServiceFile(file) {
-            const grid = document.getElementById('servicesGrid');
-            const id = 'service_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            // Add to state
-            state.services.push({
-                id: id,
-                file: file,
-                status: 'processing',
-                extractedData: null,
-                isManual: false
-            });
-            
-            renderServices();
-            
-            // Process with Gemini if API key exists
-            if (state.apiKey) {
-                await extractServiceData(id, file);
-            }
-        }
-        
-        function promptDriveFolderUrl() {
-            const url = prompt('הדבק קישור לתיקיית Google Drive:');
-            if (url && url.includes('drive.google.com')) {
-                // Extract folder ID and try to load images
-                const match = url.match(/folders\/([a-zA-Z0-9_-]+)/);
-                if (match) {
-                    showToast('📁 תיקייה נמצאה! מנסה לטעון תמונות...');
-                    // This would require additional API setup
-                    showToast('⚠️ גישה ישירה לתיקייה דורשת הגדרת API נוספת');
-                } else {
-                    showToast('❌ קישור לא תקין');
-                }
-            }
-        }
-        
-        // Close modal on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeGmailModal();
-            }
-        });
-        
-        // Close modal on outside click
-        document.getElementById('gmailModal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'gmailModal') {
-                closeGmailModal();
-            }
-        });
     </script>
 </body>
 </html>
