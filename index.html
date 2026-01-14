@@ -7725,7 +7725,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
         // ==========================================
         
         // JSONP helper function to bypass CORS
-        function fetchWithJsonp(url, timeout = 15000) {
+        function fetchWithJsonp(url, timeout = 120000) {
             return new Promise((resolve, reject) => {
                 const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 const script = document.createElement('script');
@@ -7839,6 +7839,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 <div style="text-align: center; padding: 40px;">
                     <div class="loading-spinner gold" style="width: 40px; height: 40px; margin: 0 auto 20px;"></div>
                     <p>טוען תמונות מ-Gmail...</p>
+                    <p style="font-size: 0.85rem; color: #888; margin-top: 10px;">זה עלול לקחת עד דקה, אנא המתן</p>
                 </div>
             `;
             
