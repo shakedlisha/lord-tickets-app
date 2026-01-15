@@ -4105,27 +4105,51 @@
                 
                 let prompt;
                 if (type === 'flight') {
-                    prompt = `Analyze this flight booking screenshot and extract all flight details. 
+                    prompt = `Analyze this flight booking screenshot and extract ALL flight segments.
+                       IMPORTANT: If there are connecting flights (layovers/stopovers), extract EACH segment separately!
+                       For example, a flight TLV→AUH→KIX should be 2 separate entries in the flights array.
+                       
                        Return a JSON object with this exact structure:
                        {
                          "flights": [
                            {
-                             "flightNumber": "XX123",
-                             "airline": "Airline Name",
+                             "flightNumber": "EY598",
+                             "airline": "Etihad",
                              "from": "TLV",
                              "fromCity": "Tel Aviv",
-                             "to": "BCN", 
-                             "toCity": "Barcelona",
+                             "to": "AUH", 
+                             "toCity": "Abu Dhabi",
                              "date": "15/03/2024",
                              "departureTime": "10:30",
-                             "arrivalTime": "14:45",
-                             "duration": "4h 15m"
+                             "arrivalTime": "15:45",
+                             "arrivalDate": "15/03/2024",
+                             "duration": "3h 15m"
+                           },
+                           {
+                             "flightNumber": "EY830",
+                             "airline": "Etihad",
+                             "from": "AUH",
+                             "fromCity": "Abu Dhabi",
+                             "to": "KIX", 
+                             "toCity": "Osaka",
+                             "date": "15/03/2024",
+                             "departureTime": "21:30",
+                             "arrivalTime": "11:45",
+                             "arrivalDate": "16/03/2024",
+                             "duration": "9h 15m"
                            }
                          ],
                          "totalPrice": 1500,
                          "currency": "ILS"
                        }
-                       Extract all flights shown. If price not visible, set totalPrice to 0.
+                       
+                       RULES:
+                       1. Extract EVERY flight segment shown, including connections/layovers
+                       2. Each leg of a connecting flight must be a separate entry
+                       3. Include arrivalDate if the flight lands on a different day
+                       4. If price not visible, set totalPrice to 0
+                       5. Look for ALL flight numbers, times, and airport codes
+                       
                        Return ONLY valid JSON, no explanation.`;
                 } else if (type === 'hotel') {
                     prompt = `Analyze this hotel booking screenshot and extract all details.
