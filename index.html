@@ -109,6 +109,56 @@
             background: var(--success);
         }
         
+        .settings-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--gold);
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+        
+        .settings-btn:hover {
+            background: var(--gold);
+        }
+        
+        .supabase-settings {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-top: 1px solid rgba(212, 175, 55, 0.3);
+        }
+        
+        .supabase-settings-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .supabase-settings span {
+            color: var(--gold);
+            font-size: 0.9rem;
+        }
+        
+        .save-supabase-btn {
+            background: var(--gold);
+            color: var(--navy);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        .save-supabase-btn:hover {
+            background: #e5c466;
+        }
+        
         /* Proposal Tabs Bar */
         .tabs-bar {
             background: linear-gradient(135deg, #1a3a5c 0%, #0f1f3a 100%);
@@ -1634,6 +1684,11 @@
             color: var(--navy);
         }
         
+        .share-btn.publish {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+        }
+
         .share-btn:hover {
             transform: scale(1.05);
         }
@@ -2025,6 +2080,101 @@
         .paste-modal-close:hover {
             background: var(--gray-light);
             color: var(--navy);
+        }
+        
+        /* Publish Modal */
+        .publish-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .publish-modal-overlay.visible {
+            display: flex;
+        }
+        
+        .publish-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+        }
+        
+        .publish-modal-close {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .publish-modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 10px;
+        }
+        
+        .publish-modal-desc {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .publish-expiry-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .expiry-btn {
+            flex: 1;
+            padding: 20px 15px;
+            border: 2px solid var(--gray);
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .expiry-btn:hover {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .expiry-time {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #8b5cf6;
+        }
+        
+        .expiry-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .publish-modal-note {
+            font-size: 0.85rem;
+            color: #999;
         }
         
         /* Saved Proposals Sidebar */
@@ -3598,6 +3748,15 @@
                 <label>Gemini API Key:</label>
                 <input type="password" id="apiKeyInput" class="api-key-input" placeholder="הכנס מפתח API של Gemini...">
                 <div class="api-status" id="apiStatus" title="לא מחובר"></div>
+                <button class="settings-btn" onclick="toggleSupabaseSettings()" title="הגדרות Supabase">⚙️</button>
+            </div>
+        </div>
+        <div class="supabase-settings" id="supabaseSettings" style="display: none;">
+            <div class="supabase-settings-inner">
+                <span>🔗 Supabase (לפרסום הצעות):</span>
+                <input type="text" id="supabaseUrlInput" class="api-key-input" placeholder="Project URL" style="width: 200px;">
+                <input type="password" id="supabaseKeyInput" class="api-key-input" placeholder="Anon Key" style="width: 200px;">
+                <button class="save-supabase-btn" onclick="saveSupabaseSettings()">שמור</button>
             </div>
         </div>
     </header>
@@ -3723,6 +3882,9 @@
                     <button class="share-btn copy" onclick="copyProposal()">
                         📋 העתק הצעה
                     </button>
+                    <button class="share-btn publish" onclick="showPublishModal()">
+                        🔗 פרסם לינק זמני
+                    </button>
                 </div>
             </section>
         </div>
@@ -3827,7 +3989,31 @@
             </div>
         </div>
     </div>
-    
+
+    <!-- Publish Modal -->
+    <div class="publish-modal-overlay" id="publishModal">
+        <div class="publish-modal">
+            <button class="publish-modal-close" onclick="closePublishModal()">×</button>
+            <div class="publish-modal-title">🔗 פרסום הצעה עם לינק זמני</div>
+            <div class="publish-modal-desc">בחר כמה זמן הלינק יהיה פעיל:</div>
+            <div class="publish-expiry-options">
+                <button class="expiry-btn" onclick="publishProposal(24)">
+                    <span class="expiry-time">24</span>
+                    <span class="expiry-label">שעות</span>
+                </button>
+                <button class="expiry-btn" onclick="publishProposal(48)">
+                    <span class="expiry-time">48</span>
+                    <span class="expiry-label">שעות</span>
+                </button>
+                <button class="expiry-btn" onclick="publishProposal(72)">
+                    <span class="expiry-time">72</span>
+                    <span class="expiry-label">שעות</span>
+                </button>
+            </div>
+            <div class="publish-modal-note">הלינק יפוג אוטומטית אחרי הזמן שנבחר</div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
@@ -3902,6 +4088,9 @@
             tabs: [],
             currentTabId: null,
             tabCounter: 0,
+            // Supabase configuration for publishing proposals
+            supabaseUrl: localStorage.getItem('supabaseUrl') || '',
+            supabaseKey: localStorage.getItem('supabaseKey') || '',
             flightProposalTemplate: localStorage.getItem('flightProposalTemplate') || `*✈️ הצעה לטיסות [יעד] 🇮🇱🇨🇷*
 
 *תאריכים:*
@@ -4381,6 +4570,31 @@
             status.title = connected ? 'מחובר' : 'לא מחובר';
         }
         
+        // ==========================================
+        // Supabase Settings
+        // ==========================================
+        function toggleSupabaseSettings() {
+            const settings = document.getElementById('supabaseSettings');
+            settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+            
+            // Load current values
+            if (settings.style.display === 'block') {
+                document.getElementById('supabaseUrlInput').value = state.supabaseUrl;
+                document.getElementById('supabaseKeyInput').value = state.supabaseKey;
+            }
+        }
+        
+        function saveSupabaseSettings() {
+            state.supabaseUrl = document.getElementById('supabaseUrlInput').value.trim();
+            state.supabaseKey = document.getElementById('supabaseKeyInput').value.trim();
+            
+            localStorage.setItem('supabaseUrl', state.supabaseUrl);
+            localStorage.setItem('supabaseKey', state.supabaseKey);
+            
+            document.getElementById('supabaseSettings').style.display = 'none';
+            showToast('✅ הגדרות Supabase נשמרו');
+        }
+
         // ==========================================
         // Drop Zone Setup
         // ==========================================
@@ -8047,6 +8261,102 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 document.body.removeChild(ta);
                 showToast('📋 הועתק ללוח');
             });
+        }
+        
+        // ==========================================
+        // Publish Proposal with Supabase
+        // ==========================================
+        function showPublishModal() {
+            // Ensure proposal is generated first
+            const proposalSection = document.getElementById('proposalSection');
+            if (!proposalSection || !proposalSection.classList.contains('visible')) {
+                showToast('❌ יש ליצור הצעת מחיר קודם');
+                return;
+            }
+            
+            // Check Supabase settings
+            if (!state.supabaseUrl || !state.supabaseKey) {
+                showToast('⚠️ הגדר קודם את Supabase בהגדרות (⚙️)');
+                toggleSupabaseSettings();
+                return;
+            }
+            
+            document.getElementById('publishModal').classList.add('visible');
+        }
+        
+        function closePublishModal() {
+            document.getElementById('publishModal').classList.remove('visible');
+        }
+        
+        async function publishProposal(expiryHours) {
+            closePublishModal();
+            showToast('⏳ מפרסם הצעה...');
+            
+            try {
+                // Get proposal HTML content
+                const proposalContent = document.getElementById('proposalContent').innerHTML;
+                const clientName = document.getElementById('clientName').value || 'לקוח';
+                const totalPrice = parseFloat(document.getElementById('customerPriceInput').value) || 0;
+                
+                // Get destination from flights
+                let destination = '';
+                if (state.flights.length > 0 && state.flights[0].extractedData?.flights) {
+                    const flights = state.flights[0].extractedData.flights;
+                    if (flights.length > 0) {
+                        destination = flights[0].toCity || flights[0].to || '';
+                    }
+                }
+                
+                // Calculate expiry time
+                const expiresAt = new Date();
+                expiresAt.setHours(expiresAt.getHours() + expiryHours);
+                
+                // Save to Supabase
+                const response = await fetch(`${state.supabaseUrl}/rest/v1/proposals`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': state.supabaseKey,
+                        'Authorization': `Bearer ${state.supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify({
+                        content: proposalContent,
+                        client_name: clientName,
+                        destination: destination,
+                        total_price: totalPrice,
+                        expires_at: expiresAt.toISOString()
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`שגיאת Supabase: ${response.status} - ${errorText}`);
+                }
+                
+                const data = await response.json();
+                const proposalId = data[0]?.id;
+                
+                if (!proposalId) {
+                    throw new Error('לא התקבל ID מ-Supabase');
+                }
+                
+                // Generate the public link
+                const baseUrl = window.location.origin + window.location.pathname.replace('index.html', '');
+                const publicLink = `${baseUrl}view.html?id=${proposalId}`;
+                
+                // Copy to clipboard
+                await navigator.clipboard.writeText(publicLink);
+                
+                showToast(`✅ הצעה פורסמה! הלינק הועתק (${expiryHours} שעות)`);
+                
+                // Show the link in an alert for easy access
+                alert(`הלינק להצעה:\n\n${publicLink}\n\nהלינק הועתק ללוח!\nתוקף: ${expiryHours} שעות`);
+                
+            } catch (error) {
+                console.error('Publish error:', error);
+                showToast('❌ שגיאה בפרסום: ' + error.message);
+            }
         }
         
         /**
