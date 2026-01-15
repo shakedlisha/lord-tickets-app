@@ -6410,6 +6410,260 @@
             return locationStr;
         }
         
+        // Country flags mapping for dynamic flag display
+        const countryFlags = {
+            // Hebrew names
+            'תאילנד': '🇹🇭',
+            'יוון': '🇬🇷',
+            'איטליה': '🇮🇹',
+            'צרפת': '🇫🇷',
+            'ספרד': '🇪🇸',
+            'טורקיה': '🇹🇷',
+            'קפריסין': '🇨🇾',
+            'יפן': '🇯🇵',
+            'סין': '🇨🇳',
+            'הודו': '🇮🇳',
+            'וייטנאם': '🇻🇳',
+            'קמבודיה': '🇰🇭',
+            'אינדונזיה': '🇮🇩',
+            'מלזיה': '🇲🇾',
+            'סינגפור': '🇸🇬',
+            'פיליפינים': '🇵🇭',
+            'קוריאה': '🇰🇷',
+            'הונג קונג': '🇭🇰',
+            'איחוד האמירויות': '🇦🇪',
+            'דובאי': '🇦🇪',
+            'אבו דאבי': '🇦🇪',
+            'מצרים': '🇪🇬',
+            'מרוקו': '🇲🇦',
+            'דרום אפריקה': '🇿🇦',
+            'קניה': '🇰🇪',
+            'טנזניה': '🇹🇿',
+            'ארצות הברית': '🇺🇸',
+            'ניו יורק': '🇺🇸',
+            'לוס אנג\'לס': '🇺🇸',
+            'מיאמי': '🇺🇸',
+            'קנדה': '🇨🇦',
+            'מקסיקו': '🇲🇽',
+            'קוסטה ריקה': '🇨🇷',
+            'ברזיל': '🇧🇷',
+            'ארגנטינה': '🇦🇷',
+            'פרו': '🇵🇪',
+            'קולומביה': '🇨🇴',
+            'צ\'ילה': '🇨🇱',
+            'אקוודור': '🇪🇨',
+            'אוסטרליה': '🇦🇺',
+            'ניו זילנד': '🇳🇿',
+            'פיג\'י': '🇫🇯',
+            'בריטניה': '🇬🇧',
+            'לונדון': '🇬🇧',
+            'אנגליה': '🇬🇧',
+            'גרמניה': '🇩🇪',
+            'הולנד': '🇳🇱',
+            'אמסטרדם': '🇳🇱',
+            'בלגיה': '🇧🇪',
+            'שוויץ': '🇨🇭',
+            'אוסטריה': '🇦🇹',
+            'פורטוגל': '🇵🇹',
+            'קרואטיה': '🇭🇷',
+            'צ\'כיה': '🇨🇿',
+            'פראג': '🇨🇿',
+            'פולין': '🇵🇱',
+            'הונגריה': '🇭🇺',
+            'בודפשט': '🇭🇺',
+            'רומניה': '🇷🇴',
+            'בולגריה': '🇧🇬',
+            'סרביה': '🇷🇸',
+            'מלטה': '🇲🇹',
+            'איסלנד': '🇮🇸',
+            'נורווגיה': '🇳🇴',
+            'שוודיה': '🇸🇪',
+            'דנמרק': '🇩🇰',
+            'פינלנד': '🇫🇮',
+            'רוסיה': '🇷🇺',
+            'אוקראינה': '🇺🇦',
+            'גאורגיה': '🇬🇪',
+            'אזרבייג\'ן': '🇦🇿',
+            'ירדן': '🇯🇴',
+            'לבנון': '🇱🇧',
+            'מלדיביים': '🇲🇻',
+            'סרי לנקה': '🇱🇰',
+            'נפאל': '🇳🇵',
+            'מונקו': '🇲🇨',
+            'לוקסמבורג': '🇱🇺',
+            'אירלנד': '🇮🇪',
+            'סקוטלנד': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+            'קובה': '🇨🇺',
+            'ג\'מייקה': '🇯🇲',
+            'הרפובליקה הדומיניקנית': '🇩🇴',
+            'פנמה': '🇵🇦',
+            'בהאמה': '🇧🇸',
+            // English names
+            'thailand': '🇹🇭',
+            'greece': '🇬🇷',
+            'italy': '🇮🇹',
+            'france': '🇫🇷',
+            'spain': '🇪🇸',
+            'turkey': '🇹🇷',
+            'cyprus': '🇨🇾',
+            'japan': '🇯🇵',
+            'china': '🇨🇳',
+            'india': '🇮🇳',
+            'vietnam': '🇻🇳',
+            'cambodia': '🇰🇭',
+            'indonesia': '🇮🇩',
+            'malaysia': '🇲🇾',
+            'singapore': '🇸🇬',
+            'philippines': '🇵🇭',
+            'korea': '🇰🇷',
+            'south korea': '🇰🇷',
+            'hong kong': '🇭🇰',
+            'uae': '🇦🇪',
+            'dubai': '🇦🇪',
+            'abu dhabi': '🇦🇪',
+            'egypt': '🇪🇬',
+            'morocco': '🇲🇦',
+            'south africa': '🇿🇦',
+            'kenya': '🇰🇪',
+            'tanzania': '🇹🇿',
+            'usa': '🇺🇸',
+            'united states': '🇺🇸',
+            'new york': '🇺🇸',
+            'los angeles': '🇺🇸',
+            'miami': '🇺🇸',
+            'canada': '🇨🇦',
+            'mexico': '🇲🇽',
+            'costa rica': '🇨🇷',
+            'brazil': '🇧🇷',
+            'argentina': '🇦🇷',
+            'peru': '🇵🇪',
+            'colombia': '🇨🇴',
+            'chile': '🇨🇱',
+            'ecuador': '🇪🇨',
+            'australia': '🇦🇺',
+            'new zealand': '🇳🇿',
+            'fiji': '🇫🇯',
+            'uk': '🇬🇧',
+            'united kingdom': '🇬🇧',
+            'london': '🇬🇧',
+            'england': '🇬🇧',
+            'germany': '🇩🇪',
+            'netherlands': '🇳🇱',
+            'amsterdam': '🇳🇱',
+            'belgium': '🇧🇪',
+            'switzerland': '🇨🇭',
+            'austria': '🇦🇹',
+            'portugal': '🇵🇹',
+            'croatia': '🇭🇷',
+            'czech republic': '🇨🇿',
+            'czechia': '🇨🇿',
+            'prague': '🇨🇿',
+            'poland': '🇵🇱',
+            'hungary': '🇭🇺',
+            'budapest': '🇭🇺',
+            'romania': '🇷🇴',
+            'bulgaria': '🇧🇬',
+            'serbia': '🇷🇸',
+            'malta': '🇲🇹',
+            'iceland': '🇮🇸',
+            'norway': '🇳🇴',
+            'sweden': '🇸🇪',
+            'denmark': '🇩🇰',
+            'finland': '🇫🇮',
+            'russia': '🇷🇺',
+            'ukraine': '🇺🇦',
+            'georgia': '🇬🇪',
+            'azerbaijan': '🇦🇿',
+            'jordan': '🇯🇴',
+            'lebanon': '🇱🇧',
+            'maldives': '🇲🇻',
+            'sri lanka': '🇱🇰',
+            'nepal': '🇳🇵',
+            'monaco': '🇲🇨',
+            'luxembourg': '🇱🇺',
+            'ireland': '🇮🇪',
+            'scotland': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+            'cuba': '🇨🇺',
+            'jamaica': '🇯🇲',
+            'dominican republic': '🇩🇴',
+            'panama': '🇵🇦',
+            'bahamas': '🇧🇸',
+            // Thai cities map to Thailand
+            'bangkok': '🇹🇭',
+            'phuket': '🇹🇭',
+            'בנגקוק': '🇹🇭',
+            'פוקט': '🇹🇭',
+            'קראבי': '🇹🇭',
+            'krabi': '🇹🇭',
+            'chiang mai': '🇹🇭',
+            'ציאנג מאי': '🇹🇭',
+            'koh samui': '🇹🇭',
+            'קו סאמוי': '🇹🇭',
+            // Greek cities
+            'athens': '🇬🇷',
+            'אתונה': '🇬🇷',
+            'santorini': '🇬🇷',
+            'סנטוריני': '🇬🇷',
+            'mykonos': '🇬🇷',
+            'מיקונוס': '🇬🇷',
+            'crete': '🇬🇷',
+            'כרתים': '🇬🇷',
+            'rhodes': '🇬🇷',
+            'רודוס': '🇬🇷',
+            // Italian cities
+            'rome': '🇮🇹',
+            'רומא': '🇮🇹',
+            'milan': '🇮🇹',
+            'מילאנו': '🇮🇹',
+            'venice': '🇮🇹',
+            'ונציה': '🇮🇹',
+            'florence': '🇮🇹',
+            'פירנצה': '🇮🇹',
+            // Spanish cities
+            'madrid': '🇪🇸',
+            'מדריד': '🇪🇸',
+            'barcelona': '🇪🇸',
+            'ברצלונה': '🇪🇸',
+            // Turkish cities
+            'istanbul': '🇹🇷',
+            'איסטנבול': '🇹🇷',
+            'antalya': '🇹🇷',
+            'אנטליה': '🇹🇷',
+            // French cities
+            'paris': '🇫🇷',
+            'פריז': '🇫🇷',
+            'nice': '🇫🇷',
+            'ניס': '🇫🇷'
+        };
+        
+        /**
+         * Get country flag emoji based on destination name
+         * @param {string} destination - City or country name (Hebrew or English)
+         * @returns {string} Flag emoji or empty string
+         */
+        function getCountryFlag(destination) {
+            if (!destination) return '';
+            
+            const lowerDest = destination.toLowerCase().trim();
+            
+            // Direct lookup
+            if (countryFlags[destination]) {
+                return countryFlags[destination];
+            }
+            if (countryFlags[lowerDest]) {
+                return countryFlags[lowerDest];
+            }
+            
+            // Partial match - check if any key is contained in the destination
+            for (const [key, flag] of Object.entries(countryFlags)) {
+                if (lowerDest.includes(key.toLowerCase()) || destination.includes(key)) {
+                    return flag;
+                }
+            }
+            
+            return '';
+        }
+        
         function translateRoomType(roomTypeStr) {
             if (!roomTypeStr) return '';
             
@@ -7267,16 +7521,52 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 destination = lastSegment.toCity || lastSegment.to || 'יעד';
             }
             
+            // Map airport codes to countries/cities for flag detection
+            const airportToCountry = {
+                'KIX': 'יפן', 'NRT': 'יפן', 'HND': 'יפן', 'TYO': 'יפן', 'OSA': 'יפן', 'FUK': 'יפן',
+                'BKK': 'תאילנד', 'HKT': 'תאילנד', 'CNX': 'תאילנד', 'DMK': 'תאילנד',
+                'ATH': 'יוון', 'SKG': 'יוון', 'JTR': 'יוון', 'JMK': 'יוון', 'RHO': 'יוון',
+                'FCO': 'איטליה', 'MXP': 'איטליה', 'VCE': 'איטליה', 'NAP': 'איטליה',
+                'CDG': 'צרפת', 'ORY': 'צרפת', 'NCE': 'צרפת',
+                'BCN': 'ספרד', 'MAD': 'ספרד', 'PMI': 'ספרד',
+                'IST': 'טורקיה', 'AYT': 'טורקיה', 'SAW': 'טורקיה',
+                'LHR': 'בריטניה', 'LGW': 'בריטניה', 'STN': 'בריטניה',
+                'AMS': 'הולנד', 'FRA': 'גרמניה', 'MUC': 'גרמניה',
+                'DXB': 'דובאי', 'AUH': 'אבו דאבי',
+                'JFK': 'ארצות הברית', 'LAX': 'ארצות הברית', 'MIA': 'ארצות הברית', 'EWR': 'ארצות הברית',
+                'SIN': 'סינגפור', 'HKG': 'הונג קונג', 'ICN': 'קוריאה', 'PVG': 'סין', 'PEK': 'סין',
+                'SYD': 'אוסטרליה', 'MEL': 'אוסטרליה',
+                'LCA': 'קפריסין', 'PFO': 'קפריסין',
+                'PRG': 'צ\'כיה', 'BUD': 'הונגריה', 'VIE': 'אוסטריה', 'ZRH': 'שוויץ',
+                'LIS': 'פורטוגל', 'DUB': 'אירלנד', 'CPH': 'דנמרק', 'ARN': 'שוודיה',
+                'MLE': 'מלדיביים', 'CMB': 'סרי לנקה', 'DEL': 'הודו', 'BOM': 'הודו',
+                'CAI': 'מצרים', 'SSH': 'מצרים', 'CMN': 'מרוקו', 'RAK': 'מרוקו',
+                'SJO': 'קוסטה ריקה', 'CUN': 'מקסיקו', 'GRU': 'ברזיל', 'EZE': 'ארגנטינה'
+            };
+            
+            // Try to get country name from airport code
+            let countryForFlag = destination;
+            if (airportToCountry[destination]) {
+                countryForFlag = airportToCountry[destination];
+            }
+            
+            // Get dynamic flag based on destination
+            const destFlag = getCountryFlag(countryForFlag);
+            
             // Find dates
             let departureDate = '';
             let returnDate = '';
+            let departureDateFull = '';
+            let returnDateFull = '';
             if (outboundJourney && outboundJourney.segments.length > 0) {
                 departureDate = formatShortDate(outboundJourney.segments[0].date) || '';
+                departureDateFull = outboundJourney.segments[0].date || '';
             }
             const returnJourney = journeys.find(j => j.type === 'חזור');
             if (returnJourney && returnJourney.segments.length > 0) {
                 const lastReturnSegment = returnJourney.segments[returnJourney.segments.length - 1];
                 returnDate = formatShortDate(lastReturnSegment.arrivalDate || lastReturnSegment.date) || '';
+                returnDateFull = lastReturnSegment.arrivalDate || lastReturnSegment.date || '';
             }
             
             // Calculate nights
@@ -7310,9 +7600,11 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             });
             const airline = Object.keys(airlines).sort((a, b) => airlines[b] - airlines[a])[0] || 'חברת תעופה';
             
-            // Build flight routes
-            let outboundRoute = '';
-            let outboundLayover = '';
+            // Get baggage info
+            const baggageInfo = document.getElementById('baggageInfo')?.value || 'תיק יד + מזוודה 23 ק״ג';
+            
+            // Build outbound flight details with ALL connections
+            let outboundText = '';
             let outboundTotalTime = '';
             if (outboundJourney) {
                 const segments = outboundJourney.segments;
@@ -7321,64 +7613,24 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     const to = seg.toCity || seg.to || '';
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
-                    const date = formatShortDate(seg.date) || '';
-                    const arrDate = formatShortDate(seg.arrivalDate || seg.date) || '';
+                    const flightNum = seg.flightNumber || '';
+                    const segAirline = seg.airline || airline;
                     
-                    if (idx === 0) {
-                        outboundRoute += `${from} ${depTime} (${date}) → `;
-                    }
+                    // Add flight segment
+                    outboundText += `${from} ${depTime} → ${to} ${arrTime}`;
+                    if (flightNum) outboundText += ` (${segAirline} ${flightNum})`;
+                    outboundText += '\n';
+                    
+                    // Add layover info if not the last segment
                     if (idx < segments.length - 1) {
-                        outboundRoute += `${to} ${arrTime} (${arrDate})\n`;
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            outboundLayover = `${to} | ${layover.formatted}`;
+                            outboundText += `🕒 עצירת ביניים: ${to} | ${layover.formatted}\n`;
                         }
-                    } else {
-                        outboundRoute += `${to} ${arrTime} (${arrDate})`;
                     }
                 });
-                // Calculate total time (rough estimate)
-                if (segments.length > 0) {
-                    const first = segments[0];
-                    const last = segments[segments.length - 1];
-                    const depTime = parseTimeForSort(first.departureTime);
-                    const arrTime = parseTimeForSort(last.arrivalTime);
-                    let totalMins = arrTime - depTime;
-                    if (totalMins < 0) totalMins += 24 * 60;
-                    const hours = Math.floor(totalMins / 60);
-                    const mins = totalMins % 60;
-                    outboundTotalTime = `${hours} שעות ${mins > 0 ? `${mins} דקות` : ''}`;
-                }
-            }
-            
-            let returnRoute = '';
-            let returnLayover = '';
-            let returnTotalTime = '';
-            if (returnJourney) {
-                const segments = returnJourney.segments;
-                segments.forEach((seg, idx) => {
-                    const from = seg.fromCity || seg.from || '';
-                    const to = seg.toCity || seg.to || '';
-                    const depTime = seg.departureTime || '';
-                    const arrTime = seg.arrivalTime || '';
-                    const date = formatShortDate(seg.date) || '';
-                    const arrDate = formatShortDate(seg.arrivalDate || seg.date) || '';
-                    
-                    if (idx === 0) {
-                        returnRoute += `${from} ${depTime} (${date}) → `;
-                    }
-                    if (idx < segments.length - 1) {
-                        returnRoute += `${to} ${arrTime} (${arrDate})\n`;
-                        const nextSeg = segments[idx + 1];
-                        const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
-                        if (layover) {
-                            returnLayover = `${to} | ${layover.formatted}`;
-                        }
-                    } else {
-                        returnRoute += `${to} ${arrTime} (${arrDate})`;
-                    }
-                });
+                
                 // Calculate total time
                 if (segments.length > 0) {
                     const first = segments[0];
@@ -7389,19 +7641,55 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     if (totalMins < 0) totalMins += 24 * 60;
                     const hours = Math.floor(totalMins / 60);
                     const mins = totalMins % 60;
-                    returnTotalTime = `${hours} שעות ${mins > 0 ? `${mins} דקות` : ''}`;
+                    outboundTotalTime = `${hours} שעות${mins > 0 ? ` ${mins} דקות` : ''}`;
                 }
             }
             
-            // Get baggage info
-            const baggageInfo = document.getElementById('baggageInfo')?.value || '23 ק"ג';
-            const baggageMatch = baggageInfo.match(/(\d+)/);
-            const baggageWeight = baggageMatch ? baggageMatch[1] : '23';
+            // Build return flight details with ALL connections
+            let returnText = '';
+            let returnTotalTime = '';
+            if (returnJourney) {
+                const segments = returnJourney.segments;
+                segments.forEach((seg, idx) => {
+                    const from = seg.fromCity || seg.from || '';
+                    const to = seg.toCity || seg.to || '';
+                    const depTime = seg.departureTime || '';
+                    const arrTime = seg.arrivalTime || '';
+                    const flightNum = seg.flightNumber || '';
+                    const segAirline = seg.airline || airline;
+                    
+                    // Add flight segment
+                    returnText += `${from} ${depTime} → ${to} ${arrTime}`;
+                    if (flightNum) returnText += ` (${segAirline} ${flightNum})`;
+                    returnText += '\n';
+                    
+                    // Add layover info if not the last segment
+                    if (idx < segments.length - 1) {
+                        const nextSeg = segments[idx + 1];
+                        const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
+                        if (layover) {
+                            returnText += `🕒 עצירת ביניים: ${to} | ${layover.formatted}\n`;
+                        }
+                    }
+                });
+                
+                // Calculate total time
+                if (segments.length > 0) {
+                    const first = segments[0];
+                    const last = segments[segments.length - 1];
+                    const depTime = parseTimeForSort(first.departureTime);
+                    const arrTime = parseTimeForSort(last.arrivalTime);
+                    let totalMins = arrTime - depTime;
+                    if (totalMins < 0) totalMins += 24 * 60;
+                    const hours = Math.floor(totalMins / 60);
+                    const mins = totalMins % 60;
+                    returnTotalTime = `${hours} שעות${mins > 0 ? ` ${mins} דקות` : ''}`;
+                }
+            }
             
-            // Build hotels section
+            // Build hotels section with booking links
             let hotelsText = '';
             if (state.hotels.length > 0) {
-                // Sort hotels by check-in date
                 const sortedHotels = [...state.hotels].filter(h => h.extractedData).sort((a, b) => {
                     const dateA = parseDateForSort(a.extractedData?.checkIn);
                     const dateB = parseDateForSort(b.extractedData?.checkIn);
@@ -7413,22 +7701,20 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     sortedHotels.forEach((hotel, idx) => {
                         const h = hotel.extractedData || {};
                         const hotelName = h.hotelName || 'מלון';
-                        // Translate location to Hebrew
                         const location = h.location ? translateLocation(h.location) : '';
                         const checkIn = h.checkIn || '';
                         const checkOut = h.checkOut || '';
-                        const nights = h.nights || '';
-                        // Translate room type to Hebrew
+                        const hotelNights = h.nights || '';
                         const roomType = h.roomType ? translateRoomType(h.roomType) : '';
-                        // Translate board basis to Hebrew
                         const boardBasis = h.boardBasis ? translateBoardBasis(h.boardBasis) : '';
                         const rating = h.rating || h.stars || '';
+                        const bookingUrl = h.bookingUrl || '';
                         
                         hotelsText += `\n🏨 *${hotelName}*`;
                         if (location) hotelsText += `\n📍 ${location}`;
                         if (checkIn && checkOut) {
                             hotelsText += `\n📅 ${checkIn} - ${checkOut}`;
-                            if (nights) hotelsText += ` (${nights} לילות)`;
+                            if (hotelNights) hotelsText += ` (${hotelNights} לילות)`;
                         }
                         if (roomType) hotelsText += `\n🛏️ ${roomType}`;
                         if (boardBasis) hotelsText += `\n🍽️ ${boardBasis}`;
@@ -7436,12 +7722,34 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                             const stars = '★'.repeat(Math.floor(rating));
                             hotelsText += `\n⭐ ${stars}`;
                         }
+                        if (bookingUrl) {
+                            hotelsText += `\n🔗 קישור להזמנה: ${bookingUrl}`;
+                        }
                         if (idx < sortedHotels.length - 1) hotelsText += '\n';
                     });
                 }
             }
             
-            // Calculate total price (flights + hotels)
+            // Build services/extras section
+            let servicesText = '';
+            if (state.services.length > 0) {
+                servicesText = '\n\n*🎫 תוספות ושירותים:*';
+                state.services.forEach((service, idx) => {
+                    const name = service.name || 'שירות';
+                    const description = service.description || '';
+                    const price = service.price || 0;
+                    const currency = service.currency || 'ILS';
+                    const priceInILS = convertCurrency(price, currency, 'ILS', service.customExchangeRate);
+                    
+                    servicesText += `\n\n🎫 *${name}*`;
+                    if (description) {
+                        servicesText += `\n${description}`;
+                    }
+                    servicesText += `\n💰 ${priceInILS.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}₪`;
+                });
+            }
+            
+            // Calculate total price (flights + hotels + services)
             let totalPrice = 0;
             state.flights.forEach(f => {
                 if (f.price && f.currency) {
@@ -7457,51 +7765,65 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     totalPrice += (h.basePrice || 0) + (h.markup || 0);
                 }
             });
+            state.services.forEach(s => {
+                if (s.price && s.currency) {
+                    totalPrice += convertCurrency(s.price, s.currency, 'ILS', s.customExchangeRate);
+                } else {
+                    totalPrice += s.price || 0;
+                }
+            });
             const priceInUSD = convertCurrency(totalPrice, 'ILS', 'USD');
             
-            // Format prices with thousand separators
             const priceInILSFormatted = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             const priceInUSDFormatted = priceInUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             
-            // Fill template - need to handle outbound and return layovers separately
-            let proposal = state.flightProposalTemplate;
+            // Calculate total nights from hotels if flight nights not available
+            let totalNights = nights;
+            if (totalNights <= 0 && state.hotels.length > 0) {
+                totalNights = state.hotels.reduce((sum, h) => {
+                    const hotelNights = h.extractedData?.nights || 0;
+                    return sum + (typeof hotelNights === 'number' ? hotelNights : parseInt(hotelNights) || 0);
+                }, 0);
+            }
             
-            // Replace common fields
-            proposal = proposal
-                .replace(/\[יעד\]/g, destination)
-                .replace(/\[תאריך יציאה\]/g, departureDate)
-                .replace(/\[תאריך חזרה\]/g, returnDate)
-                .replace(/\[מספר לילות\]/g, nights > 0 ? nights.toString() : '')
-                .replace(/\[חברת תעופה\]/g, airline)
-                .replace(/\[משקל ק"ג\]/g, baggageWeight)
-                .replace(/\[פרטי מלונות\]/g, hotelsText || '')
-                .replace(/\[מחיר בשקלים\]/g, priceInILSFormatted)
-                .replace(/\[מחיר בדולרים\]/g, priceInUSDFormatted)
-                .replace(/\[מחיר\]/g, `${priceInILSFormatted}₪ / ${priceInUSDFormatted}$`) // Fallback for old template format
-                .replace(/\[הערות נוספות בנוגע לזמינות הכרטיסים או תנאי הכרטוס\]/g, '');
+            // Clean up outbound text - remove empty layover lines
+            let outboundTextClean = outboundText.replace(/🕒 עצירת ביניים:\s*\|\s*\n/g, '');
+            let returnTextClean = returnText.replace(/🕒 עצירת ביניים:\s*\|\s*\n/g, '');
             
-            // Replace outbound section
-            const outboundLayoverCity = outboundLayover.split(' | ')[0] || '';
-            const outboundLayoverTime = outboundLayover.split(' | ')[1] || '';
-            proposal = proposal
-                .replace(/\[מסלול טיסה הלוך עם שעות\]/g, outboundRoute || '[לא זמין]')
-                .replace(/(✈️ \*הלוך:\*[\s\S]*?🕒 עצירת ביניים: )\[יעד עצירה\]( \| )\[משך עצירה\]/g, 
-                    `$1${outboundLayoverCity}$2${outboundLayoverTime}`)
-                .replace(/(✈️ \*הלוך:\*[\s\S]*?⏳ משך זמן כולל: )\[סה"כ זמן נסיעה\]/g,
-                    `$1${outboundTotalTime || ''}`);
-            
-            // Replace return section
-            const returnLayoverCity = returnLayover.split(' | ')[0] || '';
-            const returnLayoverTime = returnLayover.split(' | ')[1] || '';
-            proposal = proposal
-                .replace(/\[מסלול טיסה חזור עם שעות\]/g, returnRoute || '[לא זמין]')
-                .replace(/(✈️ \*חזור:\*[\s\S]*?🕒 עצירת ביניים: )\[יעד עצירה\]( \| )\[משך עצירה\]/g,
-                    `$1${returnLayoverCity}$2${returnLayoverTime}`)
-                .replace(/(✈️ \*חזור:\*[\s\S]*?⏳ משך זמן כולל: )\[סה"כ זמן נסיעה\]/g,
-                    `$1${returnTotalTime || ''}`);
-            
-            // Clean up any remaining placeholders
-            proposal = proposal.replace(/\[[^\]]+\]/g, '');
+            // Build proposal text directly (not using template)
+            let proposal = `*✈️ הצעה לטיסות ${destination} 🇮🇱${destFlag}*
+
+*תאריכים:*
+📅 הלוך: ${departureDate}
+📅 חזור: ${returnDate}
+סה"כ: ${totalNights > 0 ? totalNights + ' לילות' : ''}
+
+*טיסות:*
+חברת תעופה: ✈️ ${airline}
+
+✈️ *הלוך:*
+${outboundTextClean}⏳ משך זמן כולל: ${outboundTotalTime}
+
+✈️ *חזור:*
+${returnTextClean}⏳ משך זמן כולל: ${returnTotalTime}
+
+*כבודה: 🧳*
+${baggageInfo}
+${hotelsText}${servicesText}
+
+*תנאי ביטול:*
+הכרטיס אינו גמיש ויהיה קנס על כל ביטול/שינוי
+- במידה וחברת התעופה מבטלת את הטיסה כמובן שהכסף שב אליכם חזרה
+
+*מה אני נותן בתור שירות:*
+✅ טיפול בהזמנה וביטולים במידת הצורך
+✅ עזרה ותמיכה מתמדת בכל שאלה
+✅ חיסכון בעמלות מטבע – אפשרות תשלום בשקלים
+
+💰 *עלות כוללת:*
+${priceInILSFormatted}₪ / ${priceInUSDFormatted}$ עבור נוסע בכרטיס
+
+המחיר מוגבל לזמן ואוכל לשריין אותו עבורך. שלח לי את פרטי הדרכונים כדי שאוודא את זמינות העסקה.`;
             
             // Copy to clipboard
             navigator.clipboard.writeText(proposal).then(() => {
@@ -7516,7 +7838,6 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 showToast('📋 הצעת טיסות הועתקה ללוח');
             });
             
-            // Also show in console for debugging
             console.log('Flight Proposal Text:', proposal);
         }
         
