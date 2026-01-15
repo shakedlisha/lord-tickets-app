@@ -4295,7 +4295,11 @@
             document.addEventListener('paste', handlePaste);
             
             // Initialize commission UI
-            initCommissionUI();
+            try {
+                initCommissionUI();
+            } catch (e) {
+                console.error('Error in initCommissionUI:', e);
+            }
             
             // Load client currency
             const clientCurrencySelect = document.getElementById('clientCurrency');
@@ -4304,7 +4308,13 @@
             }
             
             // Initialize tabs system
-            initTabs();
+            try {
+                console.log('Initializing tabs...');
+                initTabs();
+                console.log('Tabs initialized successfully');
+            } catch (e) {
+                console.error('Error initializing tabs:', e);
+            }
             
             // Initial rendering
             renderServiceCards();
