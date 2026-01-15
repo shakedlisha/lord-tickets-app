@@ -1737,6 +1737,139 @@
             color: var(--navy);
         }
         
+        /* Paste Type Selector Modal */
+        .paste-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .paste-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .paste-modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 15px;
+        }
+        
+        .paste-modal-preview {
+            background: var(--gray-light);
+            border-radius: 12px;
+            padding: 10px;
+            margin-bottom: 20px;
+            max-height: 150px;
+            overflow: hidden;
+        }
+        
+        .paste-modal-preview img {
+            max-width: 100%;
+            max-height: 130px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        
+        .paste-modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        
+        .paste-btn {
+            flex: 1;
+            padding: 15px 10px;
+            border: 2px solid var(--gray);
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .paste-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .paste-btn-flight:hover {
+            border-color: #3498db;
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        .paste-btn-hotel:hover {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+        }
+        
+        .paste-btn-service:hover {
+            border-color: #9b59b6;
+            background: rgba(155, 89, 182, 0.1);
+        }
+        
+        .paste-btn-icon {
+            font-size: 2rem;
+        }
+        
+        .paste-btn-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+        
+        .paste-modal-close {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .paste-modal-close:hover {
+            background: var(--gray-light);
+            color: var(--navy);
+        }
+        
         /* Saved Proposals Sidebar */
         .saved-proposals-toggle {
             position: fixed;
@@ -3902,6 +4035,9 @@
             setupDropZone('hotelDropZone', 'hotelInput', 'hotel');
             setupDropZone('serviceDropZone', 'serviceInput', 'service');
             
+            // Setup Ctrl+V paste handler
+            document.addEventListener('paste', handlePaste);
+            
             // Initialize commission UI
             initCommissionUI();
             
@@ -3951,6 +4087,91 @@
                 handleFiles(e.target.files, type);
                 e.target.value = ''; // Reset for same file selection
             });
+        }
+        
+        // ==========================================
+        // Ctrl+V Paste Handler
+        // ==========================================
+        function handlePaste(e) {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) {
+                        showPasteTypeSelector(file);
+                    }
+                    return;
+                }
+            }
+        }
+        
+        function showPasteTypeSelector(file) {
+            // Remove existing modal if any
+            const existingModal = document.getElementById('pasteTypeModal');
+            if (existingModal) existingModal.remove();
+            
+            // Create overlay
+            const overlay = document.createElement('div');
+            overlay.id = 'pasteTypeModal';
+            overlay.className = 'paste-modal-overlay';
+            overlay.innerHTML = `
+                <div class="paste-modal">
+                    <div class="paste-modal-title">בחר סוג תמונה</div>
+                    <div class="paste-modal-preview">
+                        <img src="${URL.createObjectURL(file)}" alt="Preview">
+                    </div>
+                    <div class="paste-modal-buttons">
+                        <button class="paste-btn paste-btn-flight" data-type="flight">
+                            <span class="paste-btn-icon">✈️</span>
+                            <span class="paste-btn-text">טיסה</span>
+                        </button>
+                        <button class="paste-btn paste-btn-hotel" data-type="hotel">
+                            <span class="paste-btn-icon">🏨</span>
+                            <span class="paste-btn-text">מלון</span>
+                        </button>
+                        <button class="paste-btn paste-btn-service" data-type="service">
+                            <span class="paste-btn-icon">🎫</span>
+                            <span class="paste-btn-text">שירות</span>
+                        </button>
+                    </div>
+                    <button class="paste-modal-close">✕</button>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Handle button clicks
+            overlay.querySelectorAll('.paste-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.type;
+                    overlay.remove();
+                    addImageCard(file, type);
+                });
+            });
+            
+            // Handle close button
+            overlay.querySelector('.paste-modal-close').addEventListener('click', () => {
+                overlay.remove();
+            });
+            
+            // Handle click outside modal
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+            
+            // Handle ESC key
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    overlay.remove();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
         }
         
         // ==========================================
