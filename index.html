@@ -7480,6 +7480,10 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
          * Generate flight proposal in text format using the saved template
          */
         function generateFlightProposalText() {
+            // DEBUG: Log all flight data to console for troubleshooting
+            console.log('=== DEBUG: generateFlightProposalText ===');
+            console.log('state.flights:', JSON.stringify(state.flights, null, 2));
+            
             if (state.flights.length === 0) {
                 showToast('❌ אין טיסות להצגה');
                 return;
@@ -7494,6 +7498,10 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     });
                 }
             });
+            
+            // DEBUG: Log extracted segments
+            console.log('allFlightSegments (before processing):', JSON.stringify(allFlightSegments, null, 2));
+            console.log('Total segments found:', allFlightSegments.length);
             
             if (allFlightSegments.length === 0) {
                 showToast('❌ אין פרטי טיסות להצגה');
@@ -7723,7 +7731,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                             hotelsText += `\n⭐ ${stars}`;
                         }
                         if (bookingUrl) {
-                            hotelsText += `\n🔗 קישור להזמנה: ${bookingUrl}`;
+                            hotelsText += `\n🔗 קישור להתרשמות: ${bookingUrl}`;
                         }
                         if (idx < sortedHotels.length - 1) hotelsText += '\n';
                     });
