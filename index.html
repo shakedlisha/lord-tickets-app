@@ -3996,7 +3996,10 @@
             updatePricingTable();
             
             // Update commission UI
-            document.getElementById('commissionInput').value = state.commissionValue;
+            const commissionInput = document.getElementById('commissionValue');
+            if (commissionInput) {
+                commissionInput.value = state.commissionValue;
+            }
             setCommissionType(state.commissionType);
             
             renderTabs();
