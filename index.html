@@ -4675,7 +4675,10 @@
             const items = type === 'flight' ? state.flights : state.hotels;
             const item = items.find(i => i.id === id);
             if (item) {
-                item.price = parseFloat(price) || 0;
+                const newPrice = parseFloat(price) || 0;
+                item.price = newPrice;
+                // IMPORTANT: Also update 'basePrice' so table display and calculation stay in sync
+                item.basePrice = newPrice;
                 updateConvertedPrice(id, type);
                 updatePricingTable();
             }
@@ -5012,15 +5015,18 @@
         function updatePrice(id, type, field, value) {
             const items = type === 'flight' ? state.flights : state.hotels;
             const item = items.find(i => i.id === id);
-            
+
             if (item) {
                 if (field === 'base') {
-                    item.basePrice = parseFloat(value) || 0;
+                    const newPrice = parseFloat(value) || 0;
+                    item.basePrice = newPrice;
+                    // IMPORTANT: Also update 'price' so conversion calculation uses the new value
+                    item.price = newPrice;
                 } else {
                     item.markup = parseFloat(value) || 0;
                 }
             }
-            
+
             updatePricingTable();
         }
         
