@@ -7641,24 +7641,28 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             if (outboundJourney) {
                 const segments = outboundJourney.segments;
                 segments.forEach((seg, idx) => {
-                    // Get airport codes
-                    const fromCode = seg.from || '';
-                    const toCode = seg.to || '';
-                    // Get Hebrew city names
-                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity) || seg.fromCity || fromCode;
-                    const toCityHeb = getHebrewCityName(toCode, seg.toCity) || seg.toCity || toCode;
-                    // Format: עיר עברית (CODE)
-                    const fromDisplay = fromCode ? `${fromCityHeb} (${fromCode})` : fromCityHeb;
-                    const toDisplay = toCode ? `${toCityHeb} (${toCode})` : toCityHeb;
+                    // Get airport codes (clean, uppercase)
+                    const fromCode = (seg.from || '').toUpperCase().trim();
+                    const toCode = (seg.to || '').toUpperCase().trim();
+                    
+                    // Get Hebrew city names (only the name, no codes)
+                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity);
+                    const toCityHeb = getHebrewCityName(toCode, seg.toCity);
                     
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
-                    // Add flight segment
-                    outboundText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
-                    if (flightNum) outboundText += ` (${segAirline} ${flightNum})`;
+                    // Build clean format: עיר (CODE) שעה
+                    const fromPart = fromCityHeb ? `${fromCityHeb} (${fromCode})` : fromCode;
+                    const toPart = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
+                    
+                    // Add flight segment: עיר (CODE) 14:10 → עיר (CODE) 19:10 (Airline XX123)
+                    outboundText += `${fromPart} ${depTime} → ${toPart} ${arrTime}`;
+                    if (flightNum && segAirline) {
+                        outboundText += ` | ${segAirline} ${flightNum}`;
+                    }
                     outboundText += '\n';
                     
                     // Add layover info if not the last segment
@@ -7666,7 +7670,8 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            outboundText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
+                            const layoverCity = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
+                            outboundText += `🕒 עצירת ביניים: ${layoverCity} | ${layover.formatted}\n`;
                         }
                     }
                 });
@@ -7691,24 +7696,28 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             if (returnJourney) {
                 const segments = returnJourney.segments;
                 segments.forEach((seg, idx) => {
-                    // Get airport codes
-                    const fromCode = seg.from || '';
-                    const toCode = seg.to || '';
-                    // Get Hebrew city names
-                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity) || seg.fromCity || fromCode;
-                    const toCityHeb = getHebrewCityName(toCode, seg.toCity) || seg.toCity || toCode;
-                    // Format: עיר עברית (CODE)
-                    const fromDisplay = fromCode ? `${fromCityHeb} (${fromCode})` : fromCityHeb;
-                    const toDisplay = toCode ? `${toCityHeb} (${toCode})` : toCityHeb;
+                    // Get airport codes (clean, uppercase)
+                    const fromCode = (seg.from || '').toUpperCase().trim();
+                    const toCode = (seg.to || '').toUpperCase().trim();
+                    
+                    // Get Hebrew city names (only the name, no codes)
+                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity);
+                    const toCityHeb = getHebrewCityName(toCode, seg.toCity);
                     
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
-                    // Add flight segment
-                    returnText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
-                    if (flightNum) returnText += ` (${segAirline} ${flightNum})`;
+                    // Build clean format: עיר (CODE) שעה
+                    const fromPart = fromCityHeb ? `${fromCityHeb} (${fromCode})` : fromCode;
+                    const toPart = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
+                    
+                    // Add flight segment: עיר (CODE) 14:10 → עיר (CODE) 19:10 | Airline XX123
+                    returnText += `${fromPart} ${depTime} → ${toPart} ${arrTime}`;
+                    if (flightNum && segAirline) {
+                        returnText += ` | ${segAirline} ${flightNum}`;
+                    }
                     returnText += '\n';
                     
                     // Add layover info if not the last segment
@@ -7716,7 +7725,8 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            returnText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
+                            const layoverCity = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
+                            returnText += `🕒 עצירת ביניים: ${layoverCity} | ${layover.formatted}\n`;
                         }
                     }
                 });
