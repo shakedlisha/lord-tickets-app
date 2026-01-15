@@ -7645,21 +7645,17 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                     const fromCode = (seg.from || '').toUpperCase().trim();
                     const toCode = (seg.to || '').toUpperCase().trim();
                     
-                    // Get Hebrew city names (only the name, no codes)
-                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity);
-                    const toCityHeb = getHebrewCityName(toCode, seg.toCity);
+                    // getHebrewCityName already returns "עיר (CODE)" format - use directly
+                    const fromDisplay = getHebrewCityName(fromCode, seg.fromCity);
+                    const toDisplay = getHebrewCityName(toCode, seg.toCity);
                     
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
-                    // Build clean format: עיר (CODE) שעה
-                    const fromPart = fromCityHeb ? `${fromCityHeb} (${fromCode})` : fromCode;
-                    const toPart = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
-                    
-                    // Add flight segment: עיר (CODE) 14:10 → עיר (CODE) 19:10 (Airline XX123)
-                    outboundText += `${fromPart} ${depTime} → ${toPart} ${arrTime}`;
+                    // Add flight segment: תל אביב (TLV) 14:10 → אבו דאבי (AUH) 19:10 | Etihad EY123
+                    outboundText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
                     if (flightNum && segAirline) {
                         outboundText += ` | ${segAirline} ${flightNum}`;
                     }
@@ -7670,8 +7666,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            const layoverCity = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
-                            outboundText += `🕒 עצירת ביניים: ${layoverCity} | ${layover.formatted}\n`;
+                            outboundText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
                         }
                     }
                 });
@@ -7696,25 +7691,21 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             if (returnJourney) {
                 const segments = returnJourney.segments;
                 segments.forEach((seg, idx) => {
-                    // Get airport codes (clean, uppercase)
+                    // Get airport codes
                     const fromCode = (seg.from || '').toUpperCase().trim();
                     const toCode = (seg.to || '').toUpperCase().trim();
                     
-                    // Get Hebrew city names (only the name, no codes)
-                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity);
-                    const toCityHeb = getHebrewCityName(toCode, seg.toCity);
+                    // getHebrewCityName already returns "עיר (CODE)" format - use directly
+                    const fromDisplay = getHebrewCityName(fromCode, seg.fromCity);
+                    const toDisplay = getHebrewCityName(toCode, seg.toCity);
                     
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
-                    // Build clean format: עיר (CODE) שעה
-                    const fromPart = fromCityHeb ? `${fromCityHeb} (${fromCode})` : fromCode;
-                    const toPart = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
-                    
-                    // Add flight segment: עיר (CODE) 14:10 → עיר (CODE) 19:10 | Airline XX123
-                    returnText += `${fromPart} ${depTime} → ${toPart} ${arrTime}`;
+                    // Add flight segment: תל אביב (TLV) 14:10 → אבו דאבי (AUH) 19:10 | Etihad EY123
+                    returnText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
                     if (flightNum && segAirline) {
                         returnText += ` | ${segAirline} ${flightNum}`;
                     }
@@ -7725,8 +7716,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            const layoverCity = toCityHeb ? `${toCityHeb} (${toCode})` : toCode;
-                            returnText += `🕒 עצירת ביניים: ${layoverCity} | ${layover.formatted}\n`;
+                            returnText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
                         }
                     }
                 });
