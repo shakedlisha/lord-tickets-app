@@ -109,6 +109,115 @@
             background: var(--success);
         }
         
+        /* Proposal Tabs Bar */
+        .tabs-bar {
+            background: linear-gradient(135deg, #1a3a5c 0%, #0f1f3a 100%);
+            padding: 10px 20px 0;
+            border-bottom: 2px solid var(--gold);
+            position: sticky;
+            top: 60px;
+            z-index: 99;
+        }
+        
+        .tabs-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-end;
+            gap: 5px;
+            overflow-x: auto;
+            padding-bottom: 0;
+        }
+        
+        .tabs-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        
+        .tabs-container::-webkit-scrollbar-thumb {
+            background: var(--gold);
+            border-radius: 2px;
+        }
+        
+        .proposal-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: 12px 12px 0 0;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .proposal-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .proposal-tab.active {
+            background: white;
+            color: var(--navy);
+            font-weight: 600;
+            box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .proposal-tab .tab-name {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .proposal-tab .tab-close {
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: 0.5;
+            cursor: pointer;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .proposal-tab .tab-close:hover {
+            opacity: 1;
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff4444;
+        }
+        
+        .proposal-tab.active .tab-close:hover {
+            background: rgba(255, 0, 0, 0.1);
+        }
+        
+        .tab-add {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(212, 175, 55, 0.3);
+            border: 2px dashed var(--gold);
+            border-radius: 10px 10px 0 0;
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .tab-add:hover {
+            background: var(--gold);
+            color: var(--navy);
+            border-style: solid;
+        }
+        
         /* Main Layout */
         .main-layout {
             display: grid;
@@ -3445,6 +3554,13 @@
         </div>
     </header>
     
+    <!-- Proposal Tabs -->
+    <div class="tabs-bar">
+        <div class="tabs-container" id="tabsContainer">
+            <!-- Tabs will be rendered here -->
+        </div>
+    </div>
+    
     <!-- Main Layout -->
     <div class="main-layout">
         <!-- Main Content -->
@@ -3733,6 +3849,10 @@
             commissionValue: parseFloat(localStorage.getItem('commissionValue')) || 0,
             commissionType: localStorage.getItem('commissionType') || 'percent', // 'percent' or 'fixed'
             manualPriceOverride: null, // When user manually edits the price
+            // Tabs for multiple proposals
+            tabs: [],
+            currentTabId: null,
+            tabCounter: 0,
             flightProposalTemplate: localStorage.getItem('flightProposalTemplate') || `*✈️ הצעה לטיסות [יעד] 🇮🇱🇨🇷*
 
 *תאריכים:*
@@ -3823,6 +3943,143 @@
             const amountInTarget = amountInUSD / toRate;
             
             return amountInTarget;
+        }
+        
+        // ==========================================
+        // Tabs Management (Multiple Proposals)
+        // ==========================================
+        function createNewTab(name = null) {
+            state.tabCounter++;
+            const tabId = 'tab_' + Date.now();
+            const tabName = name || `הצעה ${state.tabCounter}`;
+            
+            const newTab = {
+                id: tabId,
+                name: tabName,
+                flights: [],
+                hotels: [],
+                services: [],
+                commissionValue: state.commissionValue,
+                commissionType: state.commissionType,
+                manualPriceOverride: null
+            };
+            
+            state.tabs.push(newTab);
+            switchToTab(tabId);
+            renderTabs();
+            return tabId;
+        }
+        
+        function switchToTab(tabId) {
+            // Save current tab state first
+            if (state.currentTabId) {
+                saveCurrentTabState();
+            }
+            
+            // Find and load the new tab
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            
+            state.currentTabId = tabId;
+            
+            // Load tab data into state
+            state.flights = tab.flights || [];
+            state.hotels = tab.hotels || [];
+            state.services = tab.services || [];
+            state.commissionValue = tab.commissionValue || 0;
+            state.commissionType = tab.commissionType || 'percent';
+            state.manualPriceOverride = tab.manualPriceOverride;
+            
+            // Update UI
+            renderFlightCards();
+            renderHotelCards();
+            renderServiceCards();
+            updatePricingTable();
+            
+            // Update commission UI
+            document.getElementById('commissionInput').value = state.commissionValue;
+            setCommissionType(state.commissionType);
+            
+            renderTabs();
+        }
+        
+        function saveCurrentTabState() {
+            const tab = state.tabs.find(t => t.id === state.currentTabId);
+            if (!tab) return;
+            
+            tab.flights = JSON.parse(JSON.stringify(state.flights));
+            tab.hotels = JSON.parse(JSON.stringify(state.hotels));
+            tab.services = JSON.parse(JSON.stringify(state.services));
+            tab.commissionValue = state.commissionValue;
+            tab.commissionType = state.commissionType;
+            tab.manualPriceOverride = state.manualPriceOverride;
+        }
+        
+        function closeTab(tabId, event) {
+            if (event) event.stopPropagation();
+            
+            // Don't close if it's the only tab
+            if (state.tabs.length <= 1) {
+                showToast('⚠️ לא ניתן לסגור את הטאב האחרון');
+                return;
+            }
+            
+            const tabIndex = state.tabs.findIndex(t => t.id === tabId);
+            if (tabIndex === -1) return;
+            
+            // If closing current tab, switch to another first
+            if (state.currentTabId === tabId) {
+                const newIndex = tabIndex > 0 ? tabIndex - 1 : 1;
+                switchToTab(state.tabs[newIndex].id);
+            }
+            
+            state.tabs = state.tabs.filter(t => t.id !== tabId);
+            renderTabs();
+        }
+        
+        function renameTab(tabId) {
+            const tab = state.tabs.find(t => t.id === tabId);
+            if (!tab) return;
+            
+            const newName = prompt('שם חדש להצעה:', tab.name);
+            if (newName && newName.trim()) {
+                tab.name = newName.trim();
+                renderTabs();
+            }
+        }
+        
+        function renderTabs() {
+            const container = document.getElementById('tabsContainer');
+            if (!container) return;
+            
+            let html = '';
+            state.tabs.forEach(tab => {
+                const isActive = tab.id === state.currentTabId;
+                html += `
+                    <div class="proposal-tab ${isActive ? 'active' : ''}" onclick="switchToTab('${tab.id}')">
+                        <span class="tab-name" ondblclick="renameTab('${tab.id}')">${tab.name}</span>
+                        <button class="tab-close" onclick="closeTab('${tab.id}', event)" title="סגור">×</button>
+                    </div>
+                `;
+            });
+            
+            html += `
+                <button class="tab-add" onclick="createNewTab()" title="הצעה חדשה">
+                    <span>+</span>
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        function initTabs() {
+            // Create first tab if none exist
+            if (state.tabs.length === 0) {
+                createNewTab('הצעה 1');
+            } else {
+                // Load first tab
+                switchToTab(state.tabs[0].id);
+            }
         }
         
         // Format currency
@@ -4046,6 +4303,9 @@
             if (clientCurrencySelect && state.clientCurrency) {
                 clientCurrencySelect.value = state.clientCurrency;
             }
+            
+            // Initialize tabs system
+            initTabs();
             
             // Initial rendering
             renderServiceCards();
