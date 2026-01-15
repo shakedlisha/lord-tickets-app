@@ -7641,15 +7641,23 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             if (outboundJourney) {
                 const segments = outboundJourney.segments;
                 segments.forEach((seg, idx) => {
-                    const from = seg.fromCity || seg.from || '';
-                    const to = seg.toCity || seg.to || '';
+                    // Get airport codes
+                    const fromCode = seg.from || '';
+                    const toCode = seg.to || '';
+                    // Get Hebrew city names
+                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity) || seg.fromCity || fromCode;
+                    const toCityHeb = getHebrewCityName(toCode, seg.toCity) || seg.toCity || toCode;
+                    // Format: עיר עברית (CODE)
+                    const fromDisplay = fromCode ? `${fromCityHeb} (${fromCode})` : fromCityHeb;
+                    const toDisplay = toCode ? `${toCityHeb} (${toCode})` : toCityHeb;
+                    
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
                     // Add flight segment
-                    outboundText += `${from} ${depTime} → ${to} ${arrTime}`;
+                    outboundText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
                     if (flightNum) outboundText += ` (${segAirline} ${flightNum})`;
                     outboundText += '\n';
                     
@@ -7658,7 +7666,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            outboundText += `🕒 עצירת ביניים: ${to} | ${layover.formatted}\n`;
+                            outboundText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
                         }
                     }
                 });
@@ -7683,15 +7691,23 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
             if (returnJourney) {
                 const segments = returnJourney.segments;
                 segments.forEach((seg, idx) => {
-                    const from = seg.fromCity || seg.from || '';
-                    const to = seg.toCity || seg.to || '';
+                    // Get airport codes
+                    const fromCode = seg.from || '';
+                    const toCode = seg.to || '';
+                    // Get Hebrew city names
+                    const fromCityHeb = getHebrewCityName(fromCode, seg.fromCity) || seg.fromCity || fromCode;
+                    const toCityHeb = getHebrewCityName(toCode, seg.toCity) || seg.toCity || toCode;
+                    // Format: עיר עברית (CODE)
+                    const fromDisplay = fromCode ? `${fromCityHeb} (${fromCode})` : fromCityHeb;
+                    const toDisplay = toCode ? `${toCityHeb} (${toCode})` : toCityHeb;
+                    
                     const depTime = seg.departureTime || '';
                     const arrTime = seg.arrivalTime || '';
                     const flightNum = seg.flightNumber || '';
                     const segAirline = seg.airline || airline;
                     
                     // Add flight segment
-                    returnText += `${from} ${depTime} → ${to} ${arrTime}`;
+                    returnText += `${fromDisplay} ${depTime} → ${toDisplay} ${arrTime}`;
                     if (flightNum) returnText += ` (${segAirline} ${flightNum})`;
                     returnText += '\n';
                     
@@ -7700,7 +7716,7 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                         const nextSeg = segments[idx + 1];
                         const layover = calculateConnection(seg.arrivalTime, nextSeg.departureTime);
                         if (layover) {
-                            returnText += `🕒 עצירת ביניים: ${to} | ${layover.formatted}\n`;
+                            returnText += `🕒 עצירת ביניים: ${toDisplay} | ${layover.formatted}\n`;
                         }
                     }
                 });
