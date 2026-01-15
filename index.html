@@ -7737,45 +7737,57 @@ ${flightsSummary}${hotelsSummary}${servicesSummary}
                 state.services.forEach((service, idx) => {
                     const name = service.name || 'שירות';
                     const description = service.description || '';
-                    const price = service.price || 0;
-                    const currency = service.currency || 'ILS';
-                    const priceInILS = convertCurrency(price, currency, 'ILS', service.customExchangeRate);
                     
                     servicesText += `\n\n🎫 *${name}*`;
                     if (description) {
                         servicesText += `\n${description}`;
                     }
-                    servicesText += `\n💰 ${priceInILS.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0})}₪`;
+                    // Price line removed
                 });
             }
             
-            // Calculate total price (flights + hotels + services)
-            let totalPrice = 0;
-            state.flights.forEach(f => {
-                if (f.price && f.currency) {
-                    totalPrice += convertCurrency(f.price, f.currency, 'ILS', f.customExchangeRate);
-                } else {
-                    totalPrice += (f.basePrice || 0) + (f.markup || 0);
-                }
-            });
-            state.hotels.forEach(h => {
-                if (h.price && h.currency) {
-                    totalPrice += convertCurrency(h.price, h.currency, 'ILS', h.customExchangeRate);
-                } else {
-                    totalPrice += (h.basePrice || 0) + (h.markup || 0);
-                }
-            });
-            state.services.forEach(s => {
-                if (s.price && s.currency) {
-                    totalPrice += convertCurrency(s.price, s.currency, 'ILS', s.customExchangeRate);
-                } else {
-                    totalPrice += s.price || 0;
-                }
-            });
-            const priceInUSD = convertCurrency(totalPrice, 'ILS', 'USD');
+            // Get the final price from the main calculator (includes commission and manual edits)
+            const finalPriceInput = document.getElementById('customerPriceInput');
+            let finalPriceILS = 0;
             
-            const priceInILSFormatted = totalPrice.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-            const priceInUSDFormatted = priceInUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (finalPriceInput && finalPriceInput.value) {
+                // Use the value from the input which is already calculated with commission
+                finalPriceILS = parseFloat(finalPriceInput.value.replace(/,/g, ''));
+            } else {
+                // Fallback calculation logic
+                let baseTotal = 0;
+                state.flights.forEach(f => {
+                    if (f.price && f.currency) {
+                        baseTotal += convertCurrency(f.price, f.currency, 'ILS', f.customExchangeRate);
+                    } else {
+                        baseTotal += (f.basePrice || 0) + (f.markup || 0);
+                    }
+                });
+                state.hotels.forEach(h => {
+                    if (h.price && h.currency) {
+                        baseTotal += convertCurrency(h.price, h.currency, 'ILS', h.customExchangeRate);
+                    } else {
+                        baseTotal += (h.basePrice || 0) + (h.markup || 0);
+                    }
+                });
+                state.services.forEach(s => {
+                    if (s.price && s.currency) {
+                        baseTotal += convertCurrency(s.price, s.currency, 'ILS', s.customExchangeRate);
+                    } else {
+                        baseTotal += s.price || 0;
+                    }
+                });
+                
+                // Add commission
+                if (state.commissionType === 'percent') {
+                    finalPriceILS = baseTotal * (1 + (state.commissionValue / 100));
+                } else {
+                    finalPriceILS = baseTotal + state.commissionValue;
+                }
+            }
+            
+            // Format price
+            const priceInILSFormatted = finalPriceILS.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             
             // Calculate total nights from hotels if flight nights not available
             let totalNights = nights;
@@ -7821,7 +7833,7 @@ ${hotelsText}${servicesText}
 ✅ חיסכון בעמלות מטבע – אפשרות תשלום בשקלים
 
 💰 *עלות כוללת:*
-${priceInILSFormatted}₪ / ${priceInUSDFormatted}$ עבור נוסע בכרטיס
+${priceInILSFormatted}₪ עבור נוסע בכרטיס
 
 המחיר מוגבל לזמן ואוכל לשריין אותו עבורך. שלח לי את פרטי הדרכונים כדי שאוודא את זמינות העסקה.`;
             
