@@ -867,6 +867,8 @@
     
     <!-- Supabase JS for Realtime -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel file support -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -941,13 +943,14 @@
                 </select>
             </div>
             <div class="toolbar-left">
+                <span style="font-size: 0.8rem; color: var(--gray-dark); margin-left: 10px;" title="הדבק צילום מסך עם Ctrl+V">📷 Ctrl+V להדבקת תמונה</span>
                 <button class="btn btn-primary" onclick="openAddModal()">
                     <span class="material-icons">add</span>
                     הוסף טיסה
                 </button>
                 <button class="btn btn-secondary" onclick="openImportModal()">
                     <span class="material-icons">upload_file</span>
-                    יבוא CSV
+                    יבוא Excel/CSV
                 </button>
                 <button class="btn btn-outline" onclick="exportCSV()">
                     <span class="material-icons">download</span>
@@ -1110,14 +1113,15 @@ Return: 14:00-18:30
     <div class="modal-overlay" id="importModal">
         <div class="modal">
             <div class="modal-header">
-                <h2>יבוא מקובץ CSV</h2>
+                <h2>יבוא מקובץ Excel / CSV</h2>
                 <button class="modal-close" onclick="closeModal('importModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="upload-area" onclick="document.getElementById('csvUpload').click()">
                     <span class="material-icons">upload_file</span>
-                    <p>לחץ לבחירת קובץ CSV</p>
-                    <input type="file" id="csvUpload" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+                    <p>לחץ לבחירת קובץ CSV או Excel</p>
+                    <p style="font-size: 0.8rem; color: var(--gray-dark);">.csv, .xlsx, .xls</p>
+                    <input type="file" id="csvUpload" accept=".csv,.xlsx,.xls" style="display: none;" onchange="handleFileUpload(event)">
                 </div>
                 <div id="csvPreview" class="csv-preview" style="display: none;"></div>
                 <p style="font-size: 0.85rem; color: var(--gray-dark); margin-top: 15px;">
@@ -1215,7 +1219,106 @@ Return: 14:00-18:30
             loadSettings();
             loadFlights();
             setupRealtime();
+            setupPasteHandler();
         });
+        
+        // Ctrl+V Paste Screenshot Handler
+        function setupPasteHandler() {
+            document.addEventListener('paste', async (event) => {
+                const items = event.clipboardData?.items;
+                if (!items) return;
+                
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        event.preventDefault();
+                        const file = item.getAsFile();
+                        if (file) {
+                            await handlePastedImage(file);
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+        
+        async function handlePastedImage(file) {
+            const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('geminiApiKey');
+            if (!apiKey) {
+                showToast('הזן Gemini API Key בהגדרות כדי לפענח תמונות', 'warning');
+                return;
+            }
+            
+            showToast('📷 מפענח תמונה...', 'info');
+            showLoading(true);
+            
+            try {
+                // Convert file to base64
+                const base64 = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                
+                // Call Gemini API
+                const result = await callGeminiAPI(apiKey, base64, true);
+                
+                if (result) {
+                    // Add the parsed flight directly
+                    await addFlightFromParsedData(result);
+                    showToast(`✅ טיסה ל${result.destination_name || 'יעד'} נוספה בהצלחה!`, 'success');
+                }
+            } catch (error) {
+                console.error('Paste image error:', error);
+                showToast('שגיאה בפענוח התמונה', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function addFlightFromParsedData(data) {
+            const flightData = {
+                departure_date: data.departure_date || null,
+                return_date: data.return_date || null,
+                airline: normalizeAirline(data.airline || ''),
+                destination_name: data.destination_name || '',
+                destination_code: data.destination_code || '',
+                available_seats: parseInt(data.available_seats) || 1,
+                total_seats: parseInt(data.available_seats) || 1,
+                outbound_details: data.outbound_details || '',
+                inbound_details: data.inbound_details || '',
+                cost_price: null,
+                selling_price: parseFloat(data.selling_price) || 0,
+                supplier_info: ''
+            };
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            
+            if (supabaseUrl && supabaseKey) {
+                // Save to Supabase
+                const response = await fetch(`${supabaseUrl}/rest/v1/flights`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(flightData)
+                });
+                
+                if (!response.ok) throw new Error('Failed to save');
+                await loadFlights();
+            } else {
+                // Save locally
+                flightData.id = Date.now().toString();
+                flights.push(flightData);
+                updateFilters();
+                filterFlights();
+                updateStats();
+            }
+        }
         
         function setupRealtime() {
             const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -1796,16 +1899,43 @@ Return: 14:00-18:30
             openModal('importModal');
         }
         
-        function handleCSVUpload(event) {
+        function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const text = e.target.result;
-                parseCSV(text);
-            };
-            reader.readAsText(file, 'UTF-8');
+            const fileName = file.name.toLowerCase();
+            
+            if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                // Handle Excel file
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const csvText = XLSX.utils.sheet_to_csv(firstSheet);
+                        parseCSV(csvText);
+                        showToast('קובץ Excel נטען בהצלחה', 'success');
+                    } catch (error) {
+                        console.error('Excel parse error:', error);
+                        showToast('שגיאה בקריאת קובץ Excel', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                // Handle CSV file
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target.result;
+                    parseCSV(text);
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        }
+        
+        // Keep old function name for backwards compatibility
+        function handleCSVUpload(event) {
+            handleFileUpload(event);
         }
         
         function parseCSV(text) {
