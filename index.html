@@ -3737,7 +3737,12 @@
     <!-- Header with API Key -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">✈️ Lord Tickets</div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="logo">✈️ Lord Tickets</div>
+                <a href="inventory.html" style="color: var(--gold); text-decoration: none; padding: 8px 16px; border: 1px solid var(--gold); border-radius: 8px; font-size: 0.9rem; transition: all 0.3s;" onmouseover="this.style.background='var(--gold)'; this.style.color='var(--navy-dark)';" onmouseout="this.style.background='transparent'; this.style.color='var(--gold)';">
+                    📦 ניהול מלאי
+                </a>
+            </div>
             <div class="api-key-section">
                 <select id="modelSelect" class="api-key-input" style="width: 180px;">
                     <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
@@ -3794,6 +3799,9 @@
                 <div class="section-header">
                     <h2 class="section-title">✈️ טיסות</h2>
                     <div class="section-buttons">
+                        <button class="add-btn" onclick="openInventoryModal()" style="background: linear-gradient(135deg, #1B365D, #2A4A7A);">
+                            <span>📦</span> מהמלאי
+                        </button>
                         <button class="add-btn manual" onclick="addManualFlight()">
                             <span>+</span> הוסף ידנית
                         </button>
@@ -4014,6 +4022,41 @@
         </div>
     </div>
 
+    <!-- Inventory Modal -->
+    <div class="modal-overlay" id="inventoryModal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 80vh;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1B365D, #0F1F3A); color: #D4AF37;">
+                <h3>📦 בחר טיסה מהמלאי</h3>
+                <button class="modal-close" onclick="closeInventoryModal()" style="color: #fff;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0; max-height: 60vh; overflow-y: auto;">
+                <div id="inventoryLoading" style="text-align: center; padding: 40px;">
+                    <div style="font-size: 2rem;">⏳</div>
+                    <p>טוען מלאי...</p>
+                </div>
+                <table id="inventoryTable" style="width: 100%; border-collapse: collapse; display: none;">
+                    <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                        <tr>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">תאריכים</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">יעד</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">חברה</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">מושבים</th>
+                            <th style="padding: 12px; text-align: right; border-bottom: 2px solid #ddd;">מחיר</th>
+                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #ddd;">בחר</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                    </tbody>
+                </table>
+                <div id="inventoryEmpty" style="text-align: center; padding: 40px; display: none;">
+                    <div style="font-size: 2rem;">📭</div>
+                    <p>אין טיסות במלאי</p>
+                    <a href="inventory.html" style="color: #D4AF37;">עבור לניהול מלאי</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal-content">
@@ -4089,8 +4132,8 @@
             currentTabId: null,
             tabCounter: 0,
             // Supabase configuration for publishing proposals
-            supabaseUrl: localStorage.getItem('supabaseUrl') || '',
-            supabaseKey: localStorage.getItem('supabaseKey') || '',
+            supabaseUrl: localStorage.getItem('supabaseUrl') || 'https://asqdpgxizhyazoblpzin.supabase.co',
+            supabaseKey: localStorage.getItem('supabaseKey') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcWRwZ3hpemh5YXpvYmxwemluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTM4MDAsImV4cCI6MjA4NDA2OTgwMH0.fbGM02K2QYTDDNBr0vuvXmd1k7qv2AtRQdV13tKDl38',
             flightProposalTemplate: localStorage.getItem('flightProposalTemplate') || `*✈️ הצעה לטיסות [יעד] 🇮🇱🇨🇷*
 
 *תאריכים:*
@@ -5971,6 +6014,119 @@
             
             // Initialize commission type toggle
             setCommissionType(state.commissionType);
+        }
+        
+        // ==========================================
+        // ==========================================
+        // Inventory Import Functions
+        // ==========================================
+        async function openInventoryModal() {
+            const modal = document.getElementById('inventoryModal');
+            const loading = document.getElementById('inventoryLoading');
+            const table = document.getElementById('inventoryTable');
+            const empty = document.getElementById('inventoryEmpty');
+            const tbody = document.getElementById('inventoryTableBody');
+            
+            modal.style.display = 'flex';
+            loading.style.display = 'block';
+            table.style.display = 'none';
+            empty.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${state.supabaseUrl}/rest/v1/flights?available_seats=gt.0&order=departure_date.asc`, {
+                    headers: {
+                        'apikey': state.supabaseKey,
+                        'Authorization': `Bearer ${state.supabaseKey}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const flights = await response.json();
+                loading.style.display = 'none';
+                
+                if (flights.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+                
+                tbody.innerHTML = flights.map(f => `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px;">${formatDateRange(f.departure_date, f.return_date)}</td>
+                        <td style="padding: 12px;"><strong>${f.destination_name}</strong> (${f.destination_code})</td>
+                        <td style="padding: 12px;">${f.airline}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="background: ${f.available_seats <= 2 ? '#DC354520' : '#28A74520'}; color: ${f.available_seats <= 2 ? '#DC3545' : '#28A745'}; padding: 4px 10px; border-radius: 15px; font-weight: 600;">${f.available_seats}</span>
+                        </td>
+                        <td style="padding: 12px; font-weight: 600;">$${f.selling_price}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="selectInventoryFlight('${encodeURIComponent(JSON.stringify(f))}')" style="background: #D4AF37; color: #1B365D; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">+ הוסף</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                table.style.display = 'table';
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+                empty.innerHTML = `<div style="font-size: 2rem;">⚠️</div><p>שגיאה בטעינת מלאי</p><a href="inventory.html" style="color: #D4AF37;">עבור לניהול מלאי</a>`;
+            }
+        }
+        
+        function closeInventoryModal() {
+            document.getElementById('inventoryModal').style.display = 'none';
+        }
+        
+        function formatDateRange(start, end) {
+            if (!start) return '-';
+            const startDate = new Date(start);
+            const startStr = `${startDate.getDate().toString().padStart(2,'0')}/${(startDate.getMonth()+1).toString().padStart(2,'0')}`;
+            if (!end) return startStr;
+            const endDate = new Date(end);
+            const endStr = `${endDate.getDate().toString().padStart(2,'0')}/${(endDate.getMonth()+1).toString().padStart(2,'0')}`;
+            return `${startStr} - ${endStr}`;
+        }
+        
+        function selectInventoryFlight(encodedFlight) {
+            const f = JSON.parse(decodeURIComponent(encodedFlight));
+            
+            const id = 'flight_' + Date.now();
+            const flight = {
+                id: id,
+                status: 'ready',
+                file: null,
+                extractedData: {
+                    flights: [{
+                        from: 'TLV',
+                        to: f.destination_code,
+                        fromCity: 'Tel Aviv',
+                        toCity: f.destination_name,
+                        date: f.departure_date,
+                        returnDate: f.return_date,
+                        departureTime: f.outbound_details ? f.outbound_details.split(' ')[0] : '',
+                        arrivalTime: '',
+                        airline: f.airline,
+                        flightNumber: f.outbound_details ? f.outbound_details.split(' ').pop() : '',
+                        duration: '',
+                        outboundDetails: f.outbound_details,
+                        inboundDetails: f.inbound_details
+                    }]
+                },
+                basePrice: f.selling_price,
+                markup: 0,
+                price: f.selling_price,
+                currency: 'USD',
+                customExchangeRate: null,
+                inventoryId: f.id,
+                inventorySeats: f.available_seats
+            };
+            
+            state.flights.push(flight);
+            renderFlightCards();
+            closeInventoryModal();
+            updatePriceSummary();
+            showToast(`✅ טיסה ל${f.destination_name} נוספה להצעה`);
         }
         
         // ==========================================
