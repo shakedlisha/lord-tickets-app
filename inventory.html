@@ -1017,6 +1017,7 @@
                 <span class="page-title">| ניהול מלאי</span>
             </div>
             <div class="header-left">
+                <span id="userDisplay" class="nav-link" style="border: none; cursor: default;"></span>
                 <a href="index.html" class="nav-link">
                     <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">receipt_long</span>
                     מחולל הצעות מחיר
@@ -1408,7 +1409,34 @@ Return: 14:00-18:30
             loadFlights();
             setupRealtime();
             setupPasteHandler();
+            displayCurrentUser();
         });
+        
+        // Display current user in header
+        function displayCurrentUser() {
+            const userDisplay = document.getElementById('userDisplay');
+            const session = localStorage.getItem('userSession');
+            
+            if (session) {
+                try {
+                    const user = JSON.parse(session);
+                    const email = user.user?.email || 'משתמש';
+                    userDisplay.innerHTML = `<span class="material-icons" style="font-size: 1rem; vertical-align: middle;">person</span> ${email.split('@')[0]}`;
+                    userDisplay.onclick = () => {
+                        if (confirm('להתנתק?')) {
+                            localStorage.removeItem('userSession');
+                            window.location.href = 'login.html';
+                        }
+                    };
+                    userDisplay.style.cursor = 'pointer';
+                    userDisplay.title = 'לחץ להתנתקות';
+                } catch (e) {
+                    userDisplay.style.display = 'none';
+                }
+            } else {
+                userDisplay.innerHTML = '<a href="login.html" style="color: var(--gold); text-decoration: none;">התחבר</a>';
+            }
+        }
         
         // Ctrl+V Paste Screenshot Handler
         function setupPasteHandler() {
@@ -1793,7 +1821,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             }
             
             tbody.innerHTML = filteredFlights.map(flight => `
-                <tr data-id="${flight.id}">
+                <tr data-id="${flight.id}" ondblclick="openFlightDetail('${flight.id}')" style="cursor: pointer;" title="לחיצה כפולה לצפייה בנוסעים">
                     <td>${formatDateRange(flight.departure_date, flight.return_date)}</td>
                     <td>
                         <strong>${flight.destination_name}</strong>
@@ -1976,6 +2004,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             
             switchTab('manual');
             openModal('flightModal');
+        }
+        
+        // Navigate to flight detail page (double-click handler)
+        function openFlightDetail(id) {
+            window.location.href = `flight-detail.html?id=${id}`;
         }
         
         function editFlight(id) {
