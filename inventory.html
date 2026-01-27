@@ -1338,6 +1338,17 @@ Return: 14:00-18:30
                 <p style="font-size: 0.85rem; color: var(--gray-dark); margin-top: 15px;">
                     ההגדרות נשמרות בדפדפן שלך בלבד.
                 </p>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--gray);">
+                    <p style="font-size: 0.85rem; color: var(--gray-dark); margin-bottom: 10px;">
+                        <strong>עדכון מסד נתונים:</strong> הוסף עמודות כבודה לטבלה
+                    </p>
+                    <button class="btn btn-secondary" onclick="runMigration()" id="migrationBtn">
+                        <span class="material-icons">database</span>
+                        הוסף עמודות כבודה
+                    </button>
+                    <p id="migrationStatus" style="font-size: 0.8rem; margin-top: 8px;"></p>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeModal('settingsModal')">ביטול</button>
@@ -1584,6 +1595,66 @@ Return: 14:00-18:30
             
             // Reload data with new settings
             loadFlights();
+        }
+        
+        async function runMigration() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const statusEl = document.getElementById('migrationStatus');
+            const btnEl = document.getElementById('migrationBtn');
+            
+            if (!supabaseUrl || !supabaseKey) {
+                statusEl.innerHTML = '<span style="color: var(--error);">הגדר קודם את Supabase URL ו-Key</span>';
+                return;
+            }
+            
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<span class="material-icons">hourglass_empty</span> בודק...';
+            
+            try {
+                // First, check if columns already exist by trying to select them
+                const checkResponse = await fetch(`${supabaseUrl}/rest/v1/flights?select=trolley_baggage,suitcase_baggage&limit=1`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`
+                    }
+                });
+                
+                if (checkResponse.ok) {
+                    statusEl.innerHTML = '<span style="color: var(--success);">✓ העמודות כבר קיימות! הכל מוכן.</span>';
+                    btnEl.innerHTML = '<span class="material-icons">check</span> העמודות קיימות';
+                    return;
+                }
+                
+                // Columns don't exist - show instructions
+                const sql = `ALTER TABLE flights 
+ADD COLUMN trolley_baggage NUMERIC DEFAULT NULL,
+ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
+                
+                // Copy SQL to clipboard
+                await navigator.clipboard.writeText(sql);
+                
+                // Extract project ID from URL for dashboard link
+                const projectMatch = supabaseUrl.match(/https:\/\/([^.]+)/);
+                const projectId = projectMatch ? projectMatch[1] : '';
+                const dashboardUrl = `https://supabase.com/dashboard/project/${projectId}/sql/new`;
+                
+                statusEl.innerHTML = `
+                    <span style="color: var(--warning);">העמודות לא קיימות.</span><br>
+                    <span style="color: var(--success);">✓ SQL הועתק ללוח!</span><br>
+                    <a href="${dashboardUrl}" target="_blank" style="color: var(--primary);">
+                        לחץ כאן לפתוח Supabase SQL Editor →
+                    </a><br>
+                    <small>הדבק שם את ה-SQL ולחץ Run</small>
+                `;
+                btnEl.innerHTML = '<span class="material-icons">content_copy</span> SQL הועתק';
+                
+            } catch (error) {
+                console.error('Migration check error:', error);
+                statusEl.innerHTML = '<span style="color: var(--error);">שגיאה בבדיקה: ' + error.message + '</span>';
+                btnEl.innerHTML = '<span class="material-icons">database</span> הוסף עמודות כבודה';
+                btnEl.disabled = false;
+            }
         }
         
         function toggleSettings() {
