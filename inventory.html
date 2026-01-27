@@ -493,25 +493,53 @@
         }
         
         .baggage-cell {
-            cursor: pointer;
             text-align: center;
-            transition: background 0.2s;
+            padding: 8px 4px;
         }
         
-        .baggage-cell:hover {
-            background: var(--gray-light);
+        .baggage-inline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
         }
         
-        .baggage-included {
+        .baggage-inline input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--success);
+        }
+        
+        .baggage-value {
+            min-width: 30px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .baggage-value.included {
             color: var(--success);
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
         }
         
-        .baggage-price {
+        .baggage-value.has-price {
             color: var(--warning);
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            background: var(--gray-light);
+            cursor: text;
+        }
+        
+        .baggage-value.has-price:hover {
+            background: #e8e8e8;
+        }
+        
+        .baggage-value.has-price:focus {
+            outline: 2px solid var(--primary);
+            background: var(--white);
         }
         
         .baggage-form-group {
@@ -1710,15 +1738,29 @@ Return: 14:00-18:30
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                         >${flight.available_seats}</span>
                     </td>
-                    <td class="baggage-cell" onclick="toggleBaggage('${flight.id}', 'trolley')">
-                        ${flight.trolley_baggage === null || flight.trolley_baggage === true ? 
-                            '<span class="baggage-included">✓</span>' : 
-                            '<span class="baggage-price">$' + flight.trolley_baggage + '</span>'}
+                    <td class="baggage-cell">
+                        <label class="baggage-inline">
+                            <input type="checkbox" 
+                                   ${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? 'checked' : ''} 
+                                   onchange="toggleBaggageIncluded('${flight.id}', 'trolley', this.checked)">
+                            <span class="baggage-value ${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? 'included' : 'has-price'}"
+                                  contenteditable="${(flight.trolley_baggage !== null && flight.trolley_baggage !== undefined) ? 'true' : 'false'}"
+                                  onblur="updateBaggagePrice('${flight.id}', 'trolley', this.textContent)"
+                                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+                            >${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? '✓' : '$' + flight.trolley_baggage}</span>
+                        </label>
                     </td>
-                    <td class="baggage-cell" onclick="toggleBaggage('${flight.id}', 'suitcase')">
-                        ${flight.suitcase_baggage === null || flight.suitcase_baggage === true ? 
-                            '<span class="baggage-included">✓</span>' : 
-                            '<span class="baggage-price">$' + flight.suitcase_baggage + '</span>'}
+                    <td class="baggage-cell">
+                        <label class="baggage-inline">
+                            <input type="checkbox" 
+                                   ${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? 'checked' : ''} 
+                                   onchange="toggleBaggageIncluded('${flight.id}', 'suitcase', this.checked)">
+                            <span class="baggage-value ${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? 'included' : 'has-price'}"
+                                  contenteditable="${(flight.suitcase_baggage !== null && flight.suitcase_baggage !== undefined) ? 'true' : 'false'}"
+                                  onblur="updateBaggagePrice('${flight.id}', 'suitcase', this.textContent)"
+                                  onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+                            >${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? '✓' : '$' + flight.suitcase_baggage}</span>
+                        </label>
                     </td>
                     <td class="cost-cell">
                         <span contenteditable="true" 
@@ -2045,29 +2087,30 @@ Return: 14:00-18:30
             await updateFlightField(id, 'selling_price', price);
         }
         
-        // Baggage toggle - click to switch between included (V) and price
-        function toggleBaggage(id, type) {
+        // Baggage inline editing functions
+        async function toggleBaggageIncluded(id, type, isChecked) {
+            const field = type === 'trolley' ? 'trolley_baggage' : 'suitcase_baggage';
+            
+            if (isChecked) {
+                // Set to included (null)
+                await updateFlightField(id, field, null);
+            } else {
+                // Set to 0 as default price, user can edit
+                await updateFlightField(id, field, 0);
+            }
+        }
+        
+        async function updateBaggagePrice(id, type, value) {
+            const field = type === 'trolley' ? 'trolley_baggage' : 'suitcase_baggage';
             const flight = flights.find(f => f.id === id);
             if (!flight) return;
             
-            const field = type === 'trolley' ? 'trolley_baggage' : 'suitcase_baggage';
-            const currentValue = flight[field];
+            // If currently included (checkbox checked), don't update
+            if (flight[field] === null || flight[field] === undefined) return;
             
-            // If currently included (null/true), prompt for price
-            if (currentValue === null || currentValue === true || currentValue === undefined) {
-                const price = prompt(`הזן מחיר ${type === 'trolley' ? 'טרולי' : 'מזוודה'} בדולר (או השאר ריק לכלול):`, '');
-                if (price === null) return; // Cancelled
-                
-                if (price === '' || price === '0') {
-                    updateFlightField(id, field, null); // Included
-                } else {
-                    const priceNum = parseFloat(price) || 0;
-                    updateFlightField(id, field, priceNum);
-                }
-            } else {
-                // Currently has price, toggle to included
-                updateFlightField(id, field, null);
-            }
+            // Extract number from value (remove $ and other chars)
+            const price = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
+            await updateFlightField(id, field, price);
         }
         
         async function updateFlightField(id, field, value) {
