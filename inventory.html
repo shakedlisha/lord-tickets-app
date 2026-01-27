@@ -261,6 +261,53 @@
             font-size: 1.1rem;
         }
         
+        /* Export Dropdown */
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .export-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--white);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            min-width: 160px;
+            z-index: 1000;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .export-menu.show {
+            display: block;
+        }
+        
+        .export-menu button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--dark);
+            transition: background 0.2s;
+        }
+        
+        .export-menu button:hover {
+            background: var(--gray-light);
+        }
+        
+        .export-menu button .material-icons {
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        
         /* Stats Bar */
         .stats-bar {
             display: flex;
@@ -869,6 +916,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS for Excel file support -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -952,10 +1002,27 @@
                     <span class="material-icons">upload_file</span>
                     יבוא Excel/CSV
                 </button>
-                <button class="btn btn-outline" onclick="exportCSV()">
-                    <span class="material-icons">download</span>
-                    ייצוא
-                </button>
+                <div class="export-dropdown">
+                    <button class="btn btn-outline" onclick="toggleExportMenu()">
+                        <span class="material-icons">download</span>
+                        ייצוא
+                        <span class="material-icons" style="font-size: 18px;">arrow_drop_down</span>
+                    </button>
+                    <div class="export-menu" id="exportMenu">
+                        <button onclick="exportExcel()">
+                            <span class="material-icons">table_chart</span>
+                            Excel (.xlsx)
+                        </button>
+                        <button onclick="exportPDF()">
+                            <span class="material-icons">picture_as_pdf</span>
+                            PDF
+                        </button>
+                        <button onclick="exportCSV()">
+                            <span class="material-icons">text_snippet</span>
+                            CSV
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -2130,6 +2197,134 @@ Return: 14:00-18:30
             URL.revokeObjectURL(url);
             
             showToast('קובץ CSV יוצא בהצלחה', 'success');
+            hideExportMenu();
+        }
+        
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('show');
+        }
+        
+        function hideExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.remove('show');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-dropdown')) {
+                hideExportMenu();
+            }
+        });
+        
+        function exportExcel() {
+            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'מחיר'];
+            
+            const rows = flights.map(f => [
+                formatDateRange(f.departure_date, f.return_date),
+                f.outbound_details || '',
+                f.inbound_details || '',
+                f.airline,
+                `${f.destination_name} (${f.destination_code})`,
+                f.available_seats,
+                f.selling_price + '$'
+            ]);
+            
+            const data = [headers, ...rows];
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            
+            // Set RTL and column widths
+            ws['!cols'] = [
+                { wch: 22 },  // תאריכים
+                { wch: 35 },  // הלוך
+                { wch: 35 },  // חזור
+                { wch: 15 },  // חברה
+                { wch: 20 },  // יעד
+                { wch: 10 },  // מושבים
+                { wch: 12 }   // מחיר
+            ];
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'מלאי טיסות');
+            
+            XLSX.writeFile(wb, `flights_${new Date().toISOString().slice(0,10)}.xlsx`);
+            
+            showToast('קובץ Excel יוצא בהצלחה', 'success');
+            hideExportMenu();
+        }
+        
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            // Add Hebrew font support - use built-in font
+            doc.setFont('helvetica');
+            
+            // Title
+            doc.setFontSize(18);
+            doc.text('Lord Tickets - Flight Inventory', 148, 15, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 148, 22, { align: 'center' });
+            
+            // Table data
+            const headers = [['Dates', 'Outbound', 'Inbound', 'Airline', 'Destination', 'Seats', 'Price']];
+            
+            const rows = flights.map(f => [
+                formatDateRange(f.departure_date, f.return_date),
+                f.outbound_details || '-',
+                f.inbound_details || '-',
+                f.airline,
+                `${f.destination_name} (${f.destination_code})`,
+                f.available_seats,
+                '$' + f.selling_price
+            ]);
+            
+            doc.autoTable({
+                head: headers,
+                body: rows,
+                startY: 28,
+                theme: 'grid',
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 3,
+                    halign: 'center'
+                },
+                headStyles: {
+                    fillColor: [30, 60, 114],
+                    textColor: 255,
+                    fontStyle: 'bold'
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                },
+                columnStyles: {
+                    0: { cellWidth: 28 },
+                    1: { cellWidth: 50, halign: 'left' },
+                    2: { cellWidth: 50, halign: 'left' },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 35 },
+                    5: { cellWidth: 18 },
+                    6: { cellWidth: 20 }
+                }
+            });
+            
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(`Page ${i} of ${pageCount}`, 280, 200, { align: 'right' });
+            }
+            
+            doc.save(`flights_${new Date().toISOString().slice(0,10)}.pdf`);
+            
+            showToast('קובץ PDF יוצא בהצלחה', 'success');
+            hideExportMenu();
         }
         
         // ==========================================
