@@ -492,6 +492,66 @@
             font-size: 0.85rem;
         }
         
+        .baggage-cell {
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        
+        .baggage-cell:hover {
+            background: var(--gray-light);
+        }
+        
+        .baggage-included {
+            color: var(--success);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .baggage-price {
+            color: var(--warning);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .baggage-form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .baggage-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .baggage-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .baggage-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .baggage-price-input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid var(--gray);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .baggage-price-input:disabled {
+            background: var(--gray-light);
+            color: var(--gray-dark);
+        }
+        
         .actions-cell {
             display: flex;
             gap: 5px;
@@ -1047,6 +1107,8 @@
                             <th>הלוך</th>
                             <th>חזור</th>
                             <th onclick="sortBy('available_seats')">מושבים <span class="material-icons">unfold_more</span></th>
+                            <th>טרולי</th>
+                            <th>מזוודה</th>
                             <th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>
                             <th onclick="sortBy('selling_price')">מחיר <span class="material-icons">unfold_more</span></th>
                             <th>פעולות</th>
@@ -1122,6 +1184,26 @@
                             <div class="form-group">
                                 <label>מחיר מכירה ($)</label>
                                 <input type="number" id="sellingPrice" min="0" step="0.01" placeholder="199" required>
+                            </div>
+                            <div class="form-group baggage-form-group">
+                                <label>טרולי</label>
+                                <div class="baggage-input-wrapper">
+                                    <label class="baggage-checkbox">
+                                        <input type="checkbox" id="trolleyIncluded" onchange="toggleBaggageInput('trolley')">
+                                        <span>כלול</span>
+                                    </label>
+                                    <input type="number" id="trolleyPrice" min="0" step="1" placeholder="מחיר $" class="baggage-price-input">
+                                </div>
+                            </div>
+                            <div class="form-group baggage-form-group">
+                                <label>מזוודה</label>
+                                <div class="baggage-input-wrapper">
+                                    <label class="baggage-checkbox">
+                                        <input type="checkbox" id="suitcaseIncluded" onchange="toggleBaggageInput('suitcase')">
+                                        <span>כלול</span>
+                                    </label>
+                                    <input type="number" id="suitcasePrice" min="0" step="1" placeholder="מחיר $" class="baggage-price-input">
+                                </div>
                             </div>
                             <div class="form-group full-width">
                                 <label>פרטי ספק (פרטי)</label>
@@ -1356,7 +1438,9 @@ Return: 14:00-18:30
                 inbound_details: data.inbound_details || '',
                 cost_price: null,
                 selling_price: parseFloat(data.selling_price) || 0,
-                supplier_info: ''
+                supplier_info: '',
+                trolley_baggage: null,
+                suitcase_baggage: null
             };
             
             const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -1597,7 +1681,7 @@ Return: 14:00-18:30
             if (filteredFlights.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9">
+                        <td colspan="11">
                             <div class="empty-state">
                                 <span class="material-icons">flight_takeoff</span>
                                 <h3>אין טיסות להצגה</h3>
@@ -1625,6 +1709,16 @@ Return: 14:00-18:30
                               onblur="updateSeats('${flight.id}', this.textContent)"
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                         >${flight.available_seats}</span>
+                    </td>
+                    <td class="baggage-cell" onclick="toggleBaggage('${flight.id}', 'trolley')">
+                        ${flight.trolley_baggage === null || flight.trolley_baggage === true ? 
+                            '<span class="baggage-included">✓</span>' : 
+                            '<span class="baggage-price">$' + flight.trolley_baggage + '</span>'}
+                    </td>
+                    <td class="baggage-cell" onclick="toggleBaggage('${flight.id}', 'suitcase')">
+                        ${flight.suitcase_baggage === null || flight.suitcase_baggage === true ? 
+                            '<span class="baggage-included">✓</span>' : 
+                            '<span class="baggage-price">$' + flight.suitcase_baggage + '</span>'}
                     </td>
                     <td class="cost-cell">
                         <span contenteditable="true" 
@@ -1758,6 +1852,15 @@ Return: 14:00-18:30
             editingFlightId = null;
             document.getElementById('modalTitle').textContent = 'הוסף טיסה חדשה';
             document.getElementById('flightForm').reset();
+            
+            // Default baggage to included
+            document.getElementById('trolleyIncluded').checked = true;
+            document.getElementById('trolleyPrice').disabled = true;
+            document.getElementById('trolleyPrice').value = '';
+            document.getElementById('suitcaseIncluded').checked = true;
+            document.getElementById('suitcasePrice').disabled = true;
+            document.getElementById('suitcasePrice').value = '';
+            
             switchTab('manual');
             openModal('flightModal');
         }
@@ -1782,8 +1885,28 @@ Return: 14:00-18:30
             document.getElementById('sellingPrice').value = flight.selling_price || '';
             document.getElementById('supplierInfo').value = flight.supplier_info || '';
             
+            // Baggage fields
+            const trolleyIncluded = flight.trolley_baggage === null || flight.trolley_baggage === true || flight.trolley_baggage === undefined;
+            document.getElementById('trolleyIncluded').checked = trolleyIncluded;
+            document.getElementById('trolleyPrice').value = trolleyIncluded ? '' : (flight.trolley_baggage || '');
+            document.getElementById('trolleyPrice').disabled = trolleyIncluded;
+            
+            const suitcaseIncluded = flight.suitcase_baggage === null || flight.suitcase_baggage === true || flight.suitcase_baggage === undefined;
+            document.getElementById('suitcaseIncluded').checked = suitcaseIncluded;
+            document.getElementById('suitcasePrice').value = suitcaseIncluded ? '' : (flight.suitcase_baggage || '');
+            document.getElementById('suitcasePrice').disabled = suitcaseIncluded;
+            
             switchTab('manual');
             openModal('flightModal');
+        }
+        
+        function toggleBaggageInput(type) {
+            const checkbox = document.getElementById(type + 'Included');
+            const priceInput = document.getElementById(type + 'Price');
+            priceInput.disabled = checkbox.checked;
+            if (checkbox.checked) {
+                priceInput.value = '';
+            }
         }
         
         async function saveFlight() {
@@ -1804,7 +1927,9 @@ Return: 14:00-18:30
                 inbound_details: document.getElementById('inboundDetails').value,
                 cost_price: parseFloat(document.getElementById('costPrice').value) || null,
                 selling_price: parseFloat(document.getElementById('sellingPrice').value),
-                supplier_info: document.getElementById('supplierInfo').value
+                supplier_info: document.getElementById('supplierInfo').value,
+                trolley_baggage: document.getElementById('trolleyIncluded').checked ? null : (parseFloat(document.getElementById('trolleyPrice').value) || null),
+                suitcase_baggage: document.getElementById('suitcaseIncluded').checked ? null : (parseFloat(document.getElementById('suitcasePrice').value) || null)
             };
             
             showLoading(true);
@@ -1918,6 +2043,31 @@ Return: 14:00-18:30
         async function updatePrice(id, value) {
             const price = parseFloat(value.replace(/[^0-9.]/g, '')) || 0;
             await updateFlightField(id, 'selling_price', price);
+        }
+        
+        // Baggage toggle - click to switch between included (V) and price
+        function toggleBaggage(id, type) {
+            const flight = flights.find(f => f.id === id);
+            if (!flight) return;
+            
+            const field = type === 'trolley' ? 'trolley_baggage' : 'suitcase_baggage';
+            const currentValue = flight[field];
+            
+            // If currently included (null/true), prompt for price
+            if (currentValue === null || currentValue === true || currentValue === undefined) {
+                const price = prompt(`הזן מחיר ${type === 'trolley' ? 'טרולי' : 'מזוודה'} בדולר (או השאר ריק לכלול):`, '');
+                if (price === null) return; // Cancelled
+                
+                if (price === '' || price === '0') {
+                    updateFlightField(id, field, null); // Included
+                } else {
+                    const priceNum = parseFloat(price) || 0;
+                    updateFlightField(id, field, priceNum);
+                }
+            } else {
+                // Currently has price, toggle to included
+                updateFlightField(id, field, null);
+            }
         }
         
         async function updateFlightField(id, field, value) {
@@ -2173,8 +2323,13 @@ Return: 14:00-18:30
             }
         }
         
+        function formatBaggage(value) {
+            if (value === null || value === true || value === undefined) return '✓';
+            return '$' + value;
+        }
+        
         function exportCSV() {
-            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'מחיר'];
+            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
             const rows = flights.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
@@ -2183,6 +2338,8 @@ Return: 14:00-18:30
                 f.airline,
                 `${f.destination_name} (${f.destination_code})`,
                 f.available_seats,
+                formatBaggage(f.trolley_baggage),
+                formatBaggage(f.suitcase_baggage),
                 f.selling_price + '$'
             ]);
             
@@ -2218,7 +2375,7 @@ Return: 14:00-18:30
         });
         
         function exportExcel() {
-            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'מחיר'];
+            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
             const rows = flights.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
@@ -2227,6 +2384,8 @@ Return: 14:00-18:30
                 f.airline,
                 `${f.destination_name} (${f.destination_code})`,
                 f.available_seats,
+                formatBaggage(f.trolley_baggage),
+                formatBaggage(f.suitcase_baggage),
                 f.selling_price + '$'
             ]);
             
@@ -2242,6 +2401,8 @@ Return: 14:00-18:30
                 { wch: 15 },  // חברה
                 { wch: 20 },  // יעד
                 { wch: 10 },  // מושבים
+                { wch: 10 },  // טרולי
+                { wch: 10 },  // מזוודה
                 { wch: 12 }   // מחיר
             ];
             
@@ -2278,7 +2439,12 @@ Return: 14:00-18:30
             doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 148, 22, { align: 'center' });
             
             // Table data
-            const headers = [['Dates', 'Outbound', 'Inbound', 'Airline', 'Destination', 'Seats', 'Price']];
+            const headers = [['Dates', 'Outbound', 'Inbound', 'Airline', 'Dest', 'Seats', 'Trolley', 'Suitcase', 'Price']];
+            
+            const formatBaggagePDF = (value) => {
+                if (value === null || value === true || value === undefined) return 'V';
+                return '$' + value;
+            };
             
             const rows = flights.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
@@ -2287,6 +2453,8 @@ Return: 14:00-18:30
                 toAscii(f.airline),
                 f.destination_code || toAscii(f.destination_name),
                 f.available_seats,
+                formatBaggagePDF(f.trolley_baggage),
+                formatBaggagePDF(f.suitcase_baggage),
                 '$' + f.selling_price
             ]);
             
@@ -2296,8 +2464,8 @@ Return: 14:00-18:30
                 startY: 28,
                 theme: 'grid',
                 styles: {
-                    fontSize: 8,
-                    cellPadding: 3,
+                    fontSize: 7,
+                    cellPadding: 2,
                     halign: 'center'
                 },
                 headStyles: {
@@ -2309,13 +2477,15 @@ Return: 14:00-18:30
                     fillColor: [245, 245, 245]
                 },
                 columnStyles: {
-                    0: { cellWidth: 28 },
-                    1: { cellWidth: 50, halign: 'left' },
-                    2: { cellWidth: 50, halign: 'left' },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 35 },
-                    5: { cellWidth: 18 },
-                    6: { cellWidth: 20 }
+                    0: { cellWidth: 25 },
+                    1: { cellWidth: 45, halign: 'left' },
+                    2: { cellWidth: 45, halign: 'left' },
+                    3: { cellWidth: 20 },
+                    4: { cellWidth: 20 },
+                    5: { cellWidth: 15 },
+                    6: { cellWidth: 18 },
+                    7: { cellWidth: 18 },
+                    8: { cellWidth: 18 }
                 }
             });
             
