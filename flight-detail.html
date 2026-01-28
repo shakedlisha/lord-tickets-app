@@ -4587,7 +4587,7 @@ IMPORTANT RULES:
             }
             
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printPassengerList(activePassengers, currentFlight);
+                LordDocs.printPassengerList(activePassengers, flight);
             } else {
                 showToast('מודול מסמכים לא נטען', 'error');
             }
@@ -4604,7 +4604,7 @@ IMPORTANT RULES:
             }
             
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printHotelList(activePassengers, currentFlight);
+                LordDocs.printHotelList(activePassengers, flight);
             } else {
                 showToast('מודול מסמכים לא נטען', 'error');
             }
@@ -4621,7 +4621,7 @@ IMPORTANT RULES:
             }
             
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printInvoice(activePassengers, currentFlight);
+                LordDocs.printInvoice(activePassengers, flight);
             } else {
                 showToast('מודול מסמכים לא נטען', 'error');
             }
@@ -4645,7 +4645,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printAirlineManifest(active, currentFlight, { leg: 'outbound' });
+                LordDocs.printAirlineManifest(active, flight, { leg: 'outbound' });
             }
         }
         
@@ -4654,7 +4654,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printAirlineManifest(active, currentFlight, { leg: 'return' });
+                LordDocs.printAirlineManifest(active, flight, { leg: 'return' });
             }
         }
         
@@ -4663,7 +4663,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printTransportManifest(active, currentFlight);
+                LordDocs.printTransportManifest(active, flight);
             }
         }
         
@@ -4673,7 +4673,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
-                LordDocs.exportPassengerListToExcel(active, currentFlight);
+                LordDocs.exportPassengerListToExcel(active, flight);
                 showToast('הקובץ יורד...', 'success');
             } else {
                 showToast('ספריית Excel לא נטענה', 'error');
@@ -4685,7 +4685,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
-                LordDocs.exportAirlineManifestToExcel(active, currentFlight, { leg: 'outbound' });
+                LordDocs.exportAirlineManifestToExcel(active, flight, { leg: 'outbound' });
                 showToast('הקובץ יורד...', 'success');
             } else {
                 showToast('ספריית Excel לא נטענה', 'error');
@@ -4697,7 +4697,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
-                LordDocs.exportAirlineManifestToExcel(active, currentFlight, { leg: 'return' });
+                LordDocs.exportAirlineManifestToExcel(active, flight, { leg: 'return' });
                 showToast('הקובץ יורד...', 'success');
             } else {
                 showToast('ספריית Excel לא נטענה', 'error');
@@ -4709,7 +4709,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
-                LordDocs.exportHotelListToExcel(active, currentFlight);
+                LordDocs.exportHotelListToExcel(active, flight);
                 showToast('הקובץ יורד...', 'success');
             } else {
                 showToast('ספריית Excel לא נטענה', 'error');
@@ -4721,7 +4721,7 @@ IMPORTANT RULES:
             const active = getActivePassengers();
             if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
             if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
-                LordDocs.exportTransportManifestToExcel(active, currentFlight);
+                LordDocs.exportTransportManifestToExcel(active, flight);
                 showToast('הקובץ יורד...', 'success');
             } else {
                 showToast('ספריית Excel לא נטענה', 'error');
@@ -4736,7 +4736,7 @@ IMPORTANT RULES:
             }
             
             if (typeof LordDocs !== 'undefined') {
-                LordDocs.printReceipt(passenger, currentFlight);
+                LordDocs.printReceipt(passenger, flight);
             } else {
                 showToast('מודול מסמכים לא נטען', 'error');
             }
