@@ -1308,6 +1308,55 @@
             color: var(--navy-light);
         }
         
+        /* Documents Menu Enhanced Styles */
+        .menu-section-title {
+            padding: 8px 15px 4px 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--gray-light);
+            border-top: 1px solid var(--gray);
+        }
+        
+        .menu-section-title:first-child {
+            border-top: none;
+        }
+        
+        .menu-divider {
+            height: 1px;
+            background: var(--gray);
+            margin: 5px 0;
+        }
+        
+        .menu-row {
+            display: flex;
+            align-items: stretch;
+        }
+        
+        .menu-row button:first-child {
+            flex: 1;
+            border-left: 1px solid var(--gray-light);
+        }
+        
+        .menu-row .excel-btn {
+            width: 45px;
+            min-width: 45px;
+            padding: 10px;
+            justify-content: center;
+            background: #e8f5e9;
+        }
+        
+        .menu-row .excel-btn:hover {
+            background: #c8e6c9;
+        }
+        
+        .menu-row .excel-btn .material-icons {
+            color: #2e7d32;
+            margin: 0;
+        }
+        
         /* Print Styles */
         @media print {
             .header, .toolbar, .view-tabs, .modal-overlay, .toast, .actions-cell, .export-dropdown {
@@ -1662,18 +1711,72 @@
                 <div class="export-dropdown docs-dropdown">
                     <button class="btn btn-outline" onclick="toggleDocsMenu()">
                         <span class="material-icons">description</span>
-                        מסמכים
+                        מסמכים לספקים
                         <span class="material-icons" style="font-size: 1rem;">arrow_drop_down</span>
                     </button>
                     <div class="export-menu" id="docsMenu">
-                        <button onclick="printFullPassengerList()">
-                            <span class="material-icons">list_alt</span>
-                            רשימת נוסעים
-                        </button>
-                        <button onclick="printHotelList()">
-                            <span class="material-icons">hotel</span>
-                            רשימת מלונות
-                        </button>
+                        <!-- General Passenger List -->
+                        <div class="menu-section-title">רשימת נוסעים</div>
+                        <div class="menu-row">
+                            <button onclick="printFullPassengerList()" title="הדפס">
+                                <span class="material-icons">print</span>
+                                רשימת נוסעים מלאה
+                            </button>
+                            <button onclick="exportPassengerListExcel()" class="excel-btn" title="Excel">
+                                <span class="material-icons">table_chart</span>
+                            </button>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <!-- Airline Manifests -->
+                        <div class="menu-section-title">מניפסט טיסה</div>
+                        <div class="menu-row">
+                            <button onclick="printAirlineManifestOutbound()" title="הדפס">
+                                <span class="material-icons">flight_takeoff</span>
+                                טיסת הלוך
+                            </button>
+                            <button onclick="exportAirlineManifestOutboundExcel()" class="excel-btn" title="Excel">
+                                <span class="material-icons">table_chart</span>
+                            </button>
+                        </div>
+                        <div class="menu-row">
+                            <button onclick="printAirlineManifestReturn()" title="הדפס">
+                                <span class="material-icons">flight_land</span>
+                                טיסת חזור
+                            </button>
+                            <button onclick="exportAirlineManifestReturnExcel()" class="excel-btn" title="Excel">
+                                <span class="material-icons">table_chart</span>
+                            </button>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <!-- Hotel & Transport -->
+                        <div class="menu-section-title">ספקים</div>
+                        <div class="menu-row">
+                            <button onclick="printHotelList()" title="הדפס">
+                                <span class="material-icons">hotel</span>
+                                רשימת מלונות
+                            </button>
+                            <button onclick="exportHotelListExcel()" class="excel-btn" title="Excel">
+                                <span class="material-icons">table_chart</span>
+                            </button>
+                        </div>
+                        <div class="menu-row">
+                            <button onclick="printTransportManifest()" title="הדפס">
+                                <span class="material-icons">directions_bus</span>
+                                רשימת הסעות
+                            </button>
+                            <button onclick="exportTransportManifestExcel()" class="excel-btn" title="Excel">
+                                <span class="material-icons">table_chart</span>
+                            </button>
+                        </div>
+                        
+                        <div class="menu-divider"></div>
+                        
+                        <!-- Internal Documents -->
+                        <div class="menu-section-title">מסמכים פנימיים</div>
                         <button onclick="printGroupInvoice()">
                             <span class="material-icons">receipt_long</span>
                             חשבונית קבוצתית
@@ -2410,6 +2513,13 @@
             // Initialize navigation
             if (typeof LordNav !== 'undefined') {
                 LordNav.init('flight-detail');
+            }
+            
+            // Preload SheetJS for Excel export
+            if (typeof XLSX === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js';
+                document.head.appendChild(script);
             }
             
             // Get flight ID from URL
@@ -4514,6 +4624,107 @@ IMPORTANT RULES:
                 LordDocs.printInvoice(activePassengers, currentFlight);
             } else {
                 showToast('מודול מסמכים לא נטען', 'error');
+            }
+        }
+        
+        // ==========================================
+        // Supplier Manifest Functions
+        // ==========================================
+        
+        function getActivePassengers() {
+            return passengers.filter(p => p.status === 'active' || !p.status);
+        }
+        
+        function closeDocsMenu() {
+            document.getElementById('docsMenu').classList.remove('show');
+        }
+        
+        // Airline Manifests
+        function printAirlineManifestOutbound() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printAirlineManifest(active, currentFlight, { leg: 'outbound' });
+            }
+        }
+        
+        function printAirlineManifestReturn() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printAirlineManifest(active, currentFlight, { leg: 'return' });
+            }
+        }
+        
+        function printTransportManifest() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printTransportManifest(active, currentFlight);
+            }
+        }
+        
+        // Excel Export Functions
+        function exportPassengerListExcel() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
+                LordDocs.exportPassengerListToExcel(active, currentFlight);
+                showToast('הקובץ יורד...', 'success');
+            } else {
+                showToast('ספריית Excel לא נטענה', 'error');
+            }
+        }
+        
+        function exportAirlineManifestOutboundExcel() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
+                LordDocs.exportAirlineManifestToExcel(active, currentFlight, { leg: 'outbound' });
+                showToast('הקובץ יורד...', 'success');
+            } else {
+                showToast('ספריית Excel לא נטענה', 'error');
+            }
+        }
+        
+        function exportAirlineManifestReturnExcel() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
+                LordDocs.exportAirlineManifestToExcel(active, currentFlight, { leg: 'return' });
+                showToast('הקובץ יורד...', 'success');
+            } else {
+                showToast('ספריית Excel לא נטענה', 'error');
+            }
+        }
+        
+        function exportHotelListExcel() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
+                LordDocs.exportHotelListToExcel(active, currentFlight);
+                showToast('הקובץ יורד...', 'success');
+            } else {
+                showToast('ספריית Excel לא נטענה', 'error');
+            }
+        }
+        
+        function exportTransportManifestExcel() {
+            closeDocsMenu();
+            const active = getActivePassengers();
+            if (active.length === 0) { showToast('אין נוסעים פעילים', 'error'); return; }
+            if (typeof LordDocs !== 'undefined' && typeof XLSX !== 'undefined') {
+                LordDocs.exportTransportManifestToExcel(active, currentFlight);
+                showToast('הקובץ יורד...', 'success');
+            } else {
+                showToast('ספריית Excel לא נטענה', 'error');
             }
         }
         
