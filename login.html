@@ -404,6 +404,9 @@
                     expires_at: data.expires_at
                 }));
                 
+                // Also save access_token directly for easier access
+                localStorage.setItem('access_token', data.access_token);
+                
                 // Save settings
                 localStorage.setItem('supabaseUrl', supabaseUrl);
                 localStorage.setItem('supabaseKey', supabaseKey);

@@ -527,6 +527,20 @@
     <script src="js/pwa.js"></script>
     
     <script>
+        // Helper: Get Access Token
+        function getAccessToken() {
+            let token = localStorage.getItem('access_token');
+            if (token) return token;
+            try {
+                const session = JSON.parse(localStorage.getItem('userSession') || '{}');
+                if (session.access_token) {
+                    localStorage.setItem('access_token', session.access_token);
+                    return session.access_token;
+                }
+            } catch (e) {}
+            return localStorage.getItem('supabaseKey');
+        }
+        
         // State
         let selectedReportType = null;
         let currentReportHtml = '';
@@ -536,7 +550,6 @@
         // Config
         const supabaseUrl = localStorage.getItem('supabaseUrl');
         const supabaseKey = localStorage.getItem('supabaseKey');
-        const accessToken = localStorage.getItem('access_token');
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
@@ -583,7 +596,7 @@
                 const res = await fetch(`${supabaseUrl}/rest/v1/flights?select=id,destination,departure_date&order=departure_date.desc&limit=50`, {
                     headers: {
                         'apikey': supabaseKey,
-                        'Authorization': `Bearer ${accessToken || supabaseKey}`
+                        'Authorization': `Bearer ${getAccessToken()}`
                     }
                 });
                 
@@ -608,7 +621,7 @@
                 const res = await fetch(`${supabaseUrl}/rest/v1/users?select=id,name,role&order=name`, {
                     headers: {
                         'apikey': supabaseKey,
-                        'Authorization': `Bearer ${accessToken || supabaseKey}`
+                        'Authorization': `Bearer ${getAccessToken()}`
                     }
                 });
                 
@@ -717,10 +730,10 @@
             
             const [flightsRes, passengersRes] = await Promise.all([
                 fetch(`${supabaseUrl}/rest/v1/flights?departure_date=gte.${startDate}&departure_date=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 }),
                 fetch(`${supabaseUrl}/rest/v1/passengers?select=*,flights(destination)&created_at=gte.${startDate}&created_at=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 })
             ]);
             
@@ -759,10 +772,10 @@
             
             const [flightRes, passengersRes] = await Promise.all([
                 fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${flightId}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 }),
                 fetch(`${supabaseUrl}/rest/v1/passengers?flight_id=eq.${flightId}&select=*,users!passengers_agent_id_fkey(name)`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 })
             ]);
             
@@ -794,10 +807,10 @@
             
             const [agentRes, passengersRes] = await Promise.all([
                 fetch(`${supabaseUrl}/rest/v1/users?id=eq.${agentId}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 }),
                 fetch(`${supabaseUrl}/rest/v1/passengers?agent_id=eq.${agentId}&select=*,flights(destination,departure_date)&created_at=gte.${startDate}&created_at=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken || supabaseKey}` }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
                 })
             ]);
             
