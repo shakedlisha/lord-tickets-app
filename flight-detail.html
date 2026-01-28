@@ -962,6 +962,244 @@
             margin: 2px 0 0;
         }
         
+        /* Packages Section */
+        .packages-section {
+            padding: 0 30px;
+            margin-bottom: 20px;
+        }
+        
+        .packages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .packages-header h3 {
+            color: var(--navy-dark);
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        
+        .packages-header h3 .material-icons {
+            color: var(--gold);
+        }
+        
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .package-card {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .package-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+        }
+        
+        .package-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .package-card-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+            margin: 0;
+        }
+        
+        .package-card-price {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+        
+        .package-card-currency {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+        }
+        
+        .package-card-includes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        
+        .package-include-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--gray-light);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--navy);
+        }
+        
+        .package-include-badge .material-icons {
+            font-size: 0.9rem;
+        }
+        
+        .package-include-badge.active {
+            background: rgba(40, 167, 69, 0.15);
+            color: var(--success);
+        }
+        
+        .package-card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--gray-light);
+        }
+        
+        .package-card-actions button {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        
+        .package-card-actions .btn-edit {
+            background: var(--gray-light);
+            color: var(--navy);
+        }
+        
+        .package-card-actions .btn-edit:hover {
+            background: var(--gold);
+            color: var(--navy-dark);
+        }
+        
+        .package-card-actions .btn-delete {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger);
+        }
+        
+        .package-card-actions .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .package-count-badge {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: var(--navy);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        
+        .add-package-card {
+            background: var(--gray-light);
+            border: 2px dashed var(--gray);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 150px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .add-package-card:hover {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .add-package-card .material-icons {
+            font-size: 2.5rem;
+            color: var(--gray-dark);
+            margin-bottom: 8px;
+        }
+        
+        .add-package-card span:not(.material-icons) {
+            color: var(--gray-dark);
+            font-weight: 500;
+        }
+        
+        /* Package Modal */
+        .package-form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .package-form-grid .form-group.full-width {
+            grid-column: span 2;
+        }
+        
+        .includes-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .include-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: var(--gray-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .include-checkbox:hover {
+            background: rgba(212, 175, 55, 0.15);
+        }
+        
+        .include-checkbox input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--gold);
+        }
+        
+        .include-checkbox label {
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .package-form-grid {
+                grid-template-columns: 1fr;
+            }
+            .package-form-grid .form-group.full-width {
+                grid-column: span 1;
+            }
+            .includes-checkboxes {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         /* Export Dropdown */
         .export-dropdown {
             position: relative;
@@ -1236,6 +1474,111 @@
             <div class="financial-info">
                 <h3 id="totalCommission">€0</h3>
                 <p>עמלות סוכנים</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Packages Section -->
+    <div class="packages-section" id="packagesSection">
+        <div class="packages-header">
+            <h3>
+                <span class="material-icons">inventory_2</span>
+                חבילות מחיר
+            </h3>
+            <button class="btn btn-sm btn-outline" onclick="togglePackagesView()">
+                <span class="material-icons" id="packagesToggleIcon">expand_more</span>
+            </button>
+        </div>
+        <div class="packages-grid" id="packagesGrid">
+            <!-- Packages will be loaded here -->
+            <div class="package-card add-package-card" onclick="openPackageModal()">
+                <span class="material-icons">add_circle_outline</span>
+                <span>הוסף חבילה</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Package Modal -->
+    <div class="modal-overlay" id="packageModal">
+        <div class="modal" style="max-width: 550px;">
+            <div class="modal-header">
+                <h2 id="packageModalTitle">הוסף חבילה חדשה</h2>
+                <button class="modal-close" onclick="closeModal('packageModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="packageForm" onsubmit="savePackage(event)">
+                    <div class="package-form-grid">
+                        <div class="form-group">
+                            <label>שם החבילה *</label>
+                            <input type="text" id="packageName" required placeholder="לדוגמה: אפשרות א' / טיסה בלבד">
+                        </div>
+                        <div class="form-group">
+                            <label>מחיר *</label>
+                            <input type="number" id="packagePrice" required step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>מטבע</label>
+                            <select id="packageCurrency">
+                                <option value="EUR">EUR - יורו</option>
+                                <option value="ILS">ILS - שקל</option>
+                                <option value="USD">USD - דולר</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>קטגוריית כרטיס (אופציונלי)</label>
+                            <input type="text" id="packageTicketCategory" placeholder="VIP / Standard / Premium">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>תיאור (אופציונלי)</label>
+                            <input type="text" id="packageDescription" placeholder="תיאור קצר של החבילה">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>החבילה כוללת:</label>
+                            <div class="includes-checkboxes">
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgOutbound" checked>
+                                    <label for="pkgOutbound">טיסת הלוך</label>
+                                </div>
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgReturn" checked>
+                                    <label for="pkgReturn">טיסת חזור</label>
+                                </div>
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgHotel">
+                                    <label for="pkgHotel">מלון</label>
+                                </div>
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgEvent">
+                                    <label for="pkgEvent">כרטיס לאירוע</label>
+                                </div>
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgTransport">
+                                    <label for="pkgTransport">הסעות</label>
+                                </div>
+                                <div class="include-checkbox">
+                                    <input type="checkbox" id="pkgInsurance">
+                                    <label for="pkgInsurance">ביטוח</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" id="hotelNightsGroup" style="display: none;">
+                            <label>מספר לילות במלון</label>
+                            <input type="number" id="packageHotelNights" min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>מקסימום נוסעים (אופציונלי)</label>
+                            <input type="number" id="packageMaxQty" min="1" placeholder="ללא הגבלה">
+                        </div>
+                    </div>
+                    <input type="hidden" id="editingPackageId">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('packageModal')">ביטול</button>
+                        <button type="submit" class="btn btn-primary">
+                            <span class="material-icons">save</span>
+                            שמור חבילה
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1549,7 +1892,31 @@
                         <span id="duplicateWarning" style="color: var(--warning); display: none;"> | <span id="duplicateCount">0</span> כפילויות</span>
                     </p>
                     
-                    <div class="preview-table-wrapper" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--gray); border-radius: 8px;">
+                    <!-- Package Selection -->
+                    <div class="import-package-section" style="background: var(--gray-light); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span class="material-icons" style="color: var(--gold);">inventory_2</span>
+                            <strong>שיוך לחבילה</strong>
+                        </div>
+                        
+                        <div id="packageColumnDetected" style="display: none; margin-bottom: 10px; padding: 10px; background: rgba(40, 167, 69, 0.1); border-radius: 6px; color: var(--success);">
+                            <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">check_circle</span>
+                            זוהתה עמודת חבילה בקובץ - החבילות ישויכו אוטומטית
+                        </div>
+                        
+                        <div id="packageSelectionManual">
+                            <label style="display: block; margin-bottom: 8px; font-size: 0.9rem;">בחר חבילת ברירת מחדל לכל הנוסעים:</label>
+                            <select id="importDefaultPackage" style="width: 100%; padding: 10px; border: 1px solid var(--gray); border-radius: 6px; font-family: 'Heebo', sans-serif;">
+                                <option value="">ללא חבילה (יוגדר מאוחר יותר)</option>
+                                <!-- Package options will be populated dynamically -->
+                            </select>
+                            <p style="font-size: 0.8rem; color: var(--gray-dark); margin-top: 8px;">
+                                * אם בקובץ יש עמודת "חבילה" או "אפשרות", המערכת תנסה להתאים אוטומטית
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-table-wrapper" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--gray); border-radius: 8px;">
                         <table style="width: 100%; font-size: 0.85rem;">
                             <thead id="previewHeader">
                                 <!-- Headers will be generated -->
@@ -1641,6 +2008,304 @@
         let currentGroupBy = 'none';  // none, agent, hotel, room
         let lastDeletedPassenger = null;  // For undo functionality
         let undoTimeout = null;
+        
+        // Packages
+        let packages = [];
+        let packagesExpanded = true;
+        
+        // ==========================================
+        // Packages Management
+        // ==========================================
+        
+        async function loadPackages() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = localStorage.getItem('access_token');
+            
+            if (!supabaseUrl || !flightId) {
+                renderPackages();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?flight_id=eq.${flightId}&order=sort_order,created_at`, {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                if (res.ok) {
+                    packages = await res.json();
+                } else {
+                    packages = [];
+                }
+            } catch (err) {
+                console.error('Error loading packages:', err);
+                packages = [];
+            }
+            
+            renderPackages();
+        }
+        
+        function renderPackages() {
+            const grid = document.getElementById('packagesGrid');
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            const canEdit = ['admin', 'manager'].includes(userRole);
+            
+            // Count passengers per package
+            const packageCounts = {};
+            passengers.forEach(p => {
+                if (p.package_id && p.status === 'active') {
+                    packageCounts[p.package_id] = (packageCounts[p.package_id] || 0) + 1;
+                }
+            });
+            
+            let html = packages.map(pkg => {
+                const count = packageCounts[pkg.id] || 0;
+                const includes = [];
+                
+                if (pkg.includes_flight_outbound) includes.push({ icon: 'flight_takeoff', label: 'הלוך' });
+                if (pkg.includes_flight_return) includes.push({ icon: 'flight_land', label: 'חזור' });
+                if (pkg.includes_hotel) includes.push({ icon: 'hotel', label: `מלון${pkg.hotel_nights ? ` (${pkg.hotel_nights} לילות)` : ''}` });
+                if (pkg.includes_event_ticket) includes.push({ icon: 'confirmation_number', label: pkg.event_ticket_category || 'כרטיס' });
+                if (pkg.includes_transport) includes.push({ icon: 'directions_bus', label: 'הסעות' });
+                if (pkg.includes_insurance) includes.push({ icon: 'health_and_safety', label: 'ביטוח' });
+                
+                return `
+                    <div class="package-card" data-package-id="${pkg.id}">
+                        ${count > 0 ? `<span class="package-count-badge">${count} נוסעים</span>` : ''}
+                        <div class="package-card-header">
+                            <h4 class="package-card-name">${escapeHtml(pkg.name)}</h4>
+                            <div>
+                                <span class="package-card-price">${pkg.price}</span>
+                                <span class="package-card-currency">${pkg.currency}</span>
+                            </div>
+                        </div>
+                        ${pkg.description ? `<p style="font-size: 0.85rem; color: var(--gray-dark); margin-bottom: 10px;">${escapeHtml(pkg.description)}</p>` : ''}
+                        <div class="package-card-includes">
+                            ${includes.map(inc => `
+                                <span class="package-include-badge active">
+                                    <span class="material-icons">${inc.icon}</span>
+                                    ${inc.label}
+                                </span>
+                            `).join('')}
+                        </div>
+                        ${canEdit ? `
+                            <div class="package-card-actions">
+                                <button class="btn-edit" onclick="editPackage('${pkg.id}')">
+                                    <span class="material-icons">edit</span>
+                                    עריכה
+                                </button>
+                                <button class="btn-delete" onclick="deletePackage('${pkg.id}')">
+                                    <span class="material-icons">delete</span>
+                                    מחיקה
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            // Add "Add Package" card for admin/manager
+            if (canEdit) {
+                html += `
+                    <div class="package-card add-package-card" onclick="openPackageModal()">
+                        <span class="material-icons">add_circle_outline</span>
+                        <span>הוסף חבילה</span>
+                    </div>
+                `;
+            }
+            
+            grid.innerHTML = html || '<p style="color: var(--gray-dark); padding: 20px;">אין חבילות מוגדרות לטיסה זו</p>';
+        }
+        
+        function togglePackagesView() {
+            packagesExpanded = !packagesExpanded;
+            const grid = document.getElementById('packagesGrid');
+            const icon = document.getElementById('packagesToggleIcon');
+            
+            grid.style.display = packagesExpanded ? 'grid' : 'none';
+            icon.textContent = packagesExpanded ? 'expand_more' : 'expand_less';
+        }
+        
+        function openPackageModal(packageId = null) {
+            const modal = document.getElementById('packageModal');
+            const form = document.getElementById('packageForm');
+            const title = document.getElementById('packageModalTitle');
+            
+            form.reset();
+            document.getElementById('editingPackageId').value = '';
+            document.getElementById('pkgOutbound').checked = true;
+            document.getElementById('pkgReturn').checked = true;
+            document.getElementById('hotelNightsGroup').style.display = 'none';
+            
+            if (packageId) {
+                const pkg = packages.find(p => p.id === packageId);
+                if (pkg) {
+                    title.textContent = 'עריכת חבילה';
+                    document.getElementById('editingPackageId').value = pkg.id;
+                    document.getElementById('packageName').value = pkg.name;
+                    document.getElementById('packagePrice').value = pkg.price;
+                    document.getElementById('packageCurrency').value = pkg.currency || 'EUR';
+                    document.getElementById('packageDescription').value = pkg.description || '';
+                    document.getElementById('packageTicketCategory').value = pkg.event_ticket_category || '';
+                    document.getElementById('packageMaxQty').value = pkg.max_quantity || '';
+                    document.getElementById('packageHotelNights').value = pkg.hotel_nights || 1;
+                    
+                    document.getElementById('pkgOutbound').checked = pkg.includes_flight_outbound;
+                    document.getElementById('pkgReturn').checked = pkg.includes_flight_return;
+                    document.getElementById('pkgHotel').checked = pkg.includes_hotel;
+                    document.getElementById('pkgEvent').checked = pkg.includes_event_ticket;
+                    document.getElementById('pkgTransport').checked = pkg.includes_transport;
+                    document.getElementById('pkgInsurance').checked = pkg.includes_insurance;
+                    
+                    if (pkg.includes_hotel) {
+                        document.getElementById('hotelNightsGroup').style.display = 'block';
+                    }
+                }
+            } else {
+                title.textContent = 'הוסף חבילה חדשה';
+            }
+            
+            modal.classList.add('show');
+        }
+        
+        function editPackage(packageId) {
+            openPackageModal(packageId);
+        }
+        
+        async function savePackage(event) {
+            event.preventDefault();
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = localStorage.getItem('access_token');
+            
+            const editingId = document.getElementById('editingPackageId').value;
+            
+            const packageData = {
+                flight_id: flightId,
+                name: document.getElementById('packageName').value.trim(),
+                price: parseFloat(document.getElementById('packagePrice').value) || 0,
+                currency: document.getElementById('packageCurrency').value,
+                description: document.getElementById('packageDescription').value.trim() || null,
+                event_ticket_category: document.getElementById('packageTicketCategory').value.trim() || null,
+                max_quantity: document.getElementById('packageMaxQty').value ? parseInt(document.getElementById('packageMaxQty').value) : null,
+                hotel_nights: document.getElementById('pkgHotel').checked ? (parseInt(document.getElementById('packageHotelNights').value) || 1) : null,
+                includes_flight_outbound: document.getElementById('pkgOutbound').checked,
+                includes_flight_return: document.getElementById('pkgReturn').checked,
+                includes_hotel: document.getElementById('pkgHotel').checked,
+                includes_event_ticket: document.getElementById('pkgEvent').checked,
+                includes_transport: document.getElementById('pkgTransport').checked,
+                includes_insurance: document.getElementById('pkgInsurance').checked
+            };
+            
+            if (!supabaseUrl) {
+                // Demo mode - add locally
+                if (editingId) {
+                    const idx = packages.findIndex(p => p.id === editingId);
+                    if (idx >= 0) {
+                        packages[idx] = { ...packages[idx], ...packageData };
+                    }
+                } else {
+                    packages.push({ id: 'demo-' + Date.now(), ...packageData, created_at: new Date().toISOString() });
+                }
+                closeModal('packageModal');
+                renderPackages();
+                showToast('החבילה נשמרה בהצלחה', 'success');
+                return;
+            }
+            
+            try {
+                let res;
+                if (editingId) {
+                    // Update
+                    res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?id=eq.${editingId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify(packageData)
+                    });
+                } else {
+                    // Insert
+                    res = await fetch(`${supabaseUrl}/rest/v1/flight_packages`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=representation'
+                        },
+                        body: JSON.stringify(packageData)
+                    });
+                }
+                
+                if (res.ok) {
+                    closeModal('packageModal');
+                    await loadPackages();
+                    showToast(editingId ? 'החבילה עודכנה בהצלחה' : 'החבילה נוספה בהצלחה', 'success');
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Failed to save package');
+                }
+            } catch (err) {
+                console.error('Error saving package:', err);
+                showToast('שגיאה בשמירת החבילה: ' + err.message, 'error');
+            }
+        }
+        
+        async function deletePackage(packageId) {
+            if (!confirm('האם למחוק את החבילה? נוסעים המשויכים לחבילה זו יישארו ללא חבילה.')) {
+                return;
+            }
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = localStorage.getItem('access_token');
+            
+            if (!supabaseUrl) {
+                // Demo mode
+                packages = packages.filter(p => p.id !== packageId);
+                renderPackages();
+                showToast('החבילה נמחקה', 'success');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?id=eq.${packageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                
+                if (res.ok) {
+                    await loadPackages();
+                    showToast('החבילה נמחקה בהצלחה', 'success');
+                } else {
+                    throw new Error('Failed to delete package');
+                }
+            } catch (err) {
+                console.error('Error deleting package:', err);
+                showToast('שגיאה במחיקת החבילה', 'error');
+            }
+        }
+        
+        // Toggle hotel nights field visibility
+        document.addEventListener('DOMContentLoaded', () => {
+            const hotelCheckbox = document.getElementById('pkgHotel');
+            if (hotelCheckbox) {
+                hotelCheckbox.addEventListener('change', function() {
+                    document.getElementById('hotelNightsGroup').style.display = this.checked ? 'block' : 'none';
+                });
+            }
+        });
         
         // ==========================================
         // Initialization
@@ -1787,6 +2452,9 @@
                 renderFlightInfo();
                 updateStats();
                 filterPassengers();
+                
+                // Load packages for this flight
+                await loadPackages();
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -2729,47 +3397,161 @@
             { value: 'crm_id', label: 'דוקט טופ (CRM ID)' },
             { value: 'phone', label: 'טלפון' },
             { value: 'hotel_name', label: 'מלון' },
-            { value: 'hotel_booking_ref', label: 'קוד הזמנת מלון' },
-            { value: 'price_paid', label: 'מחיר' },
+            { value: 'hotel_booking_ref', label: 'קוד הזמנת מלון (סיגמנט)' },
+            { value: 'selling_price', label: 'מחיר מכירה' },
+            { value: 'cost_price', label: 'מחיר עלות' },
             { value: 'booking_ref', label: 'מספר הזמנה (ALP LORD)' },
             { value: 'insurance_notes', label: 'ביטוח' },
             { value: 'special_notes', label: 'הערות מיוחדות' },
             { value: 'has_outbound', label: 'טיסת הלוך (V)' },
-            { value: 'has_return', label: 'טיסת חזור (V)' }
+            { value: 'has_return', label: 'טיסת חזור (V)' },
+            { value: 'package_name', label: 'חבילה / אפשרות' }
         ];
         
         // Auto-mapping for Hebrew columns
+        // Auto-mapping for Hebrew and English columns
         const autoMappings = {
+            // First Name variations
             'שם פרטי': 'first_name',
             'שם פרטי נוסע': 'first_name',
+            'first name': 'first_name',
             'first_name': 'first_name',
+            'firstname': 'first_name',
+            
+            // Last Name variations  
             'שם משפחה': 'last_name',
             'שם משפחה נוסע': 'last_name',
+            'last name': 'last_name',
             'last_name': 'last_name',
+            'lastname': 'last_name',
+            
+            // Agent variations
             'סוכן': 'agent_name',
             'שם הסוכן': 'agent_name',
+            'שם סוכן': 'agent_name',
             'agent': 'agent_name',
+            'agent name': 'agent_name',
+            
+            // CRM / Docket variations
             'דוקט טופ': 'crm_id',
+            'דוקט': 'crm_id',
             'crm': 'crm_id',
+            'crm id': 'crm_id',
+            'docket': 'crm_id',
+            
+            // Phone variations
             'טלפון': 'phone',
+            'נייד': 'phone',
             'phone': 'phone',
+            'mobile': 'phone',
+            'tel': 'phone',
+            
+            // Hotel variations
             'מלון': 'hotel_name',
             'שם המלון': 'hotel_name',
+            'שם מלון': 'hotel_name',
             'hotel': 'hotel_name',
+            'hotel name': 'hotel_name',
+            
+            // Hotel booking ref / Segment variations
             'סיגמנט': 'hotel_booking_ref',
             'סיגמנט ביפרו': 'hotel_booking_ref',
-            'מחיר': 'price_paid',
-            'price': 'price_paid',
+            'segment': 'hotel_booking_ref',
+            'bifro': 'hotel_booking_ref',
+            
+            // Price variations
+            'מחיר': 'selling_price',
+            'מחיר נוסע': 'selling_price',
+            'price': 'selling_price',
+            'amount': 'selling_price',
+            
+            // Booking reference variations
             'הזמנה': 'booking_ref',
+            'מספר הזמנה': 'booking_ref',
             'alp lord': 'booking_ref',
+            'booking': 'booking_ref',
+            'booking ref': 'booking_ref',
+            'reference': 'booking_ref',
+            
+            // Insurance variations
             'ביטוח': 'insurance_notes',
+            'insurance': 'insurance_notes',
+            
+            // Notes variations
             'הערות': 'special_notes',
             'הערות מיוחדות': 'special_notes',
+            'notes': 'special_notes',
+            'comments': 'special_notes',
+            
+            // Flight leg variations
             'טיסת הלוך': 'has_outbound',
             'הלוך': 'has_outbound',
+            'outbound': 'has_outbound',
             'טיסת חזור': 'has_return',
-            'חזור': 'has_return'
+            'חזור': 'has_return',
+            'return': 'has_return',
+            
+            // Package variations
+            'אפשרות': 'package_name',
+            'אפשרות א': 'package_name',
+            "אפשרות א'": 'package_name',
+            'חבילה': 'package_name',
+            'package': 'package_name',
+            'category': 'package_name'
         };
+        
+        // Known header keywords for smart detection
+        const knownHeaderKeywords = [
+            'שם פרטי', 'שם משפחה', 'שם הסוכן', 'דוקט', 'טלפון', 
+            'מלון', 'סיגמנט', 'הערות', 'הלוך', 'חזור', 'מחיר',
+            'first', 'last', 'name', 'agent', 'phone', 'hotel'
+        ];
+        
+        // Smart header row detection function
+        function findHeaderRow(jsonData) {
+            let bestRow = 0;
+            let bestScore = 0;
+            
+            // Scan first 20 rows to find the one with most header matches
+            const maxRowsToScan = Math.min(20, jsonData.length);
+            
+            for (let i = 0; i < maxRowsToScan; i++) {
+                const row = jsonData[i];
+                if (!row || !Array.isArray(row)) continue;
+                
+                // Convert row cells to strings and count matches
+                let score = 0;
+                row.forEach(cell => {
+                    const cellStr = String(cell || '').toLowerCase().trim();
+                    if (!cellStr) return;
+                    
+                    // Check if cell matches any known header keyword
+                    for (const keyword of knownHeaderKeywords) {
+                        if (cellStr.includes(keyword.toLowerCase())) {
+                            score++;
+                            break;
+                        }
+                    }
+                    
+                    // Also check autoMappings keys
+                    for (const key of Object.keys(autoMappings)) {
+                        if (cellStr === key.toLowerCase() || cellStr.includes(key.toLowerCase())) {
+                            score++;
+                            break;
+                        }
+                    }
+                });
+                
+                // Update best if this row has more matches
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestRow = i;
+                }
+            }
+            
+            console.log(`[Import] Header row detected at index ${bestRow} with score ${bestScore}`);
+            return bestRow;
+        }
         
         function openImportModal() {
             importData = [];
@@ -2856,13 +3638,25 @@
                 return;
             }
             
-            importHeaders = jsonData[0].map(h => String(h || '').trim());
-            importData = jsonData.slice(1).filter(row => row.some(cell => cell)); // Filter empty rows
+            // Smart header row detection - finds the row with most column header matches
+            const headerRowIndex = findHeaderRow(jsonData);
+            
+            // Extract headers from the detected row
+            importHeaders = jsonData[headerRowIndex].map(h => String(h || '').trim());
+            
+            // Extract data from rows after the header row, filter out empty rows
+            importData = jsonData.slice(headerRowIndex + 1).filter(row => {
+                // Filter out completely empty rows
+                if (!row || !Array.isArray(row)) return false;
+                // Keep rows that have at least one non-empty cell
+                return row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
+            });
             
             // Auto-map columns
             autoMapColumns();
             
-            showToast(`נטענו ${importData.length} שורות`, 'success');
+            const skippedRows = headerRowIndex > 0 ? ` (דילגנו על ${headerRowIndex} שורות כותרת)` : '';
+            showToast(`נטענו ${importData.length} שורות${skippedRows}`, 'success');
             showImportStep(2);
         }
         
@@ -2928,6 +3722,17 @@
                 return;
             }
             
+            // Check for package column in mapping
+            const packageCol = Object.entries(columnMapping).find(([k, v]) => v === 'package_name')?.[0];
+            const hasPackageColumn = packageCol !== undefined;
+            
+            // Show/hide package detection notice
+            document.getElementById('packageColumnDetected').style.display = hasPackageColumn ? 'block' : 'none';
+            document.getElementById('packageSelectionManual').style.display = hasPackageColumn ? 'none' : 'block';
+            
+            // Populate packages dropdown
+            populatePackageDropdown();
+            
             // Check for duplicates
             let duplicateCount = 0;
             const existingNames = new Set(
@@ -2936,13 +3741,14 @@
                     .map(p => `${p.first_name?.toLowerCase()}|${p.last_name?.toLowerCase()}`)
             );
             
-            // Generate preview table
+            // Generate preview table - add package column if detected
             const headerHtml = `<tr>
                 <th style="width: 40px;"></th>
                 <th>שם פרטי</th>
                 <th>שם משפחה</th>
                 <th>סוכן</th>
                 <th>מלון</th>
+                ${hasPackageColumn ? '<th>חבילה</th>' : ''}
             </tr>`;
             
             document.getElementById('previewHeader').innerHTML = headerHtml;
@@ -2955,6 +3761,7 @@
                 const lastName = row[lastNameCol] || '';
                 const agent = agentCol !== undefined ? row[agentCol] || '' : '';
                 const hotel = hotelCol !== undefined ? row[hotelCol] || '' : '';
+                const packageName = hasPackageColumn && packageCol !== undefined ? row[packageCol] || '' : '';
                 
                 const nameKey = `${String(firstName).toLowerCase()}|${String(lastName).toLowerCase()}`;
                 const isDuplicate = existingNames.has(nameKey);
@@ -2969,6 +3776,7 @@
                         <td>${escapeHtml(String(lastName))}</td>
                         <td>${escapeHtml(String(agent))}</td>
                         <td>${escapeHtml(String(hotel))}</td>
+                        ${hasPackageColumn ? `<td>${escapeHtml(String(packageName))}</td>` : ''}
                     </tr>
                 `;
             }).join('');
@@ -2982,6 +3790,33 @@
             } else {
                 document.getElementById('duplicateWarning').style.display = 'none';
             }
+        }
+        
+        // Populate package dropdown for import
+        function populatePackageDropdown() {
+            const select = document.getElementById('importDefaultPackage');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">ללא חבילה (יוגדר מאוחר יותר)</option>';
+            
+            packages.forEach(pkg => {
+                const priceText = `${pkg.price} ${pkg.currency}`;
+                select.innerHTML += `<option value="${pkg.id}">${escapeHtml(pkg.name)} - ${priceText}</option>`;
+            });
+        }
+        
+        // Find package by name (for auto-matching from Excel)
+        function findPackageByName(name) {
+            if (!name) return null;
+            const searchName = String(name).toLowerCase().trim();
+            
+            return packages.find(pkg => {
+                const pkgName = pkg.name.toLowerCase().trim();
+                // Exact match or partial match
+                return pkgName === searchName || 
+                       pkgName.includes(searchName) || 
+                       searchName.includes(pkgName);
+            });
         }
         
         function toggleExcludeRow(index, exclude) {
@@ -3002,10 +3837,16 @@
                 return;
             }
             
+            // Get package settings
+            const packageCol = Object.entries(columnMapping).find(([k, v]) => v === 'package_name')?.[0];
+            const hasPackageColumn = packageCol !== undefined;
+            const defaultPackageId = document.getElementById('importDefaultPackage')?.value || null;
+            
             showLoading(true);
             
             let imported = 0;
             let failed = 0;
+            let packagesMatched = 0;
             
             try {
                 const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -3031,17 +3872,39 @@
                         continue;
                     }
                     
+                    // Handle package assignment
+                    if (hasPackageColumn && packageCol !== undefined) {
+                        // Try to match package from Excel column
+                        const packageNameFromExcel = row[packageCol];
+                        const matchedPackage = findPackageByName(packageNameFromExcel);
+                        if (matchedPackage) {
+                            passengerData.package_id = matchedPackage.id;
+                            passengerData.selling_price = matchedPackage.price;
+                            packagesMatched++;
+                        }
+                    } else if (defaultPackageId) {
+                        // Use default package selected in dropdown
+                        passengerData.package_id = defaultPackageId;
+                        const defaultPkg = packages.find(p => p.id === defaultPackageId);
+                        if (defaultPkg) {
+                            passengerData.selling_price = defaultPkg.price;
+                        }
+                    }
+                    
                     // Map other fields
                     Object.entries(columnMapping).forEach(([colIndex, field]) => {
-                        if (field && field !== 'first_name' && field !== 'last_name') {
+                        if (field && field !== 'first_name' && field !== 'last_name' && field !== 'package_name') {
                             let value = row[colIndex];
                             
                             // Handle V marks for flight legs
                             if (field === 'has_outbound' || field === 'has_return') {
                                 value = String(value || '').toLowerCase();
                                 passengerData[field] = value === 'v' || value === 'yes' || value === 'כן' || value === '1' || value === 'true';
-                            } else if (field === 'price_paid') {
-                                passengerData[field] = parseFloat(String(value).replace(/[^0-9.]/g, '')) || null;
+                            } else if (field === 'selling_price' || field === 'cost_price') {
+                                // Only set price if not already set by package
+                                if (!passengerData[field]) {
+                                    passengerData[field] = parseFloat(String(value).replace(/[^0-9.]/g, '')) || null;
+                                }
                             } else {
                                 passengerData[field] = value ? String(value).trim() : null;
                             }
@@ -3080,9 +3943,12 @@
                 // Reload data
                 await loadFlightData();
                 
-                // Show results
-                document.getElementById('importResultText').textContent = 
-                    `${imported} נוסעים יובאו בהצלחה` + (failed > 0 ? `, ${failed} נכשלו` : '');
+                // Show results with package info
+                let resultText = `${imported} נוסעים יובאו בהצלחה`;
+                if (failed > 0) resultText += `, ${failed} נכשלו`;
+                if (packagesMatched > 0) resultText += ` | ${packagesMatched} שויכו לחבילות`;
+                
+                document.getElementById('importResultText').textContent = resultText;
                 showImportStep(4);
                 
             } catch (error) {
