@@ -34,6 +34,10 @@
                         <span class="material-icons">flight</span>
                         מלאי טיסות
                     </a>
+                    <a href="calendar.html" class="nav-link ${currentPage === 'calendar' ? 'active' : ''}">
+                        <span class="material-icons">calendar_month</span>
+                        לוח שנה
+                    </a>
                     ${showUsersLink ? `
                         <a href="analytics.html" class="nav-link ${currentPage === 'analytics' ? 'active' : ''}">
                             <span class="material-icons">analytics</span>
