@@ -2377,7 +2377,7 @@
                         {
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`
                             }
                         }
                     );
@@ -2410,7 +2410,7 @@
                         {
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`
                             }
                         }
                     );
@@ -2978,7 +2978,7 @@
                                 method: 'PATCH',
                                 headers: {
                                     'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${supabaseKey}`,
+                                    'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                     'Content-Type': 'application/json',
                                     'Prefer': 'return=representation'
                                 },
@@ -2992,7 +2992,7 @@
                                 method: 'POST',
                                 headers: {
                                     'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${supabaseKey}`,
+                                    'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                     'Content-Type': 'application/json',
                                     'Prefer': 'return=representation'
                                 },
@@ -3065,7 +3065,7 @@
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
@@ -3114,7 +3114,7 @@
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
@@ -3187,7 +3187,7 @@
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
@@ -3238,7 +3238,7 @@
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
@@ -3290,7 +3290,7 @@
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
@@ -3917,7 +3917,7 @@
                                 method: 'POST',
                                 headers: {
                                     'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${supabaseKey}`,
+                                    'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify(passengerData)
@@ -3975,7 +3975,7 @@
                         {
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`
+                                'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`
                             }
                         }
                     );
@@ -4049,7 +4049,7 @@
                         method: 'POST',
                         headers: {
                             'apikey': supabaseKey,
-                            'Authorization': `Bearer ${supabaseKey}`,
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || supabaseKey}`,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
