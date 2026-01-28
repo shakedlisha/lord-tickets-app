@@ -35,6 +35,10 @@
                         מלאי טיסות
                     </a>
                     ${showUsersLink ? `
+                        <a href="analytics.html" class="nav-link ${currentPage === 'analytics' ? 'active' : ''}">
+                            <span class="material-icons">analytics</span>
+                            לוח בקרה
+                        </a>
                         <a href="users.html" class="nav-link ${currentPage === 'users' ? 'active' : ''}">
                             <span class="material-icons">people</span>
                             ניהול משתמשים

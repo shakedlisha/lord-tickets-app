@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - לוח בקרה</title>
+    
+    <!-- Google Fonts - Heebo for Hebrew -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E8C547;
+            --gold-dark: #B8960C;
+            --navy: #1B365D;
+            --navy-light: #2A4A7A;
+            --navy-dark: #0F1F3A;
+            --white: #FFFFFF;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --gray-dark: #666666;
+            --success: #28A745;
+            --warning: #FFC107;
+            --danger: #DC3545;
+            --info: #17A2B8;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: var(--gray-light);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title .material-icons {
+            color: var(--gold);
+        }
+        
+        /* Date Filter */
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .date-filter label {
+            font-weight: 500;
+            color: var(--navy-dark);
+        }
+        
+        .date-filter select,
+        .date-filter input {
+            padding: 8px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 6px;
+            font-family: 'Heebo', sans-serif;
+        }
+        
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 4px;
+            height: 100%;
+        }
+        
+        .kpi-card.revenue::before { background: var(--success); }
+        .kpi-card.bookings::before { background: var(--info); }
+        .kpi-card.passengers::before { background: var(--gold); }
+        .kpi-card.flights::before { background: var(--navy); }
+        .kpi-card.agents::before { background: var(--warning); }
+        .kpi-card.pending::before { background: var(--danger); }
+        
+        .kpi-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .kpi-card.revenue .kpi-icon { background: rgba(40, 167, 69, 0.1); color: var(--success); }
+        .kpi-card.bookings .kpi-icon { background: rgba(23, 162, 184, 0.1); color: var(--info); }
+        .kpi-card.passengers .kpi-icon { background: rgba(212, 175, 55, 0.1); color: var(--gold-dark); }
+        .kpi-card.flights .kpi-icon { background: rgba(27, 54, 93, 0.1); color: var(--navy); }
+        .kpi-card.agents .kpi-icon { background: rgba(255, 193, 7, 0.1); color: var(--warning); }
+        .kpi-card.pending .kpi-icon { background: rgba(220, 53, 69, 0.1); color: var(--danger); }
+        
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            margin-bottom: 5px;
+        }
+        
+        .kpi-label {
+            font-size: 0.9rem;
+            color: var(--gray-dark);
+        }
+        
+        .kpi-change {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .kpi-change.positive { color: var(--success); }
+        .kpi-change.negative { color: var(--danger); }
+        
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .chart-card.full-width {
+            grid-column: span 2;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: right;
+            border-bottom: 1px solid var(--gray);
+        }
+        
+        .data-table th {
+            background: var(--gray-light);
+            font-weight: 600;
+            color: var(--navy-dark);
+            font-size: 0.85rem;
+        }
+        
+        .data-table tr:hover {
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        /* Agent Avatar */
+        .agent-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .agent-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: var(--navy-light);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gold);
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+        
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-overlay.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--gray);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-card.full-width {
+                grid-column: span 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 15px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .date-filter {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+    
+    <!-- Navigation Component -->
+    <script src="js/nav.js"></script>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <div class="main-container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="material-icons">analytics</span>
+                לוח בקרה
+            </h1>
+            
+            <div class="date-filter">
+                <label>תקופה:</label>
+                <select id="periodFilter" onchange="loadAnalytics()">
+                    <option value="7">7 ימים אחרונים</option>
+                    <option value="30" selected>30 ימים אחרונים</option>
+                    <option value="90">90 ימים אחרונים</option>
+                    <option value="365">שנה אחרונה</option>
+                    <option value="all">הכל</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card revenue">
+                <div class="kpi-icon">
+                    <span class="material-icons">payments</span>
+                </div>
+                <div class="kpi-value" id="totalRevenue">€0</div>
+                <div class="kpi-label">סה"כ הכנסות</div>
+            </div>
+            
+            <div class="kpi-card passengers">
+                <div class="kpi-icon">
+                    <span class="material-icons">people</span>
+                </div>
+                <div class="kpi-value" id="totalPassengers">0</div>
+                <div class="kpi-label">סה"כ נוסעים</div>
+            </div>
+            
+            <div class="kpi-card flights">
+                <div class="kpi-icon">
+                    <span class="material-icons">flight</span>
+                </div>
+                <div class="kpi-value" id="totalFlights">0</div>
+                <div class="kpi-label">טיסות פעילות</div>
+            </div>
+            
+            <div class="kpi-card bookings">
+                <div class="kpi-icon">
+                    <span class="material-icons">event_available</span>
+                </div>
+                <div class="kpi-value" id="avgOccupancy">0%</div>
+                <div class="kpi-label">תפוסה ממוצעת</div>
+            </div>
+            
+            <div class="kpi-card agents">
+                <div class="kpi-icon">
+                    <span class="material-icons">support_agent</span>
+                </div>
+                <div class="kpi-value" id="activeAgents">0</div>
+                <div class="kpi-label">סוכנים פעילים</div>
+            </div>
+            
+            <div class="kpi-card pending">
+                <div class="kpi-icon">
+                    <span class="material-icons">pending_actions</span>
+                </div>
+                <div class="kpi-value" id="pendingCancellations">0</div>
+                <div class="kpi-label">ממתינים לביטול</div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Revenue Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">הכנסות לפי יעד</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="revenueByDestChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Passengers Over Time -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">נוסעים לפי חודש</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="passengersTimeChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Top Agents Table -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">ביצועי סוכנים</h3>
+                </div>
+                <table class="data-table" id="agentsTable">
+                    <thead>
+                        <tr>
+                            <th>סוכן</th>
+                            <th>הזמנות</th>
+                            <th>הכנסות</th>
+                            <th>עמלות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Top Destinations -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">יעדים מובילים</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="destinationsChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Upcoming Flights -->
+            <div class="chart-card full-width">
+                <div class="chart-header">
+                    <h3 class="chart-title">טיסות קרובות</h3>
+                </div>
+                <table class="data-table" id="upcomingFlightsTable">
+                    <thead>
+                        <tr>
+                            <th>יעד</th>
+                            <th>תאריך יציאה</th>
+                            <th>נוסעים</th>
+                            <th>תפוסה</th>
+                            <th>הכנסות</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Chart instances
+        let revenueChart, passengersChart, destinationsChart;
+        
+        // Data storage
+        let flights = [];
+        let passengers = [];
+        let users = [];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize navigation
+            if (typeof LordNav !== 'undefined') {
+                LordNav.init('analytics');
+                
+                // Check permissions - only admin/manager can see analytics
+                const userRole = localStorage.getItem('userRole') || 'agent';
+                if (userRole === 'agent') {
+                    alert('אין לך הרשאה לצפות בדף זה');
+                    window.location.href = 'inventory.html';
+                    return;
+                }
+            }
+            
+            loadAnalytics();
+        });
+        
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('show', show);
+        }
+        
+        async function loadAnalytics() {
+            showLoading(true);
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                const period = document.getElementById('periodFilter').value;
+                
+                // Calculate date filter
+                let dateFilter = '';
+                if (period !== 'all') {
+                    const daysAgo = new Date();
+                    daysAgo.setDate(daysAgo.getDate() - parseInt(period));
+                    dateFilter = `&created_at=gte.${daysAgo.toISOString()}`;
+                }
+                
+                if (supabaseUrl && supabaseKey) {
+                    // Fetch flights
+                    const flightsRes = await fetch(
+                        `${supabaseUrl}/rest/v1/flights?select=*`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    flights = flightsRes.ok ? await flightsRes.json() : [];
+                    
+                    // Fetch passengers
+                    const passengersRes = await fetch(
+                        `${supabaseUrl}/rest/v1/passengers?select=*${dateFilter}`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    passengers = passengersRes.ok ? await passengersRes.json() : [];
+                    
+                    // Fetch users
+                    const usersRes = await fetch(
+                        `${supabaseUrl}/rest/v1/users?select=*`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    users = usersRes.ok ? await usersRes.json() : [];
+                } else {
+                    // Demo data
+                    flights = generateDemoFlights();
+                    passengers = generateDemoPassengers();
+                    users = generateDemoUsers();
+                }
+                
+                // Calculate and display KPIs
+                calculateKPIs();
+                
+                // Render charts
+                renderRevenueByDestChart();
+                renderPassengersTimeChart();
+                renderDestinationsChart();
+                renderAgentsTable();
+                renderUpcomingFlights();
+                
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        function calculateKPIs() {
+            // Total revenue
+            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
+            const totalRevenue = activePassengers.reduce((sum, p) => sum + (parseFloat(p.price_paid) || 0), 0);
+            document.getElementById('totalRevenue').textContent = `€${totalRevenue.toLocaleString()}`;
+            
+            // Total passengers
+            document.getElementById('totalPassengers').textContent = activePassengers.length;
+            
+            // Active flights (upcoming)
+            const now = new Date();
+            const activeFlights = flights.filter(f => new Date(f.departure_date) >= now);
+            document.getElementById('totalFlights').textContent = activeFlights.length;
+            
+            // Average occupancy
+            let totalOccupancy = 0;
+            let countedFlights = 0;
+            flights.forEach(f => {
+                const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+                const seats = f.total_seats || f.outbound_seats_total || 50;
+                if (seats > 0) {
+                    totalOccupancy += (flightPassengers.length / seats) * 100;
+                    countedFlights++;
+                }
+            });
+            const avgOccupancy = countedFlights > 0 ? Math.round(totalOccupancy / countedFlights) : 0;
+            document.getElementById('avgOccupancy').textContent = `${avgOccupancy}%`;
+            
+            // Active agents
+            const activeAgents = users.filter(u => u.role === 'agent' && u.is_active !== false);
+            document.getElementById('activeAgents').textContent = activeAgents.length;
+            
+            // Pending cancellations
+            const pending = passengers.filter(p => p.status === 'cancellation_requested');
+            document.getElementById('pendingCancellations').textContent = pending.length;
+        }
+        
+        function renderRevenueByDestChart() {
+            const ctx = document.getElementById('revenueByDestChart').getContext('2d');
+            
+            // Group by destination
+            const destRevenue = {};
+            passengers.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                const flight = flights.find(f => f.id === p.flight_id);
+                const dest = flight?.destination || 'אחר';
+                if (!destRevenue[dest]) destRevenue[dest] = 0;
+                destRevenue[dest] += parseFloat(p.price_paid) || 0;
+            });
+            
+            const labels = Object.keys(destRevenue);
+            const data = Object.values(destRevenue);
+            
+            if (revenueChart) revenueChart.destroy();
+            
+            revenueChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'הכנסות (€)',
+                        data: data,
+                        backgroundColor: 'rgba(212, 175, 55, 0.8)',
+                        borderColor: '#D4AF37',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '€' + value.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderPassengersTimeChart() {
+            const ctx = document.getElementById('passengersTimeChart').getContext('2d');
+            
+            // Group by month
+            const monthlyData = {};
+            const months = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+            
+            passengers.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                const date = new Date(p.created_at);
+                const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+                const monthLabel = `${months[date.getMonth()]} ${date.getFullYear()}`;
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { label: monthLabel, count: 0 };
+                monthlyData[monthKey].count++;
+            });
+            
+            const sorted = Object.entries(monthlyData).sort((a, b) => a[0].localeCompare(b[0]));
+            const labels = sorted.map(([_, v]) => v.label);
+            const data = sorted.map(([_, v]) => v.count);
+            
+            if (passengersChart) passengersChart.destroy();
+            
+            passengersChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'נוסעים',
+                        data: data,
+                        borderColor: '#1B365D',
+                        backgroundColor: 'rgba(27, 54, 93, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        function renderDestinationsChart() {
+            const ctx = document.getElementById('destinationsChart').getContext('2d');
+            
+            // Group by destination
+            const destCount = {};
+            passengers.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                const flight = flights.find(f => f.id === p.flight_id);
+                const dest = flight?.destination || 'אחר';
+                if (!destCount[dest]) destCount[dest] = 0;
+                destCount[dest]++;
+            });
+            
+            const sorted = Object.entries(destCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+            const labels = sorted.map(([k]) => k);
+            const data = sorted.map(([_, v]) => v);
+            
+            const colors = ['#1B365D', '#D4AF37', '#28A745', '#17A2B8', '#FFC107', '#DC3545'];
+            
+            if (destinationsChart) destinationsChart.destroy();
+            
+            destinationsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            rtl: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderAgentsTable() {
+            const tbody = document.querySelector('#agentsTable tbody');
+            
+            // Calculate agent stats
+            const agentStats = {};
+            passengers.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                const agentName = p.agent_name || 'לא צוין';
+                if (!agentStats[agentName]) {
+                    agentStats[agentName] = { bookings: 0, revenue: 0, commission: 0 };
+                }
+                agentStats[agentName].bookings++;
+                agentStats[agentName].revenue += parseFloat(p.price_paid) || 0;
+                agentStats[agentName].commission += parseFloat(p.agent_commission) || 0;
+            });
+            
+            const sorted = Object.entries(agentStats)
+                .sort((a, b) => b[1].revenue - a[1].revenue)
+                .slice(0, 5);
+            
+            if (sorted.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">אין נתונים</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = sorted.map(([name, stats]) => `
+                <tr>
+                    <td>
+                        <div class="agent-cell">
+                            <div class="agent-avatar">${name.charAt(0)}</div>
+                            <span>${name}</span>
+                        </div>
+                    </td>
+                    <td>${stats.bookings}</td>
+                    <td>€${stats.revenue.toLocaleString()}</td>
+                    <td>€${stats.commission.toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderUpcomingFlights() {
+            const tbody = document.querySelector('#upcomingFlightsTable tbody');
+            
+            const now = new Date();
+            const upcoming = flights
+                .filter(f => new Date(f.departure_date) >= now)
+                .sort((a, b) => new Date(a.departure_date) - new Date(b.departure_date))
+                .slice(0, 5);
+            
+            if (upcoming.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">אין טיסות קרובות</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = upcoming.map(f => {
+                const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+                const seats = f.total_seats || f.outbound_seats_total || 50;
+                const occupancy = Math.round((flightPassengers.length / seats) * 100);
+                const revenue = flightPassengers.reduce((sum, p) => sum + (parseFloat(p.price_paid) || 0), 0);
+                
+                return `
+                    <tr style="cursor: pointer;" onclick="window.location.href='flight-detail.html?id=${f.id}'">
+                        <td><strong>${f.destination || '-'}</strong></td>
+                        <td>${formatDate(f.departure_date)}</td>
+                        <td>${flightPassengers.length} / ${seats}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="progress-bar" style="width: 100px;">
+                                    <div class="progress-fill" style="width: ${occupancy}%;"></div>
+                                </div>
+                                <span>${occupancy}%</span>
+                            </div>
+                        </td>
+                        <td>€${revenue.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        }
+        
+        // Demo data generators
+        function generateDemoFlights() {
+            const destinations = ['מדריד', 'ברצלונה', 'רומא', 'פריז', 'אמסטרדם', 'פראג'];
+            return destinations.map((dest, i) => ({
+                id: `demo-flight-${i}`,
+                destination: dest,
+                departure_date: new Date(Date.now() + (i * 7 * 24 * 60 * 60 * 1000)).toISOString(),
+                return_date: new Date(Date.now() + ((i * 7 + 4) * 24 * 60 * 60 * 1000)).toISOString(),
+                total_seats: 50,
+                outbound_seats_total: 50
+            }));
+        }
+        
+        function generateDemoPassengers() {
+            const names = ['ישראל', 'שרה', 'דוד', 'רחל', 'משה', 'לאה', 'יעקב', 'רבקה'];
+            const agents = ['ניב', 'אדר', 'מיכל'];
+            const result = [];
+            
+            for (let i = 0; i < 45; i++) {
+                const flightIdx = Math.floor(Math.random() * 6);
+                result.push({
+                    id: `demo-passenger-${i}`,
+                    flight_id: `demo-flight-${flightIdx}`,
+                    first_name: names[Math.floor(Math.random() * names.length)],
+                    last_name: 'כהן',
+                    agent_name: agents[Math.floor(Math.random() * agents.length)],
+                    price_paid: 800 + Math.floor(Math.random() * 1200),
+                    agent_commission: 50 + Math.floor(Math.random() * 100),
+                    status: 'active',
+                    created_at: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString()
+                });
+            }
+            
+            return result;
+        }
+        
+        function generateDemoUsers() {
+            return [
+                { id: '1', name: 'ניב', role: 'agent', is_active: true },
+                { id: '2', name: 'אדר', role: 'agent', is_active: true },
+                { id: '3', name: 'מיכל', role: 'agent', is_active: true }
+            ];
+        }
+    </script>
+</body>
+</html>
