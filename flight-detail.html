@@ -724,6 +724,15 @@
             font-style: italic;
         }
         
+        .action-btn.print {
+            color: var(--navy-light) !important;
+        }
+        
+        .action-btn.print:hover {
+            background: var(--navy-light);
+            color: white !important;
+        }
+        
         /* Import Modal Styles */
         .upload-area {
             border: 2px dashed var(--gray);
@@ -1107,6 +1116,7 @@
     
     <!-- Navigation Component -->
     <script src="js/nav.js"></script>
+    <script src="js/documents.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -1243,6 +1253,29 @@
                     <span class="material-icons">upload_file</span>
                     ייבוא מאקסל
                 </button>
+                <!-- Documents Dropdown -->
+                <div class="export-dropdown docs-dropdown">
+                    <button class="btn btn-outline" onclick="toggleDocsMenu()">
+                        <span class="material-icons">description</span>
+                        מסמכים
+                        <span class="material-icons" style="font-size: 1rem;">arrow_drop_down</span>
+                    </button>
+                    <div class="export-menu" id="docsMenu">
+                        <button onclick="printFullPassengerList()">
+                            <span class="material-icons">list_alt</span>
+                            רשימת נוסעים
+                        </button>
+                        <button onclick="printHotelList()">
+                            <span class="material-icons">hotel</span>
+                            רשימת מלונות
+                        </button>
+                        <button onclick="printGroupInvoice()">
+                            <span class="material-icons">receipt_long</span>
+                            חשבונית קבוצתית
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="export-dropdown">
                     <button class="btn btn-outline" onclick="toggleExportMenu()">
                         <span class="material-icons">download</span>
@@ -2005,6 +2038,9 @@
             } else {
                 // Normal active status
                 actionButtons = `
+                    <button class="action-btn print" onclick="printPassengerReceipt('${p.id}')" title="הדפס קבלה">
+                        <span class="material-icons">receipt</span>
+                    </button>
                     <button class="action-btn edit" onclick="editPassenger('${p.id}')" title="ערוך">
                         <span class="material-icons">edit</span>
                     </button>
@@ -3177,6 +3213,95 @@
                 document.getElementById('roomGroup').value = roomGroupData.id;
                 closeRoomGroupModal();
                 showToast('קבוצת חדר נוצרה בהצלחה', 'success');
+            }
+        }
+        
+        // ==========================================
+        // Export Functions
+        // ==========================================
+        // ==========================================
+        // Document Generation Functions
+        // ==========================================
+        function toggleDocsMenu() {
+            const menu = document.getElementById('docsMenu');
+            menu.classList.toggle('show');
+            
+            // Close menu when clicking outside
+            setTimeout(() => {
+                document.addEventListener('click', closeDocsMenuOnClickOutside);
+            }, 0);
+        }
+        
+        function closeDocsMenuOnClickOutside(e) {
+            const dropdown = document.querySelector('.docs-dropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                document.getElementById('docsMenu').classList.remove('show');
+                document.removeEventListener('click', closeDocsMenuOnClickOutside);
+            }
+        }
+        
+        function printFullPassengerList() {
+            document.getElementById('docsMenu').classList.remove('show');
+            
+            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
+            
+            if (activePassengers.length === 0) {
+                showToast('אין נוסעים פעילים להדפסה', 'error');
+                return;
+            }
+            
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printPassengerList(activePassengers, currentFlight);
+            } else {
+                showToast('מודול מסמכים לא נטען', 'error');
+            }
+        }
+        
+        function printHotelList() {
+            document.getElementById('docsMenu').classList.remove('show');
+            
+            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
+            
+            if (activePassengers.length === 0) {
+                showToast('אין נוסעים פעילים להדפסה', 'error');
+                return;
+            }
+            
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printHotelList(activePassengers, currentFlight);
+            } else {
+                showToast('מודול מסמכים לא נטען', 'error');
+            }
+        }
+        
+        function printGroupInvoice() {
+            document.getElementById('docsMenu').classList.remove('show');
+            
+            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
+            
+            if (activePassengers.length === 0) {
+                showToast('אין נוסעים פעילים להדפסה', 'error');
+                return;
+            }
+            
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printInvoice(activePassengers, currentFlight);
+            } else {
+                showToast('מודול מסמכים לא נטען', 'error');
+            }
+        }
+        
+        function printPassengerReceipt(passengerId) {
+            const passenger = passengers.find(p => p.id === passengerId);
+            if (!passenger) {
+                showToast('נוסע לא נמצא', 'error');
+                return;
+            }
+            
+            if (typeof LordDocs !== 'undefined') {
+                LordDocs.printReceipt(passenger, currentFlight);
+            } else {
+                showToast('מודול מסמכים לא נטען', 'error');
             }
         }
         
