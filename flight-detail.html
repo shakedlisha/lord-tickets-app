@@ -3768,10 +3768,18 @@ IMPORTANT RULES:
                 return;
             }
             
-            const geminiKey = localStorage.getItem('geminiApiKey');
+            let geminiKey = localStorage.getItem('geminiApiKey');
             if (!geminiKey) {
-                showToast('נא להגדיר Gemini API Key בהגדרות', 'error');
-                return;
+                // Prompt user for API key
+                geminiKey = prompt('הזן את מפתח ה-API של Gemini:\n\nניתן לקבל מפתח חינמי מ:\nhttps://aistudio.google.com/apikey');
+                if (!geminiKey || !geminiKey.trim()) {
+                    showToast('לא הוזן מפתח API - הפעולה בוטלה', 'error');
+                    return;
+                }
+                // Save for future use
+                localStorage.setItem('geminiApiKey', geminiKey.trim());
+                showToast('מפתח API נשמר בהצלחה', 'success');
+                geminiKey = geminiKey.trim();
             }
             
             ocrProcessing = true;
@@ -3783,7 +3791,7 @@ IMPORTANT RULES:
                 
                 // Call Gemini Vision API
                 const response = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`,
                     {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -3808,7 +3816,18 @@ IMPORTANT RULES:
                 );
                 
                 if (!response.ok) {
-                    throw new Error(`Gemini API error: ${response.status}`);
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Gemini API Error:', response.status, errorData);
+                    
+                    if (response.status === 404) {
+                        throw new Error('מודל לא נמצא (404). נסה לרענן את הדף או לבדוק את מפתח ה-API');
+                    } else if (response.status === 400) {
+                        throw new Error('בקשה לא תקינה: ' + (errorData.error?.message || 'Unknown'));
+                    } else if (response.status === 403) {
+                        throw new Error('אין גישה - בדוק את מפתח ה-API');
+                    } else {
+                        throw new Error(`שגיאת API: ${response.status} - ${errorData.error?.message || 'Unknown'}`);
+                    }
                 }
                 
                 const data = await response.json();
