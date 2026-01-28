@@ -43,6 +43,10 @@
                             <span class="material-icons">analytics</span>
                             לוח בקרה
                         </a>
+                        <a href="reports.html" class="nav-link ${currentPage === 'reports' ? 'active' : ''}">
+                            <span class="material-icons">assessment</span>
+                            דוחות
+                        </a>
                         <a href="users.html" class="nav-link ${currentPage === 'users' ? 'active' : ''}">
                             <span class="material-icons">people</span>
                             ניהול משתמשים
