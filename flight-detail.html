@@ -687,6 +687,43 @@
             color: var(--success) !important;
         }
         
+        /* Cancellation Request Styles */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+        
+        .status-badge.pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+        
+        tr.pending-cancel {
+            background: rgba(255, 193, 7, 0.08) !important;
+        }
+        
+        .request-cancel {
+            color: var(--warning) !important;
+        }
+        
+        .approve-btn {
+            color: var(--success) !important;
+        }
+        
+        .reject-btn {
+            color: var(--danger) !important;
+        }
+        
+        .pending-text {
+            font-size: 0.75rem;
+            color: var(--warning);
+            font-style: italic;
+        }
+        
         /* Import Modal Styles */
         .upload-area {
             border: 2px dashed var(--gray);
@@ -1067,6 +1104,9 @@
             }
         }
     </style>
+    
+    <!-- Navigation Component -->
+    <script src="js/nav.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -1573,6 +1613,11 @@
         // Initialization
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize navigation
+            if (typeof LordNav !== 'undefined') {
+                LordNav.init('flight-detail');
+            }
+            
             // Get flight ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             flightId = urlParams.get('id');
@@ -1583,9 +1628,39 @@
                 return;
             }
             
+            // Apply role-based restrictions
+            applyRoleRestrictions();
+            
             loadFlightData();
             loadRoomGroups();
         });
+        
+        // ==========================================
+        // Role-Based Restrictions
+        // ==========================================
+        function applyRoleRestrictions() {
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            
+            if (userRole === 'agent') {
+                // Hide financial summary for agents
+                const financialSummary = document.getElementById('financialSummary');
+                if (financialSummary) {
+                    financialSummary.style.display = 'none';
+                }
+                
+                // Hide export dropdown for agents
+                const exportDropdown = document.querySelector('.export-dropdown');
+                if (exportDropdown) {
+                    exportDropdown.style.display = 'none';
+                }
+                
+                // Hide cost fields in the form
+                const costPriceGroup = document.getElementById('costPrice')?.closest('.form-row');
+                if (costPriceGroup) {
+                    costPriceGroup.style.display = 'none';
+                }
+            }
+        }
         
         // ==========================================
         // Data Loading
@@ -1621,8 +1696,19 @@
                     flight = flightData[0];
                     
                     // Load passengers for this flight (all statuses)
+                    // Agents only see their own passengers
+                    const userRole = localStorage.getItem('userRole') || 'agent';
+                    const userId = localStorage.getItem('userId');
+                    
+                    let passengersUrl = `${supabaseUrl}/rest/v1/passengers?flight_id=eq.${flightId}&order=created_at.asc`;
+                    
+                    // Filter for agents - only their passengers
+                    if (userRole === 'agent' && userId && userId !== 'demo-user') {
+                        passengersUrl += `&or=(agent_id.eq.${userId},created_by.eq.${userId})`;
+                    }
+                    
                     const passengersResponse = await fetch(
-                        `${supabaseUrl}/rest/v1/passengers?flight_id=eq.${flightId}&order=created_at.asc`,
+                        passengersUrl,
                         {
                             headers: {
                                 'apikey': supabaseKey,
@@ -1881,10 +1967,63 @@
         }
         
         function renderPassengerRow(p, index, isCancelledView, isGrouped = false) {
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            const canDelete = userRole === 'admin' || userRole === 'manager';
+            const isAgent = userRole === 'agent';
+            const isPendingCancel = p.status === 'cancellation_requested';
+            
+            // Status badge for cancellation requested
+            let statusBadge = '';
+            if (isPendingCancel) {
+                statusBadge = '<span class="status-badge pending">ממתין לביטול</span>';
+            }
+            
+            // Action buttons based on role and status
+            let actionButtons = '';
+            if (isCancelledView) {
+                if (canDelete) {
+                    actionButtons = `
+                        <button class="action-btn restore-btn" onclick="restorePassenger('${p.id}')" title="שחזר">
+                            <span class="material-icons">restore</span>
+                        </button>
+                    `;
+                }
+            } else if (isPendingCancel) {
+                // Pending cancellation - show approve/reject for managers, nothing for agents
+                if (canDelete) {
+                    actionButtons = `
+                        <button class="action-btn approve-btn" onclick="approveCancellation('${p.id}')" title="אשר ביטול">
+                            <span class="material-icons">check_circle</span>
+                        </button>
+                        <button class="action-btn reject-btn" onclick="rejectCancellation('${p.id}')" title="דחה ביטול">
+                            <span class="material-icons">cancel</span>
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `<span class="pending-text">ממתין לאישור</span>`;
+                }
+            } else {
+                // Normal active status
+                actionButtons = `
+                    <button class="action-btn edit" onclick="editPassenger('${p.id}')" title="ערוך">
+                        <span class="material-icons">edit</span>
+                    </button>
+                    ${canDelete ? `
+                        <button class="action-btn delete" onclick="deletePassenger('${p.id}')" title="בטל">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    ` : `
+                        <button class="action-btn request-cancel" onclick="requestCancellation('${p.id}')" title="בקש ביטול">
+                            <span class="material-icons">cancel</span>
+                        </button>
+                    `}
+                `;
+            }
+            
             return `
-                <tr class="${isCancelledView ? 'cancelled' : ''} ${isGrouped ? 'group-subrow' : ''}">
+                <tr class="${isCancelledView ? 'cancelled' : ''} ${isPendingCancel ? 'pending-cancel' : ''} ${isGrouped ? 'group-subrow' : ''}">
                     <td>${index}</td>
-                    <td><strong>${escapeHtml(p.first_name)}</strong></td>
+                    <td><strong>${escapeHtml(p.first_name)}</strong> ${statusBadge}</td>
                     <td><strong>${escapeHtml(p.last_name)}</strong></td>
                     <td>${escapeHtml(p.agent_name || '-')}</td>
                     <td>
@@ -1896,18 +2035,7 @@
                     <td>${p.price_paid ? formatCurrency(p.price_paid, p.currency) : '-'}</td>
                     <td>
                         <div class="actions-cell">
-                            ${isCancelledView ? `
-                                <button class="action-btn restore-btn" onclick="restorePassenger('${p.id}')" title="שחזר">
-                                    <span class="material-icons">restore</span>
-                                </button>
-                            ` : `
-                                <button class="action-btn edit" onclick="editPassenger('${p.id}')" title="ערוך">
-                                    <span class="material-icons">edit</span>
-                                </button>
-                                <button class="action-btn delete" onclick="deletePassenger('${p.id}')" title="מחק">
-                                    <span class="material-icons">delete</span>
-                                </button>
-                            `}
+                            ${actionButtons}
                         </div>
                     </td>
                 </tr>
@@ -2113,6 +2241,23 @@
             if (crmId) passengerData.crm_id = crmId;
             if (phone) passengerData.phone = phone;
             
+            // Auto-assign agent for agents (they can only create passengers for themselves)
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            const userId = localStorage.getItem('userId');
+            const userName = localStorage.getItem('userName');
+            
+            if (userRole === 'agent' && userId && userId !== 'demo-user') {
+                passengerData.agent_id = userId;
+                passengerData.agent_name = userName;
+            }
+            
+            // Track who created/updated the record
+            if (!editingPassengerId && userId) {
+                passengerData.created_by = userId;
+            } else if (editingPassengerId && userId) {
+                passengerData.updated_by = userId;
+            }
+            
             showLoading(true);
             
             try {
@@ -2305,6 +2450,169 @@
             await restorePassenger(lastDeletedPassenger.id);
             lastDeletedPassenger = null;
             clearTimeout(undoTimeout);
+        }
+        
+        // ==========================================
+        // Cancellation Request Functions (Agent Flow)
+        // ==========================================
+        async function requestCancellation(id) {
+            const passenger = passengers.find(p => p.id === id);
+            if (!passenger) return;
+            
+            const reason = prompt(`בקשת ביטול עבור ${passenger.first_name} ${passenger.last_name}\n\nנא לציין סיבה לביטול:`);
+            if (!reason) return;  // User cancelled the prompt
+            
+            showLoading(true);
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                const userId = localStorage.getItem('userId');
+                
+                const updateData = {
+                    status: 'cancellation_requested',
+                    cancellation_requested_at: new Date().toISOString(),
+                    cancellation_requested_by: userId || null,
+                    cancellation_request_reason: reason
+                };
+                
+                if (supabaseUrl && supabaseKey) {
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(updateData)
+                        }
+                    );
+                    
+                    if (!response.ok) throw new Error('Failed to request cancellation');
+                    await loadFlightData();
+                } else {
+                    // Demo mode
+                    const index = passengers.findIndex(p => p.id === id);
+                    if (index >= 0) {
+                        passengers[index] = { ...passengers[index], ...updateData };
+                    }
+                    updateStats();
+                    filterPassengers();
+                }
+                
+                showToast('בקשת הביטול נשלחה למנהל', 'success');
+                
+            } catch (error) {
+                console.error('Error requesting cancellation:', error);
+                showToast('שגיאה בשליחת בקשת ביטול', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function approveCancellation(id) {
+            if (!confirm('לאשר את בקשת הביטול?')) return;
+            
+            showLoading(true);
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                const updateData = {
+                    status: 'cancelled',
+                    cancelled_at: new Date().toISOString(),
+                    cancelled_reason: 'אושר על ידי מנהל'
+                };
+                
+                if (supabaseUrl && supabaseKey) {
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(updateData)
+                        }
+                    );
+                    
+                    if (!response.ok) throw new Error('Failed to approve cancellation');
+                    await loadFlightData();
+                } else {
+                    // Demo mode
+                    const index = passengers.findIndex(p => p.id === id);
+                    if (index >= 0) {
+                        passengers[index] = { ...passengers[index], ...updateData };
+                    }
+                    updateStats();
+                    filterPassengers();
+                }
+                
+                showToast('הביטול אושר', 'success');
+                
+            } catch (error) {
+                console.error('Error approving cancellation:', error);
+                showToast('שגיאה באישור הביטול', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function rejectCancellation(id) {
+            if (!confirm('לדחות את בקשת הביטול? הנוסע יחזור לסטטוס פעיל.')) return;
+            
+            showLoading(true);
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                const updateData = {
+                    status: 'active',
+                    cancellation_requested_at: null,
+                    cancellation_requested_by: null,
+                    cancellation_request_reason: null
+                };
+                
+                if (supabaseUrl && supabaseKey) {
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(updateData)
+                        }
+                    );
+                    
+                    if (!response.ok) throw new Error('Failed to reject cancellation');
+                    await loadFlightData();
+                } else {
+                    // Demo mode
+                    const index = passengers.findIndex(p => p.id === id);
+                    if (index >= 0) {
+                        passengers[index] = { ...passengers[index], ...updateData };
+                    }
+                    updateStats();
+                    filterPassengers();
+                }
+                
+                showToast('בקשת הביטול נדחתה', 'success');
+                
+            } catch (error) {
+                console.error('Error rejecting cancellation:', error);
+                showToast('שגיאה בדחיית הביטול', 'error');
+            } finally {
+                showLoading(false);
+            }
         }
         
         // ==========================================

@@ -402,6 +402,37 @@
                 localStorage.setItem('supabaseUrl', supabaseUrl);
                 localStorage.setItem('supabaseKey', supabaseKey);
                 
+                // Fetch user role from users table
+                try {
+                    const userResponse = await fetch(
+                        `${supabaseUrl}/rest/v1/users?auth_id=eq.${data.user.id}&select=id,name,role,commission_rate`,
+                        {
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${data.access_token}`
+                            }
+                        }
+                    );
+                    
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        if (userData.length > 0) {
+                            const user = userData[0];
+                            localStorage.setItem('userId', user.id);
+                            localStorage.setItem('userName', user.name);
+                            localStorage.setItem('userRole', user.role);
+                            localStorage.setItem('userCommission', user.commission_rate || '0');
+                        } else {
+                            // User exists in Auth but not in users table - default to agent
+                            localStorage.setItem('userRole', 'agent');
+                            localStorage.setItem('userName', email.split('@')[0]);
+                        }
+                    }
+                } catch (roleError) {
+                    console.error('Error fetching user role:', roleError);
+                    localStorage.setItem('userRole', 'agent');
+                }
+                
                 showSuccess('התחברות הצליחה! מעביר...');
                 
                 setTimeout(() => {
@@ -429,9 +460,13 @@
         function continueWithoutAuth() {
             // Allow using the system without authentication (demo mode)
             localStorage.setItem('userSession', JSON.stringify({
-                user: { email: 'demo@local', role: 'admin' },
+                user: { email: 'demo@local' },
                 demo: true
             }));
+            // Demo mode defaults to admin for full access
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userName', 'משתמש הדגמה');
+            localStorage.setItem('userId', 'demo-user');
             window.location.href = 'inventory.html';
         }
     </script>

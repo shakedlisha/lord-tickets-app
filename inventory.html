@@ -1007,6 +1007,9 @@
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Navigation Component -->
+    <script src="js/nav.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -1405,12 +1408,37 @@ Return: 14:00-18:30
         let realtimeChannel = null;
         
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize navigation
+            if (typeof LordNav !== 'undefined') {
+                LordNav.init('inventory');
+            }
+            
             loadSettings();
             loadFlights();
             setupRealtime();
             setupPasteHandler();
             displayCurrentUser();
+            
+            // Apply role-based restrictions
+            applyRoleRestrictions();
         });
+        
+        // Apply role-based UI restrictions
+        function applyRoleRestrictions() {
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            
+            if (userRole === 'agent') {
+                // Hide add flight button
+                const addFlightBtn = document.querySelector('.add-flight-btn, [onclick*="openAddModal"]');
+                if (addFlightBtn) addFlightBtn.style.display = 'none';
+                
+                // Hide import/export buttons for agents
+                const importBtn = document.querySelector('[onclick*="openImportModal"]');
+                if (importBtn) importBtn.style.display = 'none';
+                
+                // We'll hide delete buttons in renderFlights()
+            }
+        }
         
         // Display current user in header
         function displayCurrentUser() {
@@ -1877,12 +1905,16 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     </td>
                     <td>
                         <div class="actions-cell">
-                            <button class="action-btn edit" onclick="editFlight('${flight.id}')" title="ערוך">
-                                <span class="material-icons">edit</span>
-                            </button>
-                            <button class="action-btn delete" onclick="deleteFlight('${flight.id}')" title="מחק">
-                                <span class="material-icons">delete</span>
-                            </button>
+                            ${(localStorage.getItem('userRole') !== 'agent') ? `
+                                <button class="action-btn edit" onclick="editFlight('${flight.id}')" title="ערוך">
+                                    <span class="material-icons">edit</span>
+                                </button>
+                                <button class="action-btn delete" onclick="deleteFlight('${flight.id}')" title="מחק">
+                                    <span class="material-icons">delete</span>
+                                </button>
+                            ` : `
+                                <span class="no-access">-</span>
+                            `}
                         </div>
                     </td>
                 </tr>
