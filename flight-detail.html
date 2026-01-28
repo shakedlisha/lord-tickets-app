@@ -1863,7 +1863,7 @@
                         <h3>גרור קובץ Excel או CSV לכאן</h3>
                         <p style="color: var(--gray-dark);">או לחץ לבחירת קובץ</p>
                         <input type="file" id="importFileInput" accept=".xlsx,.xls,.csv" onchange="handleImportFile(event)" style="display: none;">
-                        <button type="button" class="btn btn-outline" onclick="document.getElementById('importFileInput').click()" style="margin-top: 15px;">
+                        <button type="button" class="btn btn-outline" onclick="event.stopPropagation(); document.getElementById('importFileInput').click();" style="margin-top: 15px;">
                             בחר קובץ
                         </button>
                     </div>
@@ -3387,6 +3387,7 @@
         let importHeaders = [];
         let columnMapping = {};
         let excludedRows = new Set();
+        let xlsxLoading = false;  // Flag to prevent duplicate XLSX script loading
         
         // Field mapping options
         const fieldOptions = [
@@ -3558,10 +3559,14 @@
             importHeaders = [];
             columnMapping = {};
             excludedRows = new Set();
+            
+            // Reset file input to clear any previous selection
+            document.getElementById('importFileInput').value = '';
+            
             showImportStep(1);
             document.getElementById('importModal').classList.add('show');
             
-            // Setup drag and drop
+            // Setup drag and drop (only once, not click - button handles click)
             const uploadArea = document.getElementById('uploadArea');
             uploadArea.ondragover = (e) => {
                 e.preventDefault();
@@ -3574,7 +3579,7 @@
                 const file = e.dataTransfer.files[0];
                 if (file) processImportFile(file);
             };
-            uploadArea.onclick = () => document.getElementById('importFileInput').click();
+            // Note: removed uploadArea.onclick to prevent double triggering with the button
         }
         
         function closeImportModal() {
@@ -3596,6 +3601,9 @@
         }
         
         function processImportFile(file) {
+            // Clear file input to allow re-uploading same file
+            document.getElementById('importFileInput').value = '';
+            
             const fileName = file.name.toLowerCase();
             
             if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
@@ -3605,10 +3613,24 @@
                     try {
                         // Check if XLSX is available
                         if (typeof XLSX === 'undefined') {
+                            // Prevent duplicate script loading
+                            if (xlsxLoading) {
+                                console.log('XLSX library already loading, please wait...');
+                                return;
+                            }
+                            
                             // Load SheetJS dynamically
+                            xlsxLoading = true;
                             const script = document.createElement('script');
                             script.src = 'https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js';
-                            script.onload = () => parseExcel(e.target.result);
+                            script.onload = () => {
+                                xlsxLoading = false;
+                                parseExcel(e.target.result);
+                            };
+                            script.onerror = () => {
+                                xlsxLoading = false;
+                                showToast('שגיאה בטעינת ספריית Excel', 'error');
+                            };
                             document.head.appendChild(script);
                         } else {
                             parseExcel(e.target.result);
