@@ -2109,7 +2109,7 @@
                 const res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?flight_id=eq.${flightId}&order=sort_order,created_at`, {
                     headers: {
                         'apikey': supabaseKey,
-                        'Authorization': `Bearer ${accessToken}`
+                        'Authorization': `Bearer ${accessToken || supabaseKey}`
                     }
                 });
                 
@@ -2303,7 +2303,7 @@
                         method: 'PATCH',
                         headers: {
                             'apikey': supabaseKey,
-                            'Authorization': `Bearer ${accessToken}`,
+                            'Authorization': `Bearer ${accessToken || supabaseKey}`,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
@@ -2315,7 +2315,7 @@
                         method: 'POST',
                         headers: {
                             'apikey': supabaseKey,
-                            'Authorization': `Bearer ${accessToken}`,
+                            'Authorization': `Bearer ${accessToken || supabaseKey}`,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
@@ -2359,7 +2359,7 @@
                     method: 'DELETE',
                     headers: {
                         'apikey': supabaseKey,
-                        'Authorization': `Bearer ${accessToken}`
+                        'Authorization': `Bearer ${accessToken || supabaseKey}`
                     }
                 });
                 
