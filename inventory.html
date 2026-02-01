@@ -1006,6 +1006,106 @@
                 width: 100%;
             }
         }
+        
+        /* Selection Toolbar */
+        .selection-toolbar {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .selection-toolbar .selection-count {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .selection-toolbar .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+        
+        .selection-toolbar .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .flight-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--gold);
+        }
+        
+        /* Import Preview Modal */
+        .preview-modal-content {
+            max-width: 950px !important;
+        }
+        
+        .select-all-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: var(--navy-light);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .select-all-row label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: var(--white);
+            font-weight: 500;
+        }
+        
+        .preview-selected-count {
+            color: var(--gold);
+            font-weight: 600;
+        }
+        
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .preview-table th {
+            background: var(--navy);
+            color: var(--gold);
+            padding: 10px 8px;
+            text-align: right;
+            font-weight: 600;
+        }
+        
+        .preview-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--gray);
+        }
+        
+        .preview-table tr:hover {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .preview-table .preview-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--gold);
+        }
     </style>
     
     <!-- Supabase JS for Realtime -->
@@ -1126,6 +1226,18 @@
             </div>
         </div>
         
+        <!-- Selection Toolbar (hidden by default) -->
+        <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
+            <span class="selection-count"><span id="selectedFlightsCount">0</span> טיסות נבחרו</span>
+            <button class="btn btn-danger" onclick="deleteSelectedFlights()">
+                <span class="material-icons">delete</span>
+                מחק נבחרים
+            </button>
+            <button class="btn btn-outline" onclick="clearSelection()" style="color: var(--white); border-color: var(--white);">
+                ביטול בחירה
+            </button>
+        </div>
+        
         <!-- Table -->
         <div class="table-container">
             <div class="table-header">
@@ -1141,6 +1253,9 @@
                 <table id="flightsTable">
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" id="selectAllFlights" class="flight-checkbox" onchange="toggleAllFlights(this.checked)">
+                            </th>
                             <th onclick="sortBy('departure_date')">תאריכים <span class="material-icons">unfold_more</span></th>
                             <th onclick="sortBy('destination_name')">יעד <span class="material-icons">unfold_more</span></th>
                             <th onclick="sortBy('airline')">חברה <span class="material-icons">unfold_more</span></th>
@@ -1372,6 +1487,47 @@ Return: 14:00-18:30
         </div>
     </div>
     
+    <!-- Import Preview Modal -->
+    <div class="modal-overlay" id="importPreviewModal">
+        <div class="modal preview-modal-content">
+            <div class="modal-header">
+                <h2>תצוגה מקדימה - בחר טיסות לייבוא</h2>
+                <button class="modal-close" onclick="closeImportPreview()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="select-all-row">
+                    <label>
+                        <input type="checkbox" id="selectAllPreview" onchange="toggleAllPreviewFlights(this.checked)">
+                        בחר הכל
+                    </label>
+                    <span class="preview-selected-count"><span id="previewSelectedCount">0</span> נבחרו</span>
+                </div>
+                <table class="preview-table" id="previewFlightsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"></th>
+                            <th>יעד</th>
+                            <th>חברה</th>
+                            <th>תאריך יציאה</th>
+                            <th>תאריך חזרה</th>
+                            <th>מושבים</th>
+                            <th>מחיר</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewFlightsBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeImportPreview()">ביטול</button>
+                <button class="btn btn-primary" onclick="importSelectedFlights()">
+                    <span class="material-icons">add</span>
+                    ייבא נבחרים
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
     
@@ -1493,6 +1649,9 @@ Return: 14:00-18:30
             });
         }
         
+        // Store parsed flights for import preview
+        let parsedFlightsForImport = [];
+        
         async function handlePastedImage(file) {
             const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('geminiApiKey');
             if (!apiKey) {
@@ -1512,7 +1671,7 @@ Return: 14:00-18:30
                     reader.readAsDataURL(file);
                 });
                 
-                // Call Gemini API - now returns array of flights
+                // Call Gemini API - returns array of flights
                 const results = await callGeminiAPI(apiKey, base64, true);
                 
                 console.log('=== handlePastedImage results ===');
@@ -1520,17 +1679,15 @@ Return: 14:00-18:30
                 console.log('Length:', results?.length);
                 
                 if (results && Array.isArray(results) && results.length > 0) {
-                    // Add ALL flights from the image
-                    let added = 0;
-                    for (const flightData of results) {
-                        console.log('Processing flight:', flightData.destination_name, flightData.airline);
-                        if (flightData.airline || flightData.destination_name) {
-                            await addFlightFromParsedData(flightData);
-                            added++;
-                        }
+                    // Filter valid flights and show preview modal
+                    const validFlights = results.filter(f => f.airline || f.destination_name);
+                    if (validFlights.length > 0) {
+                        parsedFlightsForImport = validFlights;
+                        showImportPreviewModal(validFlights);
+                        showToast(`נמצאו ${validFlights.length} טיסות - בחר אילו לייבא`, 'success');
+                    } else {
+                        showToast('לא נמצאו טיסות תקינות בתמונה', 'warning');
                     }
-                    console.log('Total flights added:', added);
-                    showToast(`${added} טיסות נוספו בהצלחה!`, 'success');
                 } else {
                     console.log('No valid results found');
                     showToast('לא נמצאו טיסות בתמונה', 'warning');
@@ -1541,6 +1698,78 @@ Return: 14:00-18:30
             } finally {
                 showLoading(false);
             }
+        }
+        
+        // ==========================================
+        // Import Preview Modal Functions
+        // ==========================================
+        function showImportPreviewModal(flights) {
+            const tbody = document.getElementById('previewFlightsBody');
+            tbody.innerHTML = flights.map((flight, index) => `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="preview-checkbox" data-index="${index}" 
+                               checked onchange="updatePreviewSelectionCount()">
+                    </td>
+                    <td><strong>${flight.destination_name || '-'}</strong></td>
+                    <td>${flight.airline || '-'}</td>
+                    <td>${flight.departure_date || '-'}</td>
+                    <td>${flight.return_date || '-'}</td>
+                    <td>${flight.available_seats || '-'}</td>
+                    <td>${flight.selling_price ? '$' + flight.selling_price : '-'}</td>
+                </tr>
+            `).join('');
+            
+            // Select all by default
+            document.getElementById('selectAllPreview').checked = true;
+            updatePreviewSelectionCount();
+            
+            // Show modal
+            document.getElementById('importPreviewModal').classList.add('active');
+        }
+        
+        function closeImportPreview() {
+            document.getElementById('importPreviewModal').classList.remove('active');
+            parsedFlightsForImport = [];
+        }
+        
+        function toggleAllPreviewFlights(checked) {
+            const checkboxes = document.querySelectorAll('.preview-checkbox');
+            checkboxes.forEach(cb => cb.checked = checked);
+            updatePreviewSelectionCount();
+        }
+        
+        function updatePreviewSelectionCount() {
+            const checked = document.querySelectorAll('.preview-checkbox:checked').length;
+            const total = document.querySelectorAll('.preview-checkbox').length;
+            document.getElementById('previewSelectedCount').textContent = checked;
+            document.getElementById('selectAllPreview').checked = checked === total;
+        }
+        
+        async function importSelectedFlights() {
+            const checkboxes = document.querySelectorAll('.preview-checkbox:checked');
+            const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+            
+            if (selectedIndices.length === 0) {
+                showToast('בחר לפחות טיסה אחת לייבוא', 'warning');
+                return;
+            }
+            
+            closeImportPreview();
+            showLoading(true);
+            
+            let added = 0;
+            for (const index of selectedIndices) {
+                const flightData = parsedFlightsForImport[index];
+                if (flightData) {
+                    await addFlightFromParsedData(flightData);
+                    added++;
+                }
+            }
+            
+            showLoading(false);
+            showToast(`${added} טיסות נוספו בהצלחה!`, 'success');
+            parsedFlightsForImport = [];
         }
         
         async function addFlightFromParsedData(data) {
@@ -1859,7 +2088,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             if (filteredFlights.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="11">
+                        <td colspan="12">
                             <div class="empty-state">
                                 <span class="material-icons">flight_takeoff</span>
                                 <h3>אין טיסות להצגה</h3>
@@ -1871,8 +2100,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return;
             }
             
+            // Clear selection when re-rendering
+            document.getElementById('selectAllFlights').checked = false;
+            updateFlightSelection();
+            
             tbody.innerHTML = filteredFlights.map(flight => `
                 <tr data-id="${flight.id}" ondblclick="openFlightDetail('${flight.id}')" style="cursor: pointer;" title="לחיצה כפולה לצפייה בנוסעים">
+                    <td onclick="event.stopPropagation();">
+                        <input type="checkbox" class="flight-checkbox" data-flight-id="${flight.id}" onchange="updateFlightSelection()">
+                    </td>
                     <td>${formatDateRange(flight.departure_date, flight.return_date)}</td>
                     <td>
                         <strong>${flight.destination_name}</strong>
@@ -2191,6 +2427,96 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             } catch (error) {
                 console.error('Error saving flight:', error);
                 showToast('שגיאה בשמירת טיסה', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Flight Selection Functions
+        // ==========================================
+        function toggleAllFlights(checked) {
+            const checkboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox');
+            checkboxes.forEach(cb => cb.checked = checked);
+            updateFlightSelection();
+        }
+        
+        function updateFlightSelection() {
+            const checkboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox:checked');
+            const count = checkboxes.length;
+            const toolbar = document.getElementById('selectionToolbar');
+            const countSpan = document.getElementById('selectedFlightsCount');
+            
+            countSpan.textContent = count;
+            
+            if (count > 0) {
+                toolbar.style.display = 'flex';
+            } else {
+                toolbar.style.display = 'none';
+            }
+            
+            // Update header checkbox state
+            const allCheckboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox');
+            const headerCheckbox = document.getElementById('selectAllFlights');
+            if (allCheckboxes.length > 0) {
+                headerCheckbox.checked = count === allCheckboxes.length;
+                headerCheckbox.indeterminate = count > 0 && count < allCheckboxes.length;
+            }
+        }
+        
+        function getSelectedFlightIds() {
+            const checkboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox:checked');
+            return Array.from(checkboxes).map(cb => cb.dataset.flightId);
+        }
+        
+        function clearSelection() {
+            const checkboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+            document.getElementById('selectAllFlights').checked = false;
+            updateFlightSelection();
+        }
+        
+        async function deleteSelectedFlights() {
+            const selectedIds = getSelectedFlightIds();
+            if (selectedIds.length === 0) return;
+            
+            if (!confirm(`האם למחוק ${selectedIds.length} טיסות?`)) return;
+            
+            showLoading(true);
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    // Delete all selected flights
+                    for (const id of selectedIds) {
+                        const response = await fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${supabaseKey}`
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            console.error(`Failed to delete flight ${id}`);
+                        }
+                    }
+                    await loadFlights();
+                } else {
+                    // Local mode
+                    flights = flights.filter(f => !selectedIds.includes(f.id));
+                    updateFilters();
+                    filterFlights();
+                    updateStats();
+                }
+                
+                clearSelection();
+                showToast(`${selectedIds.length} טיסות נמחקו בהצלחה`, 'success');
+            } catch (error) {
+                console.error('Error deleting flights:', error);
+                showToast('שגיאה במחיקת טיסות', 'error');
             } finally {
                 showLoading(false);
             }
