@@ -1500,7 +1500,7 @@ Return: 14:00-18:30
                 return;
             }
             
-            showToast('📷 מפענח תמונה...', 'info');
+            showToast('מפענח תמונה עם AI...', 'info');
             showLoading(true);
             
             try {
@@ -1512,17 +1512,32 @@ Return: 14:00-18:30
                     reader.readAsDataURL(file);
                 });
                 
-                // Call Gemini API
-                const result = await callGeminiAPI(apiKey, base64, true);
+                // Call Gemini API - now returns array of flights
+                const results = await callGeminiAPI(apiKey, base64, true);
                 
-                if (result) {
-                    // Add the parsed flight directly
-                    await addFlightFromParsedData(result);
-                    showToast(`✅ טיסה ל${result.destination_name || 'יעד'} נוספה בהצלחה!`, 'success');
+                console.log('=== handlePastedImage results ===');
+                console.log('Is array:', Array.isArray(results));
+                console.log('Length:', results?.length);
+                
+                if (results && Array.isArray(results) && results.length > 0) {
+                    // Add ALL flights from the image
+                    let added = 0;
+                    for (const flightData of results) {
+                        console.log('Processing flight:', flightData.destination_name, flightData.airline);
+                        if (flightData.airline || flightData.destination_name) {
+                            await addFlightFromParsedData(flightData);
+                            added++;
+                        }
+                    }
+                    console.log('Total flights added:', added);
+                    showToast(`${added} טיסות נוספו בהצלחה!`, 'success');
+                } else {
+                    console.log('No valid results found');
+                    showToast('לא נמצאו טיסות בתמונה', 'warning');
                 }
             } catch (error) {
                 console.error('Paste image error:', error);
-                showToast('שגיאה בפענוח התמונה', 'error');
+                showToast('שגיאה בפענוח התמונה: ' + error.message, 'error');
             } finally {
                 showLoading(false);
             }
@@ -2102,13 +2117,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return;
             }
             
+            const seatsValue = parseInt(document.getElementById('availableSeats').value) || 0;
             const flightData = {
                 departure_date: document.getElementById('departureDate').value,
                 return_date: document.getElementById('returnDate').value || null,
                 airline: normalizeAirline(document.getElementById('airline').value),
                 destination_name: document.getElementById('destinationName').value,
                 destination_code: document.getElementById('destinationCode').value.toUpperCase(),
-                available_seats: parseInt(document.getElementById('availableSeats').value) || 0,
+                available_seats: seatsValue,
+                total_seats: seatsValue,  // Keep in sync with available_seats
                 outbound_details: document.getElementById('outboundDetails').value,
                 inbound_details: document.getElementById('inboundDetails').value,
                 cost_price: parseFloat(document.getElementById('costPrice').value) || null,
@@ -2218,7 +2235,9 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         // Inline editing
         async function updateSeats(id, value) {
             const seats = parseInt(value) || 0;
+            // Update both available_seats AND total_seats to keep them in sync
             await updateFlightField(id, 'available_seats', seats);
+            await updateFlightField(id, 'total_seats', seats);
         }
         
         async function updateCost(id, value) {
@@ -2367,19 +2386,29 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     row[h] = values[idx] || '';
                 });
                 
-                // Convert to our format
+                // Convert to our format - support multiple column name variations
+                const seatsValue = parseInt(
+                    row['מספר מושבים'] || row['מושבים'] || row['seats'] || '0'
+                ) || 0;
+                
+                const costValue = parsePrice(
+                    row['עלות למושב בדולר'] || row['עלות'] || row['cost'] || '0'
+                );
+                
                 const flight = {
                     departure_date: parseDateFromCSV(row['תאריכים'] || row['dates'] || ''),
                     return_date: parseReturnDateFromCSV(row['תאריכים'] || row['dates'] || ''),
-                    outbound_details: row['הלוך (פירוט מלא)'] || row['outbound'] || '',
-                    inbound_details: row['חזור (פירוט מלא)'] || row['inbound'] || '',
-                    airline: normalizeAirline(row['חברה'] || row['airline'] || ''),
+                    outbound_details: row['הלוך'] || row['הלוך (פירוט מלא)'] || row['outbound'] || '',
+                    inbound_details: row['חזור'] || row['חזור (פירוט מלא)'] || row['inbound'] || '',
+                    airline: normalizeAirline(row['חברת תעופה'] || row['חברה'] || row['airline'] || ''),
                     destination_name: (row['יעד'] || row['destination'] || '').replace(/\s*\([^)]+\)/, ''),
                     destination_code: extractCode(row['יעד'] || row['destination'] || ''),
-                    available_seats: parseInt(row['מושבים'] || row['seats'] || '0') || 0,
-                    selling_price: parsePrice(row['מחיר'] || row['price'] || '0'),
-                    cost_price: null,
-                    supplier_info: ''
+                    available_seats: seatsValue,
+                    total_seats: seatsValue,
+                    selling_price: parsePrice(row['מחיר'] || row['price'] || '0') || costValue,
+                    cost_price: costValue || null,
+                    event_name: row['שם האירוע'] || row['event'] || '',
+                    supplier_info: row['PNR'] || row['pnr'] || ''
                 };
                 
                 if (flight.airline && flight.destination_name) {
@@ -2398,22 +2427,24 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         <tr>
                             <th>יעד</th>
                             <th>חברה</th>
+                            <th>אירוע</th>
                             <th>תאריך</th>
                             <th>מושבים</th>
-                            <th>מחיר</th>
+                            <th>עלות</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${data.slice(0, 10).map(f => `
+                        ${data.slice(0, 15).map(f => `
                             <tr>
                                 <td>${f.destination_name}</td>
                                 <td>${f.airline}</td>
+                                <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.event_name || '-'}</td>
                                 <td>${f.departure_date || '-'}</td>
                                 <td>${f.available_seats}</td>
-                                <td>$${f.selling_price}</td>
+                                <td>$${f.cost_price || f.selling_price}</td>
                             </tr>
                         `).join('')}
-                        ${data.length > 10 ? `<tr><td colspan="5" style="text-align:center;">... ועוד ${data.length - 10} שורות</td></tr>` : ''}
+                        ${data.length > 15 ? `<tr><td colspan="6" style="text-align:center; font-weight: bold;">... ועוד ${data.length - 15} טיסות</td></tr>` : ''}
                     </tbody>
                 </table>
             `;
@@ -2424,7 +2455,18 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         
         function parseDateFromCSV(dateStr) {
             if (!dateStr) return null;
-            // Format: DD/MM - DD/MM or DD/MM/YY - DD/MM/YY
+            
+            // Format 1: DD-DD/MM or DD-DD/MM/YY (e.g., "25-28/09" means day 25 to day 28 of month 09)
+            const rangeMatch = dateStr.match(/(\d{1,2})-(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+            if (rangeMatch) {
+                const day = rangeMatch[1].padStart(2, '0');
+                const month = rangeMatch[3].padStart(2, '0');
+                let year = rangeMatch[4] || new Date().getFullYear().toString();
+                if (year.length === 2) year = '20' + year;
+                return `${year}-${month}-${day}`;
+            }
+            
+            // Format 2: DD/MM or DD/MM/YY - DD/MM or DD/MM/YY
             const match = dateStr.match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
             if (!match) return null;
             
@@ -2438,7 +2480,18 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         
         function parseReturnDateFromCSV(dateStr) {
             if (!dateStr) return null;
-            // Format: DD/MM - DD/MM
+            
+            // Format 1: DD-DD/MM or DD-DD/MM/YY (e.g., "25-28/09" means day 25 to day 28 of month 09)
+            const rangeMatch = dateStr.match(/(\d{1,2})-(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+            if (rangeMatch) {
+                const day = rangeMatch[2].padStart(2, '0'); // Return day is the second number
+                const month = rangeMatch[3].padStart(2, '0');
+                let year = rangeMatch[4] || new Date().getFullYear().toString();
+                if (year.length === 2) year = '20' + year;
+                return `${year}-${month}-${day}`;
+            }
+            
+            // Format 2: DD/MM - DD/MM
             const parts = dateStr.split('-');
             if (parts.length < 2) return null;
             
@@ -2735,6 +2788,9 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             reader.readAsDataURL(file);
         }
         
+        // Store parsed flights for bulk add
+        let parsedFlightsFromImage = [];
+        
         async function parseImageWithAI() {
             if (!uploadedImage) {
                 showToast('העלה תמונה קודם', 'warning');
@@ -2751,11 +2807,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             document.getElementById('parseImageBtn').innerHTML = '<span class="material-icons">hourglass_empty</span> מפענח...';
             
             try {
-                const result = await callGeminiAPI(apiKey, uploadedImage, true);
-                displayParserResult(result);
+                const results = await callGeminiAPI(apiKey, uploadedImage, true);
+                parsedFlightsFromImage = results;
+                displayParserResult(results);
             } catch (error) {
                 console.error('AI parsing error:', error);
-                showToast('שגיאה בפענוח AI', 'error');
+                showToast('שגיאה בפענוח AI: ' + error.message, 'error');
             } finally {
                 document.getElementById('parseImageBtn').disabled = false;
                 document.getElementById('parseImageBtn').innerHTML = '<span class="material-icons">auto_awesome</span> פענח תמונה עם AI';
@@ -2763,23 +2820,39 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         async function callGeminiAPI(apiKey, content, isImage) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            // Use gemini-1.5-pro for better instruction following with tables
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
             
-            const prompt = `Extract flight information from the following input. Return ONLY a valid JSON object with these exact fields:
-{
-    "departure_date": "YYYY-MM-DD format",
-    "return_date": "YYYY-MM-DD format or null",
-    "outbound_details": "HH:MM CITY (CODE) -> HH:MM CITY (CODE) FLIGHT#",
-    "inbound_details": "same format or empty",
-    "airline": "Airline Name",
-    "destination_name": "City name",
-    "destination_code": "3-letter airport code",
-    "available_seats": number,
-    "selling_price": number (just the number, no currency symbol)
-}
+            // Aggressive prompt to extract ALL flights
+            const prompt = `You are extracting flight data from a table image.
 
-If any field is not found, use null for optional fields or reasonable defaults.
-Return ONLY the JSON object, no other text.`;
+CRITICAL INSTRUCTION: This table contains MULTIPLE flights/rows. You MUST extract EVERY SINGLE ROW from the table.
+
+Step 1: Count how many data rows are in the table (exclude header row)
+Step 2: Extract each row as a JSON object
+Step 3: Return ALL of them in a JSON array
+
+Return format - a JSON array with ALL flights:
+[
+  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "available_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
+  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "available_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
+  ... continue for ALL rows
+]
+
+Column mapping (Hebrew columns):
+- תאריכים → parse as departure_date and return_date (format DD-DD/MM means day range in same month)
+- יעד → destination_name
+- חברת תעופה → airline
+- מספר מושבים → available_seats
+- עלות למושב בדולר → selling_price AND cost_price
+- שם האירוע → event_name
+
+MANDATORY RULES:
+1. Extract EVERY row - if there are 30 rows, return 30 objects
+2. Do NOT skip any rows
+3. Do NOT summarize or aggregate
+4. Parse dates: "25-28/09" means departure 2026-09-25, return 2026-09-28
+5. Return ONLY the JSON array, no explanations or markdown`;
 
             let requestBody;
             if (isImage) {
@@ -2814,34 +2887,130 @@ Return ONLY the JSON object, no other text.`;
             const data = await response.json();
             const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
             
+            // Debug logging - check browser console (F12)
+            console.log('=== Gemini API Response ===');
+            console.log('Raw text length:', text?.length);
+            console.log('Raw text preview:', text?.substring(0, 500));
+            
             if (!text) throw new Error('No response from AI');
             
-            // Extract JSON from response
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('No JSON in response');
+            // Extract JSON array from response
+            let jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                console.log('Parsed as ARRAY - count:', parsed.length);
+                console.log('Flights:', parsed);
+                return parsed;
+            }
             
-            return JSON.parse(jsonMatch[0]);
+            // Fallback: try single object and wrap in array
+            jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const parsed = [JSON.parse(jsonMatch[0])];
+                console.log('Parsed as SINGLE object, wrapped in array');
+                console.log('Flights:', parsed);
+                return parsed;
+            }
+            
+            console.error('No JSON found in response');
+            throw new Error('No JSON in response');
         }
         
-        function displayParserResult(result) {
+        function displayParserResult(results) {
             const resultDiv = document.getElementById('parserResult');
             resultDiv.style.display = 'block';
             resultDiv.className = 'parser-result success';
             
-            resultDiv.innerHTML = `
-                <h4 style="margin-bottom: 10px; color: var(--success);">✓ פענוח הצליח!</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
-                    <div><strong>יעד:</strong> ${result.destination_name} (${result.destination_code})</div>
-                    <div><strong>חברה:</strong> ${result.airline}</div>
-                    <div><strong>תאריך:</strong> ${result.departure_date || '-'}</div>
-                    <div><strong>מושבים:</strong> ${result.available_seats || '-'}</div>
-                    <div><strong>מחיר:</strong> $${result.selling_price || '-'}</div>
-                </div>
-                <button class="btn btn-primary" style="margin-top: 15px;" onclick="applyParsedData(${JSON.stringify(result).replace(/"/g, '&quot;')})">
-                    <span class="material-icons">check</span>
-                    השתמש בנתונים
-                </button>
-            `;
+            // Handle array of flights
+            const flights = Array.isArray(results) ? results : [results];
+            const validFlights = flights.filter(f => f.airline || f.destination_name);
+            
+            if (validFlights.length === 0) {
+                resultDiv.className = 'parser-result error';
+                resultDiv.innerHTML = '<h4 style="color: var(--error);">לא נמצאו טיסות</h4>';
+                return;
+            }
+            
+            if (validFlights.length === 1) {
+                // Single flight - show details and option to fill form
+                const result = validFlights[0];
+                resultDiv.innerHTML = `
+                    <h4 style="margin-bottom: 10px; color: var(--success);">✓ נמצאה טיסה אחת</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.9rem;">
+                        <div><strong>יעד:</strong> ${result.destination_name || '-'} ${result.destination_code ? '(' + result.destination_code + ')' : ''}</div>
+                        <div><strong>חברה:</strong> ${result.airline || '-'}</div>
+                        <div><strong>תאריך:</strong> ${result.departure_date || '-'}</div>
+                        <div><strong>מושבים:</strong> ${result.available_seats || '-'}</div>
+                        <div><strong>מחיר:</strong> $${result.selling_price || result.cost_price || '-'}</div>
+                        ${result.event_name ? `<div><strong>אירוע:</strong> ${result.event_name}</div>` : ''}
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="applyParsedData(parsedFlightsFromImage[0])">
+                        <span class="material-icons">check</span>
+                        השתמש בנתונים
+                    </button>
+                `;
+            } else {
+                // Multiple flights - show table and bulk add button
+                resultDiv.innerHTML = `
+                    <h4 style="margin-bottom: 10px; color: var(--success);">✓ נמצאו ${validFlights.length} טיסות!</h4>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--gray); border-radius: 8px;">
+                        <table style="width: 100%; font-size: 0.85rem; border-collapse: collapse;">
+                            <thead style="background: var(--gray-light); position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 8px; text-align: right;">יעד</th>
+                                    <th style="padding: 8px; text-align: right;">חברה</th>
+                                    <th style="padding: 8px; text-align: right;">תאריך</th>
+                                    <th style="padding: 8px; text-align: right;">מושבים</th>
+                                    <th style="padding: 8px; text-align: right;">מחיר</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${validFlights.map(f => `
+                                    <tr style="border-bottom: 1px solid var(--gray);">
+                                        <td style="padding: 8px;">${f.destination_name || '-'}</td>
+                                        <td style="padding: 8px;">${f.airline || '-'}</td>
+                                        <td style="padding: 8px;">${f.departure_date || '-'}</td>
+                                        <td style="padding: 8px;">${f.available_seats || '-'}</td>
+                                        <td style="padding: 8px;">$${f.selling_price || f.cost_price || '-'}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="addAllParsedFlights()">
+                        <span class="material-icons">add_circle</span>
+                        הוסף את כל ${validFlights.length} הטיסות
+                    </button>
+                `;
+            }
+        }
+        
+        async function addAllParsedFlights() {
+            if (!parsedFlightsFromImage || parsedFlightsFromImage.length === 0) {
+                showToast('אין טיסות להוספה', 'warning');
+                return;
+            }
+            
+            showLoading(true);
+            let added = 0;
+            
+            try {
+                for (const flightData of parsedFlightsFromImage) {
+                    if (flightData.airline || flightData.destination_name) {
+                        await addFlightFromParsedData(flightData);
+                        added++;
+                    }
+                }
+                
+                closeModal('flightModal');
+                showToast(`${added} טיסות נוספו בהצלחה!`, 'success');
+                parsedFlightsFromImage = [];
+            } catch (error) {
+                console.error('Error adding flights:', error);
+                showToast('שגיאה בהוספת טיסות', 'error');
+            } finally {
+                showLoading(false);
+            }
         }
         
         function applyParsedData(data) {
