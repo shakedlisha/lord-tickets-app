@@ -1725,11 +1725,11 @@ Return: 14:00-18:30
             updatePreviewSelectionCount();
             
             // Show modal
-            document.getElementById('importPreviewModal').classList.add('active');
+            document.getElementById('importPreviewModal').classList.add('visible');
         }
         
         function closeImportPreview() {
-            document.getElementById('importPreviewModal').classList.remove('active');
+            document.getElementById('importPreviewModal').classList.remove('visible');
             parsedFlightsForImport = [];
         }
         
