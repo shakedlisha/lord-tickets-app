@@ -1,8 +1,8 @@
 // Lord Tickets - Create User Edge Function
 // Deploy: supabase functions deploy create-user
 // 
-// This function creates both a Supabase Auth user and a users table record,
-// then sends a password reset email so the user can set their own password.
+// This function invites a new user via email (creates Auth user + sends invite),
+// then creates a users table record linked by auth_id.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -111,17 +111,16 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Create Auth user
-    const { data: authData, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      email_confirm: true, // Mark email as confirmed
-      user_metadata: { name, role }
+    // Step 1: Invite user by email (creates Auth user AND sends invite email)
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: "https://www.supatours.com/lord-tickets-app/login.html",
+      data: { name, role }
     });
 
-    if (createAuthError) {
-      console.error("Error creating auth user:", createAuthError);
+    if (inviteError) {
+      console.error("Error inviting user:", inviteError);
       return new Response(
-        JSON.stringify({ error: `Failed to create auth user: ${createAuthError.message}` }),
+        JSON.stringify({ error: `Failed to invite user: ${inviteError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -130,7 +129,7 @@ serve(async (req) => {
     const { error: insertError } = await supabaseAdmin
       .from("users")
       .insert({
-        auth_id: authData.user.id,
+        auth_id: inviteData.user.id,
         email,
         name,
         role,
@@ -141,34 +140,19 @@ serve(async (req) => {
     if (insertError) {
       console.error("Error inserting user record:", insertError);
       // Rollback: delete the auth user we just created
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(inviteData.user.id);
       return new Response(
         JSON.stringify({ error: `Failed to create user record: ${insertError.message}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Step 3: Generate password recovery link (sends email)
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-      options: {
-        redirectTo: "https://www.supatours.com/lord-tickets-app/login.html"
-      }
-    });
-
-    if (linkError) {
-      console.error("Error generating recovery link:", linkError);
-      // User is created but email failed - log warning but don't fail
-      console.warn("User created but password reset email failed. Admin may need to resend.");
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
-        message: "User created successfully. Password reset email sent.",
+        message: "User created successfully. Invite email sent to set password.",
         user: {
-          id: authData.user.id,
+          id: inviteData.user.id,
           email,
           name,
           role
