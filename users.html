@@ -748,12 +748,16 @@
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
-                    const headers = await getAuthHeaders();
-                    if (!headers) return; // Session expired, redirect handled
+                    const accessToken = await getAccessToken();
+                    if (!accessToken) return; // Session expired, redirect handled
                     
                     let response;
                     
                     if (editingUserId) {
+                        // Update existing user - use REST API directly
+                        const headers = await getAuthHeaders();
+                        if (!headers) return;
+                        
                         response = await fetch(
                             `${supabaseUrl}/rest/v1/users?id=eq.${editingUserId}`,
                             {
@@ -762,23 +766,40 @@
                                 body: JSON.stringify(userData)
                             }
                         );
+                        
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        if (!response.ok) throw new Error('Failed to update user');
                     } else {
-                        userData.is_active = true;
+                        // Create new user - use Edge Function to create both Auth and DB record
                         response = await fetch(
-                            `${supabaseUrl}/rest/v1/users`,
+                            `${supabaseUrl}/functions/v1/create-user`,
                             {
                                 method: 'POST',
-                                headers,
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
                                 body: JSON.stringify(userData)
                             }
                         );
+                        
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(result.error || 'Failed to create user');
+                        }
+                        
+                        // Show success message with email notification
+                        showToast('המשתמש נוצר בהצלחה! נשלח מייל לאיפוס סיסמה', 'success');
                     }
-                    
-                    if (response.status === 401) {
-                        handleSessionExpired();
-                        return;
-                    }
-                    if (!response.ok) throw new Error('Failed to save user');
                     
                     await loadUsers();
                 } else {
@@ -799,11 +820,14 @@
                 }
                 
                 closeModal();
-                showToast(editingUserId ? 'המשתמש עודכן בהצלחה' : 'המשתמש נוסף בהצלחה', 'success');
+                // Toast for updates or demo mode (new users via Edge Function already showed toast)
+                if (editingUserId || !supabaseUrl || !supabaseKey) {
+                    showToast(editingUserId ? 'המשתמש עודכן בהצלחה' : 'המשתמש נוסף בהצלחה', 'success');
+                }
                 
             } catch (error) {
                 console.error('Error saving user:', error);
-                showToast('שגיאה בשמירת משתמש', 'error');
+                showToast(error.message || 'שגיאה בשמירת משתמש', 'error');
             }
         }
         
