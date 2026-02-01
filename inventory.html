@@ -2820,8 +2820,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         async function callGeminiAPI(apiKey, content, isImage) {
-            // Use gemini-1.5-pro for better instruction following with tables
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+            // Use gemini-2.0-flash for image analysis
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             
             // Aggressive prompt to extract ALL flights
             const prompt = `You are extracting flight data from a table image.
