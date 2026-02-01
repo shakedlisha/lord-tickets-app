@@ -397,15 +397,18 @@
                     throw new Error(data.error_description || data.msg || 'Login failed');
                 }
                 
-                // Save session
+                // Save session (including refresh_token for automatic renewal)
                 localStorage.setItem('userSession', JSON.stringify({
                     access_token: data.access_token,
+                    refresh_token: data.refresh_token,
                     user: data.user,
                     expires_at: data.expires_at
                 }));
                 
-                // Also save access_token directly for easier access
+                // Also save tokens directly for easier access
                 localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('token_expires_at', String(data.expires_at));
                 
                 // Save settings
                 localStorage.setItem('supabaseUrl', supabaseUrl);

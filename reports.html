@@ -527,18 +527,120 @@
     <script src="js/pwa.js"></script>
     
     <script>
-        // Helper: Get Access Token
-        function getAccessToken() {
+        // ==========================================
+        // Helper: Get Access Token (with auto-refresh)
+        // ==========================================
+        let isRefreshing = false;
+        let refreshPromise = null;
+        
+        async function getAccessToken() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            
+            // Check if token is expired or about to expire (within 60 seconds)
+            const expiresAt = localStorage.getItem('token_expires_at');
+            const now = Math.floor(Date.now() / 1000);
+            const isExpired = expiresAt && (parseInt(expiresAt) - 60) < now;
+            
+            // If expired, try to refresh
+            if (isExpired) {
+                const refreshToken = localStorage.getItem('refresh_token');
+                if (refreshToken && supabaseUrl && supabaseKey) {
+                    if (isRefreshing) {
+                        await refreshPromise;
+                        return localStorage.getItem('access_token');
+                    }
+                    
+                    isRefreshing = true;
+                    refreshPromise = refreshAccessToken(supabaseUrl, supabaseKey, refreshToken);
+                    
+                    try {
+                        const newToken = await refreshPromise;
+                        if (newToken) return newToken;
+                    } catch (e) {
+                        console.error('Token refresh failed:', e);
+                    } finally {
+                        isRefreshing = false;
+                        refreshPromise = null;
+                    }
+                }
+                
+                handleSessionExpired();
+                return null;
+            }
+            
             let token = localStorage.getItem('access_token');
             if (token) return token;
+            
             try {
                 const session = JSON.parse(localStorage.getItem('userSession') || '{}');
                 if (session.access_token) {
                     localStorage.setItem('access_token', session.access_token);
+                    if (session.refresh_token) {
+                        localStorage.setItem('refresh_token', session.refresh_token);
+                    }
+                    if (session.expires_at) {
+                        localStorage.setItem('token_expires_at', String(session.expires_at));
+                    }
                     return session.access_token;
                 }
             } catch (e) {}
-            return localStorage.getItem('supabaseKey');
+            
+            handleSessionExpired();
+            return null;
+        }
+        
+        async function refreshAccessToken(supabaseUrl, supabaseKey, refreshToken) {
+            try {
+                const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+                
+                if (!response.ok) throw new Error('Refresh failed');
+                
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('token_expires_at', String(data.expires_at));
+                localStorage.setItem('userSession', JSON.stringify({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    user: data.user,
+                    expires_at: data.expires_at
+                }));
+                
+                return data.access_token;
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                return null;
+            }
+        }
+        
+        function handleSessionExpired() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('token_expires_at');
+            localStorage.removeItem('userSession');
+            
+            showToast('פג תוקף ההתחברות - מעביר לדף התחברות');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
+        
+        async function getAuthHeaders() {
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return null;
+            return {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${accessToken}`
+            };
         }
         
         // State
@@ -557,8 +659,9 @@
                 LordNav.init('reports');
             }
             
-            // Check auth
-            if (!accessToken && !localStorage.getItem('demoMode')) {
+            // Check auth - validate session exists
+            const session = localStorage.getItem('userSession');
+            if (!session && !localStorage.getItem('demoMode')) {
                 window.location.href = 'login.html';
                 return;
             }
@@ -593,12 +696,17 @@
             if (!supabaseUrl) return;
             
             try {
+                const headers = await getAuthHeaders();
+                if (!headers) return;
+                
                 const res = await fetch(`${supabaseUrl}/rest/v1/flights?select=id,destination,departure_date&order=departure_date.desc&limit=50`, {
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${getAccessToken()}`
-                    }
+                    headers
                 });
+                
+                if (res.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 
                 flights = await res.json();
                 
@@ -618,12 +726,17 @@
             if (!supabaseUrl) return;
             
             try {
+                const headers = await getAuthHeaders();
+                if (!headers) return;
+                
                 const res = await fetch(`${supabaseUrl}/rest/v1/users?select=id,name,role&order=name`, {
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${getAccessToken()}`
-                    }
+                    headers
                 });
+                
+                if (res.status === 401) {
+                    handleSessionExpired();
+                    return;
+                }
                 
                 agents = await res.json();
                 
@@ -701,16 +814,19 @@
                     case 'monthly':
                     case 'custom':
                         reportData = await fetchPeriodData(options.startDate, options.endDate);
+                        if (!reportData) return; // Session expired
                         html = generatePeriodHtml(reportData, type);
                         break;
                     
                     case 'flight':
                         reportData = await fetchFlightData(options.flightId);
+                        if (!reportData) return; // Session expired
                         html = generateFlightHtml(reportData);
                         break;
                     
                     case 'agent':
                         reportData = await fetchAgentData(options.agentId, options.startDate, options.endDate);
+                        if (!reportData) return; // Session expired
                         html = generateAgentHtml(reportData);
                         break;
                 }
@@ -728,14 +844,18 @@
         async function fetchPeriodData(startDate, endDate) {
             if (!supabaseUrl) return getDemoData();
             
+            const headers = await getAuthHeaders();
+            if (!headers) return null;
+            
             const [flightsRes, passengersRes] = await Promise.all([
-                fetch(`${supabaseUrl}/rest/v1/flights?departure_date=gte.${startDate}&departure_date=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                }),
-                fetch(`${supabaseUrl}/rest/v1/passengers?select=*,flights(destination)&created_at=gte.${startDate}&created_at=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                })
+                fetch(`${supabaseUrl}/rest/v1/flights?departure_date=gte.${startDate}&departure_date=lte.${endDate}`, { headers }),
+                fetch(`${supabaseUrl}/rest/v1/passengers?select=*,flights(destination)&created_at=gte.${startDate}&created_at=lte.${endDate}`, { headers })
             ]);
+            
+            if (flightsRes.status === 401 || passengersRes.status === 401) {
+                handleSessionExpired();
+                return null;
+            }
             
             const flightsData = await flightsRes.json();
             const passengersData = await passengersRes.json();
@@ -770,14 +890,18 @@
         async function fetchFlightData(flightId) {
             if (!supabaseUrl) return getDemoFlightData();
             
+            const headers = await getAuthHeaders();
+            if (!headers) return null;
+            
             const [flightRes, passengersRes] = await Promise.all([
-                fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${flightId}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                }),
-                fetch(`${supabaseUrl}/rest/v1/passengers?flight_id=eq.${flightId}&select=*,users!passengers_agent_id_fkey(name)`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                })
+                fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${flightId}`, { headers }),
+                fetch(`${supabaseUrl}/rest/v1/passengers?flight_id=eq.${flightId}&select=*,users!passengers_agent_id_fkey(name)`, { headers })
             ]);
+            
+            if (flightRes.status === 401 || passengersRes.status === 401) {
+                handleSessionExpired();
+                return null;
+            }
             
             const [flight] = await flightRes.json();
             const passengers = await passengersRes.json();
@@ -805,14 +929,18 @@
         async function fetchAgentData(agentId, startDate, endDate) {
             if (!supabaseUrl) return getDemoAgentData();
             
+            const headers = await getAuthHeaders();
+            if (!headers) return null;
+            
             const [agentRes, passengersRes] = await Promise.all([
-                fetch(`${supabaseUrl}/rest/v1/users?id=eq.${agentId}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                }),
-                fetch(`${supabaseUrl}/rest/v1/passengers?agent_id=eq.${agentId}&select=*,flights(destination,departure_date)&created_at=gte.${startDate}&created_at=lte.${endDate}`, {
-                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${getAccessToken()}` }
-                })
+                fetch(`${supabaseUrl}/rest/v1/users?id=eq.${agentId}`, { headers }),
+                fetch(`${supabaseUrl}/rest/v1/passengers?agent_id=eq.${agentId}&select=*,flights(destination,departure_date)&created_at=gte.${startDate}&created_at=lte.${endDate}`, { headers })
             ]);
+            
+            if (agentRes.status === 401 || passengersRes.status === 401) {
+                handleSessionExpired();
+                return null;
+            }
             
             const [agent] = await agentRes.json();
             const passengers = await passengersRes.json();

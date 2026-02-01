@@ -2178,9 +2178,51 @@
     
     <script>
         // ==========================================
-        // Helper: Get Access Token
+        // Helper: Get Access Token (with auto-refresh)
         // ==========================================
-        function getAccessToken() {
+        let isRefreshing = false;
+        let refreshPromise = null;
+        
+        async function getAccessToken() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            
+            // Check if token is expired or about to expire (within 60 seconds)
+            const expiresAt = localStorage.getItem('token_expires_at');
+            const now = Math.floor(Date.now() / 1000);
+            const isExpired = expiresAt && (parseInt(expiresAt) - 60) < now;
+            
+            // If expired, try to refresh
+            if (isExpired) {
+                const refreshToken = localStorage.getItem('refresh_token');
+                if (refreshToken && supabaseUrl && supabaseKey) {
+                    // Prevent multiple simultaneous refresh attempts
+                    if (isRefreshing) {
+                        await refreshPromise;
+                        return localStorage.getItem('access_token');
+                    }
+                    
+                    isRefreshing = true;
+                    refreshPromise = refreshAccessToken(supabaseUrl, supabaseKey, refreshToken);
+                    
+                    try {
+                        const newToken = await refreshPromise;
+                        if (newToken) {
+                            return newToken;
+                        }
+                    } catch (e) {
+                        console.error('Token refresh failed:', e);
+                    } finally {
+                        isRefreshing = false;
+                        refreshPromise = null;
+                    }
+                }
+                
+                // Refresh failed or no refresh token - redirect to login
+                handleSessionExpired();
+                return null;
+            }
+            
             // Try direct access_token first
             let token = localStorage.getItem('access_token');
             if (token) return token;
@@ -2189,14 +2231,81 @@
             try {
                 const session = JSON.parse(localStorage.getItem('userSession') || '{}');
                 if (session.access_token) {
-                    // Also save directly for future use
                     localStorage.setItem('access_token', session.access_token);
+                    if (session.refresh_token) {
+                        localStorage.setItem('refresh_token', session.refresh_token);
+                    }
+                    if (session.expires_at) {
+                        localStorage.setItem('token_expires_at', String(session.expires_at));
+                    }
                     return session.access_token;
                 }
             } catch (e) {}
             
-            // Return API key as last resort
-            return localStorage.getItem('supabaseKey');
+            // No valid token found - redirect to login
+            handleSessionExpired();
+            return null;
+        }
+        
+        async function refreshAccessToken(supabaseUrl, supabaseKey, refreshToken) {
+            try {
+                const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Refresh failed');
+                }
+                
+                const data = await response.json();
+                
+                // Update stored tokens
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('token_expires_at', String(data.expires_at));
+                localStorage.setItem('userSession', JSON.stringify({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    user: data.user,
+                    expires_at: data.expires_at
+                }));
+                
+                console.log('Token refreshed successfully');
+                return data.access_token;
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                return null;
+            }
+        }
+        
+        function handleSessionExpired() {
+            // Clear expired session data
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('token_expires_at');
+            localStorage.removeItem('userSession');
+            
+            // Show message and redirect
+            showToast('פג תוקף ההתחברות - מעביר לדף התחברות', 'error');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
+        
+        // Helper to get authenticated headers for API calls
+        async function getAuthHeaders() {
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return null;
+            return {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${accessToken}`
+            };
         }
         
         // ==========================================
@@ -2222,22 +2331,24 @@
         
         async function loadPackages() {
             const supabaseUrl = localStorage.getItem('supabaseUrl');
-            const supabaseKey = localStorage.getItem('supabaseKey');
             if (!supabaseUrl || !flightId) {
                 renderPackages();
                 return;
             }
             
             try {
+                const headers = await getAuthHeaders();
+                if (!headers) return; // Session expired
+                
                 const res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?flight_id=eq.${flightId}&order=sort_order,created_at`, {
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${getAccessToken()}`
-                    }
+                    headers
                 });
                 
                 if (res.ok) {
                     packages = await res.json();
+                } else if (res.status === 401) {
+                    handleSessionExpired();
+                    return;
                 } else {
                     packages = [];
                 }
@@ -2418,14 +2529,16 @@
             }
             
             try {
+                const headers = await getAuthHeaders();
+                if (!headers) return; // Session expired
+                
                 let res;
                 if (editingId) {
                     // Update
                     res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?id=eq.${editingId}`, {
                         method: 'PATCH',
                         headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${getAccessToken()}`,
+                            ...headers,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
@@ -2436,8 +2549,7 @@
                     res = await fetch(`${supabaseUrl}/rest/v1/flight_packages`, {
                         method: 'POST',
                         headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${getAccessToken()}`,
+                            ...headers,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
@@ -2449,6 +2561,8 @@
                     closeModal('packageModal');
                     await loadPackages();
                     showToast(editingId ? 'החבילה עודכנה בהצלחה' : 'החבילה נוספה בהצלחה', 'success');
+                } else if (res.status === 401) {
+                    handleSessionExpired();
                 } else {
                     const err = await res.json();
                     throw new Error(err.message || 'Failed to save package');
@@ -2476,17 +2590,19 @@
             }
             
             try {
+                const headers = await getAuthHeaders();
+                if (!headers) return; // Session expired
+                
                 const res = await fetch(`${supabaseUrl}/rest/v1/flight_packages?id=eq.${packageId}`, {
                     method: 'DELETE',
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${getAccessToken()}`
-                    }
+                    headers
                 });
                 
                 if (res.ok) {
                     await loadPackages();
                     showToast('החבילה נמחקה בהצלחה', 'success');
+                } else if (res.status === 401) {
+                    handleSessionExpired();
                 } else {
                     throw new Error('Failed to delete package');
                 }
@@ -2577,18 +2693,28 @@
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
+                    // Get valid access token (will auto-refresh if expired)
+                    const accessToken = await getAccessToken();
+                    if (!accessToken) return; // Session expired, redirect handled
+                    
                     // Load flight details
                     const flightResponse = await fetch(
                         `${supabaseUrl}/rest/v1/flights?id=eq.${flightId}`,
                         {
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`
+                                'Authorization': `Bearer ${accessToken}`
                             }
                         }
                     );
                     
-                    if (!flightResponse.ok) throw new Error('Failed to load flight');
+                    if (!flightResponse.ok) {
+                        if (flightResponse.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Failed to load flight');
+                    }
                     const flightData = await flightResponse.json();
                     
                     if (flightData.length === 0) {
@@ -2616,7 +2742,7 @@
                         {
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`
+                                'Authorization': `Bearer ${accessToken}`
                             }
                         }
                     );
@@ -2701,7 +2827,8 @@
             const outboundPassengers = activePassengers.filter(p => p.has_outbound !== false).length;
             const returnPassengers = activePassengers.filter(p => p.has_return !== false).length;
             
-            const totalSeats = flight?.total_seats || flight?.available_seats || 20;
+            // Prefer available_seats (more likely to be current) over total_seats
+            const totalSeats = flight?.available_seats || flight?.total_seats || 20;
             const availableSeats = totalSeats - Math.max(outboundPassengers, returnPassengers);
             const capacityPercent = (Math.max(outboundPassengers, returnPassengers) / totalSeats) * 100;
             
@@ -3033,7 +3160,8 @@
             const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
             const outboundCount = activePassengers.filter(p => p.has_outbound !== false).length;
             const returnCount = activePassengers.filter(p => p.has_return !== false).length;
-            const totalSeats = flight?.total_seats || flight?.available_seats || 20;
+            // Prefer available_seats (more likely to be current) over total_seats
+            const totalSeats = flight?.available_seats || flight?.total_seats || 20;
             
             if (outboundCount >= totalSeats && returnCount >= totalSeats) {
                 // Both legs are full - offer waitlist
@@ -3175,6 +3303,9 @@
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return false; // Session expired
+                    
                     let response;
                     
                     if (editingPassengerId) {
@@ -3183,8 +3314,7 @@
                             {
                                 method: 'PATCH',
                                 headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${getAccessToken()}`,
+                                    ...headers,
                                     'Content-Type': 'application/json',
                                     'Prefer': 'return=representation'
                                 },
@@ -3197,8 +3327,7 @@
                             {
                                 method: 'POST',
                                 headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${getAccessToken()}`,
+                                    ...headers,
                                     'Content-Type': 'application/json',
                                     'Prefer': 'return=representation'
                                 },
@@ -3208,6 +3337,10 @@
                     }
                     
                     if (!response.ok) {
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return false;
+                        }
                         const error = await response.text();
                         throw new Error(error);
                     }
@@ -3264,14 +3397,16 @@
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     // Soft delete - update status to cancelled
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
                         {
                             method: 'PATCH',
                             headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`,
+                                ...headers,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
@@ -3281,7 +3416,13 @@
                         }
                     );
                     
-                    if (!response.ok) throw new Error('Failed to delete');
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Failed to delete');
+                    }
                     await loadFlightData();
                 } else {
                     // Demo mode
@@ -3314,13 +3455,15 @@
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
                         {
                             method: 'PATCH',
                             headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`,
+                                ...headers,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
@@ -3387,20 +3530,28 @@
                 };
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
                         {
                             method: 'PATCH',
                             headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`,
+                                ...headers,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
                         }
                     );
                     
-                    if (!response.ok) throw new Error('Failed to request cancellation');
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Failed to request cancellation');
+                    }
                     await loadFlightData();
                 } else {
                     // Demo mode
@@ -3438,20 +3589,28 @@
                 };
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
                         {
                             method: 'PATCH',
                             headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`,
+                                ...headers,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
                         }
                     );
                     
-                    if (!response.ok) throw new Error('Failed to approve cancellation');
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Failed to approve cancellation');
+                    }
                     await loadFlightData();
                 } else {
                     // Demo mode
@@ -3490,20 +3649,28 @@
                 };
                 
                 if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/passengers?id=eq.${id}`,
                         {
                             method: 'PATCH',
                             headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`,
+                                ...headers,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(updateData)
                         }
                     );
                     
-                    if (!response.ok) throw new Error('Failed to reject cancellation');
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        throw new Error('Failed to reject cancellation');
+                    }
                     await loadFlightData();
                 } else {
                     // Demo mode
@@ -4322,6 +4489,13 @@ IMPORTANT RULES:
                 const supabaseUrl = localStorage.getItem('supabaseUrl');
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
+                // Get access token before the import loop
+                let importHeaders = null;
+                if (supabaseUrl && supabaseKey) {
+                    importHeaders = await getAuthHeaders();
+                    if (!importHeaders) return; // Session expired
+                }
+                
                 for (let i = 0; i < importData.length; i++) {
                     if (excludedRows.has(i)) continue;
                     
@@ -4381,13 +4555,12 @@ IMPORTANT RULES:
                         }
                     });
                     
-                    if (supabaseUrl && supabaseKey) {
+                    if (supabaseUrl && supabaseKey && importHeaders) {
                         try {
                             const response = await fetch(`${supabaseUrl}/rest/v1/passengers`, {
                                 method: 'POST',
                                 headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${getAccessToken()}`,
+                                    ...importHeaders,
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify(passengerData)
@@ -4395,13 +4568,16 @@ IMPORTANT RULES:
                             
                             if (response.ok) {
                                 imported++;
+                            } else if (response.status === 401) {
+                                handleSessionExpired();
+                                return;
                             } else {
                                 failed++;
                             }
                         } catch (e) {
                             failed++;
                         }
-                    } else {
+                    } else if (!supabaseUrl) {
                         // Demo mode
                         passengerData.id = Date.now().toString() + i;
                         passengerData.created_at = new Date().toISOString();
@@ -4436,22 +4612,22 @@ IMPORTANT RULES:
         
         async function loadRoomGroups() {
             const supabaseUrl = localStorage.getItem('supabaseUrl');
-            const supabaseKey = localStorage.getItem('supabaseKey');
             
-            if (supabaseUrl && supabaseKey) {
+            if (supabaseUrl) {
                 try {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(
                         `${supabaseUrl}/rest/v1/room_groups?flight_id=eq.${flightId}&order=name.asc`,
-                        {
-                            headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${getAccessToken()}`
-                            }
-                        }
+                        { headers }
                     );
                     
                     if (response.ok) {
                         roomGroups = await response.json();
+                    } else if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
                     }
                 } catch (error) {
                     console.error('Error loading room groups:', error);
@@ -4515,11 +4691,13 @@ IMPORTANT RULES:
             
             if (supabaseUrl && supabaseKey) {
                 try {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
                     const response = await fetch(`${supabaseUrl}/rest/v1/room_groups`, {
                         method: 'POST',
                         headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${getAccessToken()}`,
+                            ...headers,
                             'Content-Type': 'application/json',
                             'Prefer': 'return=representation'
                         },
@@ -4533,6 +4711,8 @@ IMPORTANT RULES:
                         document.getElementById('roomGroup').value = newGroup.id;
                         closeRoomGroupModal();
                         showToast('קבוצת חדר נוצרה בהצלחה', 'success');
+                    } else if (response.status === 401) {
+                        handleSessionExpired();
                     } else {
                         throw new Error('Failed to create room group');
                     }
