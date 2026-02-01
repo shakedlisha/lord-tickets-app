@@ -1755,12 +1755,15 @@ Return: 14:00-18:30
                 return;
             }
             
+            // Save reference BEFORE closing modal (which clears the array)
+            const flightsToImport = [...parsedFlightsForImport];
+            
             closeImportPreview();
             showLoading(true);
             
             let added = 0;
             for (const index of selectedIndices) {
-                const flightData = parsedFlightsForImport[index];
+                const flightData = flightsToImport[index];
                 if (flightData) {
                     await addFlightFromParsedData(flightData);
                     added++;
@@ -1769,7 +1772,6 @@ Return: 14:00-18:30
             
             showLoading(false);
             showToast(`${added} טיסות נוספו בהצלחה!`, 'success');
-            parsedFlightsForImport = [];
         }
         
         async function addFlightFromParsedData(data) {
