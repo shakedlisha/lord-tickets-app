@@ -802,6 +802,26 @@
             margin-right: 8px;
         }
         
+        /* Airline Brand Colors */
+        .airline-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .airline-elal { background: rgba(30, 58, 138, 0.15); color: #1E3A8A; }
+        .airline-wizz { background: rgba(232, 31, 123, 0.15); color: #E31E7B; }
+        .airline-centrum { background: rgba(74, 85, 104, 0.15); color: #4A5568; }
+        .airline-lot { background: rgba(0, 51, 102, 0.15); color: #003366; }
+        .airline-smartwings { background: rgba(232, 85, 0, 0.15); color: #E85500; }
+        .airline-ryanair { background: rgba(7, 53, 144, 0.15); color: #073590; }
+        .airline-easyjet { background: rgba(255, 102, 0, 0.15); color: #FF6600; }
+        .airline-turkish { background: rgba(200, 16, 46, 0.15); color: #C8102E; }
+        .airline-lufthansa { background: rgba(5, 22, 77, 0.15); color: #05164D; }
+        .airline-aegean { background: rgba(0, 32, 91, 0.15); color: #00205B; }
+        .airline-other { background: rgba(102, 102, 102, 0.15); color: #666; }
+        
         /* Drop Zone for new images */
         .drop-zone-mini {
             border: 2px dashed var(--gray);
@@ -5125,7 +5145,7 @@
                                 <span class="mini-city">${f.fromCity || ''}</span>
                             </div>
                             <div class="mini-connector">
-                                <span class="mini-flight-info">${f.airline || ''}</span>
+                                <span class="mini-flight-info airline-badge ${getAirlineClass(f.airline)}">${f.airline || ''}</span>
                             </div>
                             <div class="mini-row">
                                 <span class="mini-time">${f.arrivalTime || '--:--'}</span>
@@ -5416,7 +5436,7 @@
                                 <span class="mini-city">${flight.fromCity || ''}</span>
                             </div>
                             <div class="mini-connector">
-                                <span class="mini-flight-info">${flight.airline || ''}</span>
+                                <span class="mini-flight-info airline-badge ${getAirlineClass(flight.airline)}">${flight.airline || ''}</span>
                             </div>
                             <div class="mini-row">
                                 <span class="mini-time">${flight.arrivalTime || '--:--'}</span>
@@ -6053,7 +6073,7 @@
                     <tr style="border-bottom: 1px solid #eee;">
                         <td style="padding: 12px;">${formatDateRange(f.departure_date, f.return_date)}</td>
                         <td style="padding: 12px;"><strong>${f.destination_name}</strong> (${f.destination_code})</td>
-                        <td style="padding: 12px;">${f.airline}</td>
+                        <td style="padding: 12px;"><span class="airline-badge ${getAirlineClass(f.airline)}">${f.airline}</span></td>
                         <td style="padding: 12px; text-align: center;">
                             <span style="background: ${f.available_seats <= 2 ? '#DC354520' : '#28A74520'}; color: ${f.available_seats <= 2 ? '#DC3545' : '#28A745'}; padding: 4px 10px; border-radius: 15px; font-weight: 600;">${f.available_seats}</span>
                         </td>
@@ -6085,6 +6105,21 @@
             const endDate = new Date(end);
             const endStr = `${endDate.getDate().toString().padStart(2,'0')}/${(endDate.getMonth()+1).toString().padStart(2,'0')}`;
             return `${startStr} - ${endStr}`;
+        }
+        
+        function getAirlineClass(airline) {
+            const name = (airline || '').toLowerCase().trim();
+            if (name.includes('el al') || name === 'elal') return 'airline-elal';
+            if (name.includes('wizz')) return 'airline-wizz';
+            if (name.includes('centrum')) return 'airline-centrum';
+            if (name.includes('lot')) return 'airline-lot';
+            if (name.includes('smartwings')) return 'airline-smartwings';
+            if (name.includes('ryanair')) return 'airline-ryanair';
+            if (name.includes('easyjet')) return 'airline-easyjet';
+            if (name.includes('turkish')) return 'airline-turkish';
+            if (name.includes('lufthansa')) return 'airline-lufthansa';
+            if (name.includes('aegean')) return 'airline-aegean';
+            return 'airline-other';
         }
         
         function selectInventoryFlight(encodedFlight) {

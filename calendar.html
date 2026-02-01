@@ -274,6 +274,19 @@
             background: var(--info);
         }
         
+        /* Airline Brand Colors - Left Border */
+        .flight-event.airline-elal { border-right: 3px solid #1E3A8A; }
+        .flight-event.airline-wizz { border-right: 3px solid #E31E7B; }
+        .flight-event.airline-centrum { border-right: 3px solid #4A5568; }
+        .flight-event.airline-lot { border-right: 3px solid #003366; }
+        .flight-event.airline-smartwings { border-right: 3px solid #E85500; }
+        .flight-event.airline-ryanair { border-right: 3px solid #073590; }
+        .flight-event.airline-easyjet { border-right: 3px solid #FF6600; }
+        .flight-event.airline-turkish { border-right: 3px solid #C8102E; }
+        .flight-event.airline-lufthansa { border-right: 3px solid #05164D; }
+        .flight-event.airline-aegean { border-right: 3px solid #00205B; }
+        .flight-event.airline-other { border-right: 3px solid #666; }
+        
         .flight-event .material-icons {
             font-size: 0.9rem;
         }
@@ -754,9 +767,10 @@
                     const isDeparture = depDate === dateStr;
                     const type = isDeparture ? 'departure' : 'return';
                     const icon = isDeparture ? 'flight_takeoff' : 'flight_land';
+                    const airlineClass = getAirlineClass(f.airline);
                     
                     eventsHtml += `
-                        <div class="flight-event ${type}" onclick="openFlightDetail('${f.id}')">
+                        <div class="flight-event ${type} ${airlineClass}" onclick="openFlightDetail('${f.id}')">
                             <span class="material-icons">${icon}</span>
                             ${f.destination || 'טיסה'}
                         </div>
@@ -988,6 +1002,21 @@ END:VEVENT
             if (!dateStr) return '-';
             const date = new Date(dateStr);
             return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        }
+        
+        function getAirlineClass(airline) {
+            const name = (airline || '').toLowerCase().trim();
+            if (name.includes('el al') || name === 'elal') return 'airline-elal';
+            if (name.includes('wizz')) return 'airline-wizz';
+            if (name.includes('centrum')) return 'airline-centrum';
+            if (name.includes('lot')) return 'airline-lot';
+            if (name.includes('smartwings')) return 'airline-smartwings';
+            if (name.includes('ryanair')) return 'airline-ryanair';
+            if (name.includes('easyjet')) return 'airline-easyjet';
+            if (name.includes('turkish')) return 'airline-turkish';
+            if (name.includes('lufthansa')) return 'airline-lufthansa';
+            if (name.includes('aegean')) return 'airline-aegean';
+            return 'airline-other';
         }
         
         function downloadFile(filename, content, type) {

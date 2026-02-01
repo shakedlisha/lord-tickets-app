@@ -469,11 +469,49 @@
             font-weight: 500;
         }
         
-        .airline-wizz { background: #C6007E20; color: #C6007E; }
-        .airline-ryanair { background: #07355920; color: #073559; }
-        .airline-easyjet { background: #FF660020; color: #FF6600; }
-        .airline-elal { background: #00529920; color: #005299; }
-        .airline-other { background: var(--gray-light); color: var(--gray-dark); }
+        /* Airline Brand Colors */
+        .airline-elal { background: rgba(30, 58, 138, 0.15); color: #1E3A8A; }
+        .airline-wizz { background: rgba(232, 31, 123, 0.15); color: #E31E7B; }
+        .airline-centrum { background: rgba(74, 85, 104, 0.15); color: #4A5568; }
+        .airline-lot { background: rgba(0, 51, 102, 0.15); color: #003366; }
+        .airline-smartwings { background: rgba(232, 85, 0, 0.15); color: #E85500; }
+        .airline-ryanair { background: rgba(7, 53, 144, 0.15); color: #073590; }
+        .airline-easyjet { background: rgba(255, 102, 0, 0.15); color: #FF6600; }
+        .airline-turkish { background: rgba(200, 16, 46, 0.15); color: #C8102E; }
+        .airline-lufthansa { background: rgba(5, 22, 77, 0.15); color: #05164D; }
+        .airline-aegean { background: rgba(0, 32, 91, 0.15); color: #00205B; }
+        .airline-other { background: rgba(102, 102, 102, 0.15); color: #666; }
+        
+        /* Airline Logo + Badge */
+        .airline-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .airline-logo {
+            width: 28px;
+            height: 20px;
+            object-fit: contain;
+            border-radius: 3px;
+            background: #f5f5f5;
+            padding: 2px;
+        }
+        
+        .airline-logo-fallback {
+            width: 28px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gray-light);
+            border-radius: 3px;
+            color: var(--navy);
+        }
+        
+        .airline-logo-fallback .material-icons {
+            font-size: 16px;
+        }
         
         .seats-badge {
             display: inline-flex;
@@ -2148,7 +2186,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         <strong>${flight.destination_name}</strong>
                         <br><small style="color: var(--gray-dark);">${flight.destination_code}</small>
                     </td>
-                    <td><span class="airline-badge ${getAirlineClass(flight.airline)}">${flight.airline}</span></td>
+                    <td>
+                        <div class="airline-cell">
+                            ${getAirlineLogo(flight.airline, flight.outbound_details) 
+                                ? `<img src="${getAirlineLogo(flight.airline, flight.outbound_details)}" class="airline-logo" alt="${flight.airline}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"><span class="airline-logo-fallback" style="display:none"><span class="material-icons">flight</span></span>`
+                                : `<span class="airline-logo-fallback"><span class="material-icons">flight</span></span>`
+                            }
+                            <span class="airline-badge ${getAirlineClass(flight.airline)}">${flight.airline}</span>
+                        </div>
+                    </td>
                     <td style="font-size: 0.85rem;">${flight.outbound_details || '-'}</td>
                     <td style="font-size: 0.85rem;">${flight.inbound_details || '-'}</td>
                     <td>
@@ -2231,12 +2277,71 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         function getAirlineClass(airline) {
-            const lower = airline.toLowerCase();
-            if (lower.includes('wizz')) return 'airline-wizz';
-            if (lower.includes('ryanair')) return 'airline-ryanair';
-            if (lower.includes('easyjet')) return 'airline-easyjet';
-            if (lower.includes('el al')) return 'airline-elal';
+            const name = (airline || '').toLowerCase().trim();
+            if (name.includes('el al') || name === 'elal') return 'airline-elal';
+            if (name.includes('wizz')) return 'airline-wizz';
+            if (name.includes('centrum')) return 'airline-centrum';
+            if (name.includes('lot')) return 'airline-lot';
+            if (name.includes('smartwings')) return 'airline-smartwings';
+            if (name.includes('ryanair')) return 'airline-ryanair';
+            if (name.includes('easyjet')) return 'airline-easyjet';
+            if (name.includes('turkish')) return 'airline-turkish';
+            if (name.includes('lufthansa')) return 'airline-lufthansa';
+            if (name.includes('aegean')) return 'airline-aegean';
             return 'airline-other';
+        }
+        
+        function getAirlineLogo(airlineName, flightNumber) {
+            let iataCode = null;
+            
+            // Try to extract IATA from flight number
+            if (flightNumber) {
+                const flightStr = flightNumber.toString().trim();
+                const match = flightStr.match(/^([A-Z]{2,3})[\s\-]?\d/i);
+                if (match) {
+                    iataCode = match[1].toUpperCase();
+                } else {
+                    const simpleMatch = flightStr.match(/^([A-Z]{2,3})/i);
+                    if (simpleMatch) {
+                        iataCode = simpleMatch[1].toUpperCase();
+                    }
+                }
+            }
+            
+            // Map from airline name if no IATA from flight number
+            if (!iataCode && airlineName) {
+                const name = airlineName.toLowerCase();
+                const airlineToIATA = {
+                    'el al': 'LY', 'elal': 'LY',
+                    'arkia': 'IZ', 'israir': '6H',
+                    'lufthansa': 'LH', 'swiss': 'LX', 'austrian': 'OS',
+                    'british airways': 'BA', 'air france': 'AF', 'klm': 'KL',
+                    'ita': 'AZ', 'alitalia': 'AZ', 'iberia': 'IB', 'vueling': 'VY',
+                    'tap': 'TP', 'lot': 'LO', 'smartwings': 'QS', 'cyprus': 'CY',
+                    'air europa': 'UX', 'virgin': 'VS', 'brussels': 'SN',
+                    'transavia': 'HV', 'ryanair': 'FR', 'wizz': 'W6', 'easyjet': 'U2',
+                    'norwegian': 'DY', 'sas': 'SK', 'finnair': 'AY', 'icelandair': 'FI',
+                    'aer lingus': 'EI', 'tui': 'BY', 'jet2': 'LS',
+                    'emirates': 'EK', 'flydubai': 'FZ', 'etihad': 'EY', 'qatar': 'QR',
+                    'royal jordanian': 'RJ', 'turkish': 'TK', 'turkish airlines': 'TK',
+                    'pegasus': 'PC', 'sunexpress': 'XQ', 'aegean': 'A3',
+                    'centrum': 'C3',
+                    'united': 'UA', 'delta': 'DL', 'american': 'AA',
+                    'air canada': 'AC', 'jetblue': 'B6', 'southwest': 'WN'
+                };
+                
+                for (const [key, code] of Object.entries(airlineToIATA)) {
+                    if (name.includes(key)) {
+                        iataCode = code;
+                        break;
+                    }
+                }
+            }
+            
+            if (iataCode) {
+                return `https://cdn.jsdelivr.net/gh/urbullet/iata-airelines-logos@master/scripts/airlines-logos/${iataCode}.png`;
+            }
+            return null;
         }
         
         function getSeatsClass(seats) {
