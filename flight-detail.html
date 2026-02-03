@@ -3188,9 +3188,11 @@
             document.getElementById('passengerModal').classList.add('show');
         }
         
-        function closeModal() {
-            document.getElementById('passengerModal').classList.remove('show');
-            editingPassengerId = null;
+        function closeModal(modalId = 'passengerModal') {
+            document.getElementById(modalId).classList.remove('show');
+            if (modalId === 'passengerModal') {
+                editingPassengerId = null;
+            }
         }
         
         function editPassenger(id) {
