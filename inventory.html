@@ -2044,6 +2044,35 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         // ==========================================
         // Data Loading (Mock for now, Supabase later)
         // ==========================================
+        // Fetch active passenger counts per flight from Supabase
+        async function fetchPassengerCounts() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            if (!supabaseUrl || !supabaseKey) return;
+            
+            try {
+                const response = await fetch(
+                    `${supabaseUrl}/rest/v1/passengers?select=flight_id,status&status=in.(active)`,
+                    { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                );
+                if (!response.ok) return;
+                const passengers = await response.json();
+                
+                // Count active passengers per flight
+                const counts = {};
+                passengers.forEach(p => {
+                    counts[p.flight_id] = (counts[p.flight_id] || 0) + 1;
+                });
+                
+                // Attach to each flight object
+                flights.forEach(f => {
+                    f.booked_passengers = counts[f.id] || 0;
+                });
+            } catch (err) {
+                console.error('Error fetching passenger counts:', err);
+            }
+        }
+        
         async function loadFlights() {
             showLoading(true);
             
@@ -2066,6 +2095,9 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     } else {
                         throw new Error('Failed to load from Supabase');
                     }
+                    
+                    // Fetch passenger counts to compute remaining seats
+                    await fetchPassengerCounts();
                 } else {
                     // Load sample data
                     flights = getSampleFlights();
@@ -2198,11 +2230,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     <td style="font-size: 0.85rem;">${flight.outbound_details || '-'}</td>
                     <td style="font-size: 0.85rem;">${flight.inbound_details || '-'}</td>
                     <td>
-                        <span class="seats-badge ${getSeatsClass(flight.available_seats)}" 
+                        <span class="seats-badge ${getSeatsClass((flight.total_seats || 0) - (flight.booked_passengers || 0))}" 
                               contenteditable="true" 
                               onblur="updateSeats('${flight.id}', this.textContent)"
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-                        >${flight.available_seats}</span>
+                              title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
+                        >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
                     </td>
                     <td class="baggage-cell">
                         <label class="baggage-inline">
@@ -2345,7 +2378,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         function getSeatsClass(seats) {
-            if (seats === 0) return 'seats-none';
+            if (seats <= 0) return 'seats-none';
             if (seats <= 2) return 'seats-low';
             if (seats <= 5) return 'seats-medium';
             return 'seats-high';
@@ -2353,7 +2386,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         
         function updateStats() {
             document.getElementById('totalFlights').textContent = flights.length;
-            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + (f.available_seats || 0), 0);
+            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + ((f.total_seats || 0) - (f.booked_passengers || 0)), 0);
             document.getElementById('totalAirlines').textContent = [...new Set(flights.map(f => f.airline))].length;
         }
         
