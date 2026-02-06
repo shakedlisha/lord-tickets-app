@@ -2230,12 +2230,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     <td style="font-size: 0.85rem;">${flight.outbound_details || '-'}</td>
                     <td style="font-size: 0.85rem;">${flight.inbound_details || '-'}</td>
                     <td>
-                        <span class="seats-badge ${getSeatsClass((flight.total_seats || 0) - (flight.booked_passengers || 0))}" 
+                        <span class="seats-badge ${getSeatsClass((flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0))}" 
                               contenteditable="true" 
                               onblur="updateSeats('${flight.id}', this.textContent)"
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-                              title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
-                        >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
+                              title="נותרו ${(flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || flight.available_seats || 0}"
+                        >${(flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0)}</span>
                     </td>
                     <td class="baggage-cell">
                         <label class="baggage-inline">
@@ -2386,7 +2386,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         
         function updateStats() {
             document.getElementById('totalFlights').textContent = flights.length;
-            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + ((f.total_seats || 0) - (f.booked_passengers || 0)), 0);
+            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + ((f.total_seats || f.available_seats || 0) - (f.booked_passengers || 0)), 0);
             document.getElementById('totalAirlines').textContent = [...new Set(flights.map(f => f.airline))].length;
         }
         
