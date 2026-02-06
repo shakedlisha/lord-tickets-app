@@ -60,7 +60,14 @@ self.addEventListener('activate', event => {
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Listen for skip waiting message from client
+self.addEventListener('message', event => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
+// Fetch event - network first, cache fallback
 self.addEventListener('fetch', event => {
     const { request } = event;
     const url = new URL(request.url);
