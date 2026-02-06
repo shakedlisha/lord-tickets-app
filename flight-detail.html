@@ -1563,7 +1563,7 @@
                 <span class="material-icons">payments</span>
             </div>
             <div class="financial-info">
-                <h3 id="totalRevenue">€0</h3>
+                <h3 id="totalRevenue">$0</h3>
                 <p>סה"כ הכנסות</p>
             </div>
         </div>
@@ -1572,7 +1572,7 @@
                 <span class="material-icons">receipt_long</span>
             </div>
             <div class="financial-info">
-                <h3 id="totalCost">€0</h3>
+                <h3 id="totalCost">$0</h3>
                 <p>סה"כ עלויות</p>
             </div>
         </div>
@@ -1581,7 +1581,7 @@
                 <span class="material-icons">trending_up</span>
             </div>
             <div class="financial-info">
-                <h3 id="totalProfit">€0</h3>
+                <h3 id="totalProfit">$0</h3>
                 <p>רווח גולמי</p>
             </div>
         </div>
@@ -1590,7 +1590,7 @@
                 <span class="material-icons">account_balance_wallet</span>
             </div>
             <div class="financial-info">
-                <h3 id="totalCommission">€0</h3>
+                <h3 id="totalCommission">$0</h3>
                 <p>עמלות סוכנים</p>
             </div>
         </div>
@@ -2781,8 +2781,10 @@
                         return_date: '2025-03-23',
                         outbound_details: 'LY395 03:15-07:45',
                         inbound_details: 'LY396 12:15-17:50',
-                        available_seats: 20,
                         total_seats: 20,
+                        selling_price: 899,
+                        cost_price: 680,
+                        currency: 'USD',
                         event_name: 'Real Madrid vs Atletico Madrid'
                     };
                     passengers = [];
@@ -2826,139 +2828,102 @@
             document.title = `Lord Tickets - ${flight.destination_name}`;
         }
         
+        // ==========================================
+        // Shared helper: single source of truth for seat info
+        // ==========================================
+        function getSeatsInfo() {
+            const active = passengers.filter(p => p.status === 'active' || !p.status);
+            const waitlist = passengers.filter(p => p.status === 'waitlist');
+            const cancelled = passengers.filter(p => p.status === 'cancelled');
+            const outbound = active.filter(p => p.has_outbound !== false).length;
+            const returnCount = active.filter(p => p.has_return !== false).length;
+            const totalSeats = flight?.total_seats || 0;
+            const maxBooked = Math.max(outbound, returnCount);
+            const available = totalSeats - maxBooked;
+            return { active, waitlist, cancelled, outbound, returnCount, totalSeats, available, isOverbooked: available < 0 };
+        }
+        
+        // ==========================================
+        // Stats cards
+        // ==========================================
         function updateStats() {
-            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
-            const waitlistPassengers = passengers.filter(p => p.status === 'waitlist');
-            const cancelledPassengers = passengers.filter(p => p.status === 'cancelled');
+            const info = getSeatsInfo();
             
-            const outboundPassengers = activePassengers.filter(p => p.has_outbound !== false).length;
-            const returnPassengers = activePassengers.filter(p => p.has_return !== false).length;
-            
-            // Prefer available_seats (more likely to be current) over total_seats
-            const totalSeats = flight?.available_seats || flight?.total_seats || 20;
-            const availableSeats = totalSeats - Math.max(outboundPassengers, returnPassengers);
-            const capacityPercent = (Math.max(outboundPassengers, returnPassengers) / totalSeats) * 100;
-            
-            // Update main stats
-            document.getElementById('totalPassengers').textContent = activePassengers.length;
-            document.getElementById('outboundCount').textContent = `${outboundPassengers}/${totalSeats}`;
-            document.getElementById('returnCount').textContent = `${returnPassengers}/${totalSeats}`;
-            document.getElementById('availableSeats').textContent = availableSeats;
+            // Update main stat cards
+            document.getElementById('totalPassengers').textContent = info.active.length;
+            document.getElementById('outboundCount').textContent = `${info.outbound}/${info.totalSeats}`;
+            document.getElementById('returnCount').textContent = `${info.returnCount}/${info.totalSeats}`;
+            document.getElementById('availableSeats').textContent = info.available;
             
             // Update view tab counts
-            document.getElementById('activeCount').textContent = activePassengers.length;
-            document.getElementById('waitlistCount').textContent = waitlistPassengers.length;
-            document.getElementById('cancelledCount').textContent = cancelledPassengers.length;
+            document.getElementById('activeCount').textContent = info.active.length;
+            document.getElementById('waitlistCount').textContent = info.waitlist.length;
+            document.getElementById('cancelledCount').textContent = info.cancelled.length;
             
-            // Apply capacity warning colors
+            // Capacity warning colors
             const outboundCard = document.getElementById('outboundCount').closest('.stat-card');
             const returnCard = document.getElementById('returnCount').closest('.stat-card');
             const availableCard = document.getElementById('availableSeats').closest('.stat-card');
             
-            // Reset classes
             [outboundCard, returnCard, availableCard].forEach(card => {
                 card.classList.remove('warning', 'full');
             });
             
-            // Outbound capacity
-            const outboundPercent = (outboundPassengers / totalSeats) * 100;
-            if (outboundPercent >= 100) {
-                outboundCard.classList.add('full');
-            } else if (outboundPercent >= 80) {
-                outboundCard.classList.add('warning');
+            if (info.totalSeats > 0) {
+                const outPct = (info.outbound / info.totalSeats) * 100;
+                if (outPct >= 100) outboundCard.classList.add('full');
+                else if (outPct >= 80) outboundCard.classList.add('warning');
+                
+                const retPct = (info.returnCount / info.totalSeats) * 100;
+                if (retPct >= 100) returnCard.classList.add('full');
+                else if (retPct >= 80) returnCard.classList.add('warning');
             }
             
-            // Return capacity
-            const returnPercent = (returnPassengers / totalSeats) * 100;
-            if (returnPercent >= 100) {
-                returnCard.classList.add('full');
-            } else if (returnPercent >= 80) {
-                returnCard.classList.add('warning');
-            }
+            if (info.available <= 0) availableCard.classList.add('full');
+            else if (info.available <= 3) availableCard.classList.add('warning');
             
-            // Available seats
-            if (availableSeats <= 0) {
-                availableCard.classList.add('full');
-            } else if (availableSeats <= 3) {
-                availableCard.classList.add('warning');
-            }
-            
-            // Overbooking visual alert
+            // Overbooking alert
             const overbookingAlert = document.getElementById('overbookingAlert');
             if (overbookingAlert) {
-                if (availableSeats < 0) {
-                    overbookingAlert.style.display = 'block';
-                    overbookingAlert.textContent = 'אוברובוקינג';
-                } else {
-                    overbookingAlert.style.display = 'none';
-                }
+                overbookingAlert.style.display = info.isOverbooked ? 'block' : 'none';
             }
             
             // Update financials
             updateFinancials();
         }
         
+        // ==========================================
+        // Financial summary — all USD, simple math
+        // ==========================================
         function updateFinancials() {
-            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
-            const flightCurrency = flight?.currency || 'USD';
+            const active = passengers.filter(p => p.status === 'active' || !p.status);
+            const flightPrice = parseFloat(flight?.selling_price) || 0;
+            const flightCost = parseFloat(flight?.cost_price) || 0;
             
-            // Group by currency for totals; default to USD to match inventory
-            const totals = {};
-            let mainCurrency = 'USD';
+            let totalRevenue = 0;
+            let totalCost = 0;
+            let totalCommission = 0;
             
-            activePassengers.forEach(p => {
-                const currency = p.currency || flightCurrency;
-                if (!totals[currency]) {
-                    totals[currency] = { revenue: 0, cost: 0, commission: 0, count: 0 };
-                }
-                const pricePaid = parseFloat(p.price_paid);
-                const costPrice = parseFloat(p.cost_price);
-                const flightSelling = parseFloat(flight?.selling_price);
-                const flightCost = parseFloat(flight?.cost_price);
-                totals[currency].revenue += (Number.isFinite(pricePaid) && pricePaid > 0) ? pricePaid : (Number.isFinite(flightSelling) ? flightSelling : 0);
-                totals[currency].cost += (Number.isFinite(costPrice) && costPrice > 0) ? costPrice : (Number.isFinite(flightCost) ? flightCost : 0);
-                totals[currency].commission += parseFloat(p.agent_commission) || 0;
-                totals[currency].count++;
+            active.forEach(p => {
+                const pp = parseFloat(p.price_paid);
+                const cp = parseFloat(p.cost_price);
+                totalRevenue += (pp > 0) ? pp : flightPrice;
+                totalCost += (cp > 0) ? cp : flightCost;
+                totalCommission += parseFloat(p.agent_commission) || 0;
             });
             
-            // Find dominant currency
-            let maxCount = 0;
-            Object.entries(totals).forEach(([currency, data]) => {
-                if (data.count > maxCount) {
-                    maxCount = data.count;
-                    mainCurrency = currency;
-                }
-            });
+            const profit = totalRevenue - totalCost - totalCommission;
             
-            // Get totals for main currency
-            const mainTotals = totals[mainCurrency] || { revenue: 0, cost: 0, commission: 0 };
-            const profit = mainTotals.revenue - mainTotals.cost - mainTotals.commission;
+            document.getElementById('totalRevenue').textContent = `$${totalRevenue.toLocaleString()}`;
+            document.getElementById('totalCost').textContent = `$${totalCost.toLocaleString()}`;
+            document.getElementById('totalProfit').textContent = `$${profit.toLocaleString()}`;
+            document.getElementById('totalCommission').textContent = `$${totalCommission.toLocaleString()}`;
             
-            // Format values
-            const currencySymbols = { EUR: '€', USD: '$', ILS: '₪', GBP: '£' };
-            const symbol = currencySymbols[mainCurrency] || mainCurrency;
-            
-            document.getElementById('totalRevenue').textContent = `${symbol}${mainTotals.revenue.toLocaleString()}`;
-            document.getElementById('totalCost').textContent = `${symbol}${mainTotals.cost.toLocaleString()}`;
-            document.getElementById('totalProfit').textContent = `${symbol}${profit.toLocaleString()}`;
-            document.getElementById('totalCommission').textContent = `${symbol}${mainTotals.commission.toLocaleString()}`;
-            
-            // Apply profit color
             const profitCard = document.querySelector('.financial-card.profit');
             if (profit < 0) {
                 profitCard.classList.add('negative');
             } else {
                 profitCard.classList.remove('negative');
-            }
-            
-            // Show multi-currency warning if needed
-            const currencies = Object.keys(totals);
-            const revenueEl = document.getElementById('totalRevenue');
-            if (currencies.length > 1) {
-                const otherCurrencies = currencies.filter(c => c !== mainCurrency).join(', ');
-                revenueEl.title = `מטבעות נוספים: ${otherCurrencies}`;
-            } else {
-                revenueEl.title = '';
             }
         }
         
@@ -3181,31 +3146,20 @@
         // CRUD Operations
         // ==========================================
         function openAddModal() {
-            // Check if flight is full or overbooked
-            const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
-            const outboundCount = activePassengers.filter(p => p.has_outbound !== false).length;
-            const returnCount = activePassengers.filter(p => p.has_return !== false).length;
-            // Prefer available_seats (more likely to be current) over total_seats
-            const totalSeats = flight?.available_seats || flight?.total_seats || 20;
-            const availableSeats = totalSeats - Math.max(outboundCount, returnCount);
+            const info = getSeatsInfo();
             
-            // Overbooking: only allow adding to waitlist
-            if (availableSeats <= 0) {
-                if (confirm('אוברובוקינג — אין מקומות פנויים. להוסיף לרשימת המתנה בלבד?')) {
+            // No seats left — only allow waitlist
+            if (info.available <= 0) {
+                if (confirm('אין מקומות פנויים! להוסיף לרשימת המתנה בלבד?')) {
                     openAddModalInternal(true);
                 }
                 return;
             }
             
-            if (outboundCount >= totalSeats && returnCount >= totalSeats) {
-                // Both legs are full - offer waitlist
-                if (confirm('הטיסה מלאה! האם להוסיף לרשימת המתנה?')) {
-                    openAddModalInternal(true);
-                }
-                return;
-            } else if (outboundCount >= totalSeats) {
+            // Warn if one leg is full
+            if (info.outbound >= info.totalSeats) {
                 showToast('שים לב: טיסת ההלוך מלאה', 'warning');
-            } else if (returnCount >= totalSeats) {
+            } else if (info.returnCount >= info.totalSeats) {
                 showToast('שים לב: טיסת החזור מלאה', 'warning');
             }
             
@@ -3219,13 +3173,13 @@
             document.getElementById('hasOutbound').checked = true;
             document.getElementById('hasReturn').checked = true;
             document.getElementById('passengerForm').dataset.waitlist = isWaitlist;
-            // Pre-fill price, cost, and currency from flight to match inventory
+            // Pre-fill currency, price, cost from flight data
             const currencySelect = document.getElementById('currency');
-            if (currencySelect) currencySelect.value = flight?.currency || 'USD';
+            if (currencySelect) currencySelect.value = 'USD';
             const pricePaidInput = document.getElementById('pricePaid');
-            if (pricePaidInput && flight && Number.isFinite(parseFloat(flight.selling_price))) pricePaidInput.value = flight.selling_price;
+            if (pricePaidInput && flight?.selling_price) pricePaidInput.value = flight.selling_price;
             const costPriceInput = document.getElementById('costPrice');
-            if (costPriceInput && flight && Number.isFinite(parseFloat(flight.cost_price))) costPriceInput.value = flight.cost_price;
+            if (costPriceInput && flight?.cost_price) costPriceInput.value = flight.cost_price;
             document.getElementById('passengerModal').classList.add('show');
         }
         
@@ -3253,7 +3207,7 @@
             document.getElementById('hotelName').value = passenger.hotel_name || '';
             document.getElementById('hotelBookingRef').value = passenger.hotel_booking_ref || '';
             document.getElementById('roomGroup').value = passenger.room_group_id || '';
-            document.getElementById('currency').value = passenger.currency || flight?.currency || 'USD';
+            document.getElementById('currency').value = passenger.currency || 'USD';
             document.getElementById('pricePaid').value = passenger.price_paid || '';
             document.getElementById('costPrice').value = passenger.cost_price || '';
             document.getElementById('agentCommission').value = passenger.agent_commission || '';
@@ -3297,15 +3251,12 @@
             
             // Overbooking guard: prevent adding new active passenger if would exceed seats
             if (!editingPassengerId && !isWaitlist) {
-                const activePassengers = passengers.filter(p => p.status === 'active' || !p.status);
-                const outboundCount = activePassengers.filter(p => p.has_outbound !== false).length;
-                const returnCount = activePassengers.filter(p => p.has_return !== false).length;
-                const totalSeats = flight?.available_seats || flight?.total_seats || 20;
+                const info = getSeatsInfo();
                 const hasOutbound = document.getElementById('hasOutbound').checked;
                 const hasReturn = document.getElementById('hasReturn').checked;
-                const newOutbound = outboundCount + (hasOutbound ? 1 : 0);
-                const newReturn = returnCount + (hasReturn ? 1 : 0);
-                if (newOutbound > totalSeats || newReturn > totalSeats) {
+                const newOutbound = info.outbound + (hasOutbound ? 1 : 0);
+                const newReturn = info.returnCount + (hasReturn ? 1 : 0);
+                if (newOutbound > info.totalSeats || newReturn > info.totalSeats) {
                     showToast('אין מקום — מספר הנוסעים יעלה על המקומות הזמינים. הוסף לרשימת המתנה.', 'error');
                     return false;
                 }
@@ -3767,7 +3718,7 @@
             return `${startStr} - ${endStr}`;
         }
         
-        function formatCurrency(amount, currency = 'EUR') {
+        function formatCurrency(amount, currency = 'USD') {
             const symbols = { EUR: '€', USD: '$', ILS: '₪', GBP: '£' };
             return `${symbols[currency] || ''}${amount}`;
         }
@@ -5025,7 +4976,7 @@ IMPORTANT RULES:
                 p.room_group_name || '',
                 p.has_outbound !== false ? 'V' : '',
                 p.has_return !== false ? 'V' : '',
-                p.currency || 'EUR',
+                p.currency || 'USD',
                 p.price_paid || '',
                 p.cost_price || '',
                 p.agent_commission || '',
