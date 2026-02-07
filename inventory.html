@@ -1289,23 +1289,7 @@
             </div>
             <div class="table-wrapper">
                 <table id="flightsTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">
-                                <input type="checkbox" id="selectAllFlights" class="flight-checkbox" onchange="toggleAllFlights(this.checked)">
-                            </th>
-                            <th onclick="sortBy('departure_date')">תאריכים <span class="material-icons">unfold_more</span></th>
-                            <th onclick="sortBy('destination_name')">יעד <span class="material-icons">unfold_more</span></th>
-                            <th onclick="sortBy('airline')">חברה <span class="material-icons">unfold_more</span></th>
-                            <th>הלוך</th>
-                            <th>חזור</th>
-                            <th onclick="sortBy('available_seats')">מושבים <span class="material-icons">unfold_more</span></th>
-                            <th>טרולי</th>
-                            <th>מזוודה</th>
-                            <th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>
-                            <th onclick="sortBy('selling_price')">מחיר <span class="material-icons">unfold_more</span></th>
-                            <th>פעולות</th>
-                        </tr>
+                    <thead id="flightsTableHead">
                     </thead>
                     <tbody id="flightsTableBody">
                         <!-- Flights will be rendered here -->
@@ -1359,7 +1343,7 @@
                                 <input type="text" id="destinationCode" placeholder="לדוגמה: VIE" required maxlength="3" style="text-transform: uppercase;">
                             </div>
                             <div class="form-group">
-                                <label>מושבים זמינים</label>
+                                <label>סה״כ מושבים</label>
                                 <input type="number" id="availableSeats" min="0" value="1" required>
                             </div>
                             <div class="form-group full-width">
@@ -1785,7 +1769,7 @@ Return: 14:00-18:30
                     <td>${flight.airline || '-'}</td>
                     <td>${flight.departure_date || '-'}</td>
                     <td>${flight.return_date || '-'}</td>
-                    <td>${flight.available_seats || '-'}</td>
+                    <td>${flight.total_seats || '-'}</td>
                     <td>${flight.selling_price ? '$' + flight.selling_price : '-'}</td>
                 </tr>
             `).join('');
@@ -1851,7 +1835,7 @@ Return: 14:00-18:30
                 airline: normalizeAirline(data.airline || ''),
                 destination_name: data.destination_name || '',
                 destination_code: data.destination_code || '',
-                total_seats: parseInt(data.available_seats) || 1,
+                total_seats: parseInt(data.total_seats || data.available_seats) || 1,
                 outbound_details: data.outbound_details || '',
                 inbound_details: data.inbound_details || '',
                 cost_price: null,
@@ -2044,16 +2028,30 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         // ==========================================
         // Data Loading (Mock for now, Supabase later)
         // ==========================================
+        // Get authenticated access token (same approach as flight-detail.html)
+        function getAccessToken() {
+            let token = localStorage.getItem('access_token');
+            if (token) return token;
+            try {
+                const session = JSON.parse(localStorage.getItem('userSession') || '{}');
+                if (session.access_token) return session.access_token;
+            } catch (e) {}
+            return null;
+        }
+        
         // Fetch active passenger counts per flight from Supabase
         async function fetchPassengerCounts() {
             const supabaseUrl = localStorage.getItem('supabaseUrl');
             const supabaseKey = localStorage.getItem('supabaseKey');
             if (!supabaseUrl || !supabaseKey) return;
             
+            // Use authenticated token (required by passengers RLS), fall back to anon key
+            const accessToken = getAccessToken() || supabaseKey;
+            
             try {
                 const response = await fetch(
-                    `${supabaseUrl}/rest/v1/passengers?select=flight_id,status&status=in.(active)`,
-                    { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    `${supabaseUrl}/rest/v1/passengers?select=flight_id&or=(status.eq.active,status.is.null)`,
+                    { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${accessToken}` } }
                 );
                 if (!response.ok) return;
                 const passengers = await response.json();
@@ -2128,7 +2126,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     airline: 'Wizz Air',
                     destination_code: 'VIE',
                     destination_name: 'Vienna',
-                    available_seats: 4,
+                    total_seats: 4,
                     cost_price: 150,
                     selling_price: 199,
                     supplier_info: ''
@@ -2142,7 +2140,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     airline: 'Wizz Air',
                     destination_code: 'BUD',
                     destination_name: 'Budapest',
-                    available_seats: 2,
+                    total_seats: 2,
                     cost_price: 130,
                     selling_price: 179,
                     supplier_info: ''
@@ -2156,7 +2154,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     airline: 'Ryanair',
                     destination_code: 'ATH',
                     destination_name: 'Athens',
-                    available_seats: 3,
+                    total_seats: 3,
                     cost_price: 120,
                     selling_price: 149,
                     supplier_info: ''
@@ -2170,7 +2168,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     airline: 'Ryanair',
                     destination_code: 'BCN',
                     destination_name: 'Barcelona',
-                    available_seats: 0,
+                    total_seats: 0,
                     cost_price: 140,
                     selling_price: 189,
                     supplier_info: ''
@@ -2188,11 +2186,32 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         // ==========================================
         function renderFlights() {
             const tbody = document.getElementById('flightsTableBody');
+            const thead = document.getElementById('flightsTableHead');
+            const isManagerOrAbove = (localStorage.getItem('userRole') || 'agent') !== 'agent';
+            
+            // Dynamically render thead so column count matches tbody
+            thead.innerHTML = `<tr>
+                <th style="width: 40px;">
+                    <input type="checkbox" id="selectAllFlights" class="flight-checkbox" onchange="toggleAllFlights(this.checked)">
+                </th>
+                <th onclick="sortBy('departure_date')">תאריכים <span class="material-icons">unfold_more</span></th>
+                <th onclick="sortBy('destination_name')">יעד <span class="material-icons">unfold_more</span></th>
+                <th onclick="sortBy('airline')">חברה <span class="material-icons">unfold_more</span></th>
+                <th>הלוך</th>
+                <th>חזור</th>
+                <th>מושבים (נותרו)</th>
+                ${isManagerOrAbove ? `<th onclick="sortBy('total_seats')">סה״כ מושבים <span class="material-icons">unfold_more</span></th>` : ''}
+                <th>טרולי</th>
+                <th>מזוודה</th>
+                <th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>
+                <th onclick="sortBy('selling_price')">מחיר <span class="material-icons">unfold_more</span></th>
+                <th>פעולות</th>
+            </tr>`;
             
             if (filteredFlights.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="12">
+                        <td colspan="${isManagerOrAbove ? 13 : 12}">
                             <div class="empty-state">
                                 <span class="material-icons">flight_takeoff</span>
                                 <h3>אין טיסות להצגה</h3>
@@ -2230,13 +2249,18 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     <td style="font-size: 0.85rem;">${flight.outbound_details || '-'}</td>
                     <td style="font-size: 0.85rem;">${flight.inbound_details || '-'}</td>
                     <td>
-                        <span class="seats-badge ${getSeatsClass((flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0))}" 
-                              contenteditable="true" 
+                        <span class="seats-badge ${getSeatsClass((flight.total_seats || 0) - (flight.booked_passengers || 0))}"
+                              title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
+                        >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
+                    </td>
+                    ${isManagerOrAbove ? `<td>
+                        <span class="seats-badge total-seats"
+                              contenteditable="true"
                               onblur="updateSeats('${flight.id}', this.textContent)"
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-                              title="נותרו ${(flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || flight.available_seats || 0}"
-                        >${(flight.total_seats || flight.available_seats || 0) - (flight.booked_passengers || 0)}</span>
-                    </td>
+                              title="סה״כ מושבים - ניתן לעריכה"
+                        >${flight.total_seats || 0}</span>
+                    </td>` : ''}
                     <td class="baggage-cell">
                         <label class="baggage-inline">
                             <input type="checkbox" 
@@ -2377,16 +2401,16 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             return null;
         }
         
-        function getSeatsClass(seats) {
-            if (seats <= 0) return 'seats-none';
-            if (seats <= 2) return 'seats-low';
-            if (seats <= 5) return 'seats-medium';
+        function getSeatsClass(remaining) {
+            if (remaining <= 0) return 'seats-none';
+            if (remaining <= 2) return 'seats-low';
+            if (remaining <= 5) return 'seats-medium';
             return 'seats-high';
         }
         
         function updateStats() {
             document.getElementById('totalFlights').textContent = flights.length;
-            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + ((f.total_seats || f.available_seats || 0) - (f.booked_passengers || 0)), 0);
+            document.getElementById('totalSeats').textContent = flights.reduce((sum, f) => sum + ((f.total_seats || 0) - (f.booked_passengers || 0)), 0);
             document.getElementById('totalAirlines').textContent = [...new Set(flights.map(f => f.airline))].length;
         }
         
@@ -2415,10 +2439,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 // Airline filter
                 if (airline && f.airline !== airline) return false;
                 
-                // Availability filter
-                if (availability === 'available' && f.available_seats <= 0) return false;
-                if (availability === 'low' && (f.available_seats < 1 || f.available_seats > 2)) return false;
-                if (availability === 'none' && f.available_seats > 0) return false;
+                // Availability filter (based on remaining seats)
+                const remainingSeats = (f.total_seats || 0) - (f.booked_passengers || 0);
+                if (availability === 'available' && remainingSeats <= 0) return false;
+                if (availability === 'low' && (remainingSeats < 1 || remainingSeats > 2)) return false;
+                if (availability === 'none' && remainingSeats > 0) return false;
                 
                 return true;
             });
@@ -2487,7 +2512,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             document.getElementById('airline').value = flight.airline || '';
             document.getElementById('destinationName').value = flight.destination_name || '';
             document.getElementById('destinationCode').value = flight.destination_code || '';
-            document.getElementById('availableSeats').value = flight.available_seats || 0;
+            document.getElementById('availableSeats').value = flight.total_seats || 0;
             document.getElementById('outboundDetails').value = flight.outbound_details || '';
             document.getElementById('inboundDetails').value = flight.inbound_details || '';
             document.getElementById('costPrice').value = flight.cost_price || '';
@@ -2937,7 +2962,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                                 <td>${f.airline}</td>
                                 <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${f.event_name || '-'}</td>
                                 <td>${f.departure_date || '-'}</td>
-                                <td>${f.available_seats}</td>
+                                <td>${f.total_seats || 0}</td>
                                 <td>$${f.cost_price || f.selling_price}</td>
                             </tr>
                         `).join('')}
@@ -3066,7 +3091,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         function exportCSV() {
-            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'טרולי', 'מזוודה', 'מחיר'];
+            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'סה״כ מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
             const rows = flights.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
@@ -3074,7 +3099,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 f.inbound_details || '',
                 f.airline,
                 `${f.destination_name} (${f.destination_code})`,
-                f.available_seats,
+                f.total_seats || 0,
                 formatBaggage(f.trolley_baggage),
                 formatBaggage(f.suitcase_baggage),
                 f.selling_price + '$'
@@ -3112,7 +3137,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         });
         
         function exportExcel() {
-            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'מושבים', 'טרולי', 'מזוודה', 'מחיר'];
+            const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'סה״כ מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
             const rows = flights.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
@@ -3120,7 +3145,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 f.inbound_details || '',
                 f.airline,
                 `${f.destination_name} (${f.destination_code})`,
-                f.available_seats,
+                f.total_seats || 0,
                 formatBaggage(f.trolley_baggage),
                 formatBaggage(f.suitcase_baggage),
                 f.selling_price + '$'
@@ -3189,7 +3214,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 toAscii(f.inbound_details),
                 toAscii(f.airline),
                 f.destination_code || toAscii(f.destination_name),
-                f.available_seats,
+                f.total_seats || 0,
                 formatBaggagePDF(f.trolley_baggage),
                 formatBaggagePDF(f.suitcase_baggage),
                 '$' + f.selling_price
@@ -3331,8 +3356,8 @@ Step 3: Return ALL of them in a JSON array
 
 Return format - a JSON array with ALL flights:
 [
-  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "available_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
-  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "available_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
+  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "total_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
+  {"airline": "...", "destination_name": "...", "departure_date": "YYYY-MM-DD", "return_date": "YYYY-MM-DD", "total_seats": N, "selling_price": N, "cost_price": N, "event_name": "..."},
   ... continue for ALL rows
 ]
 
@@ -3340,7 +3365,7 @@ Column mapping (Hebrew columns):
 - תאריכים → parse as departure_date and return_date (format DD-DD/MM means day range in same month)
 - יעד → destination_name
 - חברת תעופה → airline
-- מספר מושבים → available_seats
+- מספר מושבים → total_seats
 - עלות למושב בדולר → selling_price AND cost_price
 - שם האירוע → event_name
 
@@ -3437,7 +3462,7 @@ MANDATORY RULES:
                         <div><strong>יעד:</strong> ${result.destination_name || '-'} ${result.destination_code ? '(' + result.destination_code + ')' : ''}</div>
                         <div><strong>חברה:</strong> ${result.airline || '-'}</div>
                         <div><strong>תאריך:</strong> ${result.departure_date || '-'}</div>
-                        <div><strong>מושבים:</strong> ${result.available_seats || '-'}</div>
+                        <div><strong>מושבים:</strong> ${result.total_seats || '-'}</div>
                         <div><strong>מחיר:</strong> $${result.selling_price || result.cost_price || '-'}</div>
                         ${result.event_name ? `<div><strong>אירוע:</strong> ${result.event_name}</div>` : ''}
                     </div>
@@ -3467,7 +3492,7 @@ MANDATORY RULES:
                                         <td style="padding: 8px;">${f.destination_name || '-'}</td>
                                         <td style="padding: 8px;">${f.airline || '-'}</td>
                                         <td style="padding: 8px;">${f.departure_date || '-'}</td>
-                                        <td style="padding: 8px;">${f.available_seats || '-'}</td>
+                                        <td style="padding: 8px;">${f.total_seats || '-'}</td>
                                         <td style="padding: 8px;">$${f.selling_price || f.cost_price || '-'}</td>
                                     </tr>
                                 `).join('')}
@@ -3519,7 +3544,7 @@ MANDATORY RULES:
             document.getElementById('airline').value = normalizeAirline(data.airline || '');
             document.getElementById('destinationName').value = data.destination_name || '';
             document.getElementById('destinationCode').value = data.destination_code || '';
-            document.getElementById('availableSeats').value = data.available_seats || 1;
+            document.getElementById('availableSeats').value = data.total_seats || 1;
             document.getElementById('outboundDetails').value = data.outbound_details || '';
             document.getElementById('inboundDetails').value = data.inbound_details || '';
             document.getElementById('sellingPrice').value = data.selling_price || '';

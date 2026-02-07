@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - הגדרה ראשונית</title>
+    
+    <!-- Google Fonts - Heebo for Hebrew -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E8C547;
+            --gold-dark: #B8960C;
+            --navy: #1B365D;
+            --navy-light: #2A4A7A;
+            --navy-dark: #0F1F3A;
+            --white: #FFFFFF;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --gray-dark: #666666;
+            --success: #28A745;
+            --error: #DC3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            direction: rtl;
+            padding: 20px;
+        }
+        
+        .setup-container {
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 500px;
+            overflow: hidden;
+        }
+        
+        .setup-header {
+            background: var(--navy-dark);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .logo-subtitle {
+            color: var(--gold-light);
+            font-size: 1rem;
+            font-weight: 300;
+        }
+        
+        .setup-body {
+            padding: 40px 30px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--gray);
+        }
+        
+        .step-dot.active {
+            background: var(--gold);
+        }
+        
+        .step-dot.done {
+            background: var(--success);
+        }
+        
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .step-description {
+            color: var(--gray-dark);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 0.95rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--navy-dark);
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--gray);
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="url"] {
+            direction: ltr;
+            text-align: left;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--gold);
+            color: var(--navy-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--gold-light);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gray);
+            color: var(--gray-dark);
+            margin-top: 10px;
+        }
+        
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .success-message {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            text-align: center;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .success-message .material-icons {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--navy-dark);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .info-text {
+            background: rgba(26, 54, 93, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--navy-dark);
+            margin-bottom: 20px;
+        }
+        
+        .info-text strong {
+            color: var(--navy);
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <div class="logo">Lord Tickets</div>
+            <div class="logo-subtitle">הגדרה ראשונית</div>
+        </div>
+        
+        <div class="setup-body">
+            <div class="step-indicator">
+                <div class="step-dot active" id="dot1"></div>
+                <div class="step-dot" id="dot2"></div>
+                <div class="step-dot" id="dot3"></div>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+            
+            <!-- Step 1: Supabase Configuration -->
+            <div class="step active" id="step1">
+                <h2 class="step-title">חיבור ל-Supabase</h2>
+                <p class="step-description">הזן את פרטי ההתחברות ל-Supabase</p>
+                
+                <div class="form-group">
+                    <label>Supabase URL</label>
+                    <input type="url" id="supabaseUrl" placeholder="https://xxx.supabase.co">
+                </div>
+                
+                <div class="form-group">
+                    <label>Supabase Anon Key</label>
+                    <input type="password" id="supabaseKey" placeholder="eyJ...">
+                </div>
+                
+                <button class="btn btn-primary" onclick="validateSupabase()">
+                    <span class="material-icons">check</span>
+                    בדוק חיבור
+                </button>
+            </div>
+            
+            <!-- Step 2: Create Admin Account -->
+            <div class="step" id="step2">
+                <h2 class="step-title">יצירת חשבון מנהל</h2>
+                <p class="step-description">צור את חשבון המנהל הראשון</p>
+                
+                <div class="info-text">
+                    <strong>שים לב:</strong> יש ליצור משתמש ב-Supabase Authentication לפני המשך.
+                    <br><br>
+                    1. היכנס ל-Supabase Dashboard<br>
+                    2. לחץ על Authentication → Users<br>
+                    3. צור משתמש חדש עם האימייל שתזין כאן
+                </div>
+                
+                <div class="form-group">
+                    <label>שם מלא</label>
+                    <input type="text" id="adminName" placeholder="שם המנהל">
+                </div>
+                
+                <div class="form-group">
+                    <label>אימייל</label>
+                    <input type="email" id="adminEmail" placeholder="admin@example.com">
+                </div>
+                
+                <button class="btn btn-primary" onclick="createAdmin()">
+                    <span class="material-icons">person_add</span>
+                    צור חשבון מנהל
+                </button>
+                
+                <button class="btn btn-outline" onclick="goToStep(1)">
+                    חזרה
+                </button>
+            </div>
+            
+            <!-- Step 3: Complete -->
+            <div class="step" id="step3">
+                <div class="success-message show">
+                    <span class="material-icons">check_circle</span>
+                    <strong>ההגדרה הושלמה בהצלחה!</strong>
+                    <p>המערכת מוכנה לשימוש</p>
+                </div>
+                
+                <button class="btn btn-primary" onclick="goToLogin()">
+                    <span class="material-icons">login</span>
+                    המשך להתחברות
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 1;
+        
+        // Check on load if setup is already done
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load saved settings
+            const savedUrl = localStorage.getItem('supabaseUrl');
+            const savedKey = localStorage.getItem('supabaseKey');
+            
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+            
+            // Check if users already exist
+            if (savedUrl && savedKey) {
+                try {
+                    const response = await fetch(`${savedUrl}/rest/v1/users?limit=1`, {
+                        headers: {
+                            'apikey': savedKey,
+                            'Authorization': `Bearer ${savedKey}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const users = await response.json();
+                        if (users.length > 0) {
+                            // Setup already done, redirect to login
+                            window.location.href = 'login.html';
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cannot check users, showing setup');
+                }
+            }
+        });
+        
+        function showError(message) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = message;
+            el.classList.add('show');
+        }
+        
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+        
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.step-dot').forEach((d, i) => {
+                d.classList.remove('active', 'done');
+                if (i < step - 1) d.classList.add('done');
+                if (i === step - 1) d.classList.add('active');
+            });
+            
+            // Show target step
+            document.getElementById(`step${step}`).classList.add('active');
+            currentStep = step;
+            hideError();
+        }
+        
+        async function validateSupabase() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key) {
+                showError('נא להזין את כל הפרטים');
+                return;
+            }
+            
+            try {
+                // Test connection by fetching flights
+                const response = await fetch(`${url}/rest/v1/flights?limit=1`, {
+                    headers: {
+                        'apikey': key,
+                        'Authorization': `Bearer ${key}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Connection failed');
+                }
+                
+                // Save settings
+                localStorage.setItem('supabaseUrl', url);
+                localStorage.setItem('supabaseKey', key);
+                
+                goToStep(2);
+                
+            } catch (error) {
+                showError('שגיאה בחיבור ל-Supabase. בדוק את הפרטים');
+            }
+        }
+        
+        async function createAdmin() {
+            const name = document.getElementById('adminName').value.trim();
+            const email = document.getElementById('adminEmail').value.trim();
+            
+            if (!name || !email) {
+                showError('נא להזין שם ואימייל');
+                return;
+            }
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            
+            try {
+                // Create admin user in users table
+                const response = await fetch(`${supabaseUrl}/rest/v1/users`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        role: 'admin',
+                        is_active: true,
+                        commission_rate: 0
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                goToStep(3);
+                
+            } catch (error) {
+                console.error('Error creating admin:', error);
+                showError('שגיאה ביצירת חשבון: ' + error.message);
+            }
+        }
+        
+        function goToLogin() {
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

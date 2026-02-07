@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - אופליין</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, #1B365D 0%, #0F1F3A 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            direction: rtl;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 400px;
+        }
+        .icon {
+            font-size: 5rem;
+            color: #D4AF37;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        p {
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #D4AF37;
+            color: #0F1F3A;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: #E8C547;
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">✈️</div>
+        <span class="material-icons icon">wifi_off</span>
+        <h1>אין חיבור לאינטרנט</h1>
+        <p>נראה שאתה במצב אופליין. בדוק את החיבור לאינטרנט ונסה שוב.</p>
+        <button class="btn" onclick="location.reload()">
+            <span class="material-icons">refresh</span>
+            נסה שוב
+        </button>
+    </div>
+</body>
+</html>

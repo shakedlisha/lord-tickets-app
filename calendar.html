@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - לוח שנה</title>
+    
+    <!-- Google Fonts - Heebo for Hebrew -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E8C547;
+            --gold-dark: #B8960C;
+            --navy: #1B365D;
+            --navy-light: #2A4A7A;
+            --navy-dark: #0F1F3A;
+            --white: #FFFFFF;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --gray-dark: #666666;
+            --success: #28A745;
+            --warning: #FFC107;
+            --danger: #DC3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: var(--gray-light);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title .material-icons {
+            color: var(--gold);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--gold);
+            color: var(--navy-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--gold-light);
+        }
+        
+        .btn-outline {
+            background: white;
+            border: 2px solid var(--gray);
+            color: var(--gray-dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--gray-light);
+            border-color: var(--navy-light);
+        }
+        
+        .btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+        
+        .btn-whatsapp:hover {
+            background: #128C7E;
+        }
+        
+        /* Calendar Navigation */
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .nav-btn {
+            background: var(--gray-light);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .nav-btn:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+        
+        .current-month {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .view-btn {
+            padding: 8px 16px;
+            border: none;
+            background: var(--gray-light);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .view-btn.active {
+            background: var(--navy);
+            color: white;
+        }
+        
+        /* Calendar Grid */
+        .calendar-container {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        
+        .calendar-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: var(--navy-dark);
+            color: white;
+        }
+        
+        .calendar-header div {
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        
+        .calendar-day {
+            min-height: 120px;
+            border: 1px solid var(--gray);
+            padding: 8px;
+            background: white;
+            transition: background 0.2s;
+        }
+        
+        .calendar-day:hover {
+            background: var(--gray-light);
+        }
+        
+        .calendar-day.other-month {
+            background: #fafafa;
+            color: #ccc;
+        }
+        
+        .calendar-day.today {
+            background: rgba(212, 175, 55, 0.1);
+        }
+        
+        .day-number {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--navy-dark);
+        }
+        
+        .calendar-day.today .day-number {
+            background: var(--gold);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .calendar-day.other-month .day-number {
+            color: #ccc;
+        }
+        
+        /* Flight Events */
+        .flight-event {
+            background: var(--navy);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .flight-event:hover {
+            background: var(--navy-light);
+            transform: scale(1.02);
+        }
+        
+        .flight-event.departure {
+            background: var(--success);
+        }
+        
+        .flight-event.return {
+            background: var(--info);
+        }
+        
+        /* Airline Brand Colors - Left Border */
+        .flight-event.airline-elal { border-right: 3px solid #1E3A8A; }
+        .flight-event.airline-wizz { border-right: 3px solid #E31E7B; }
+        .flight-event.airline-centrum { border-right: 3px solid #4A5568; }
+        .flight-event.airline-lot { border-right: 3px solid #003366; }
+        .flight-event.airline-smartwings { border-right: 3px solid #E85500; }
+        .flight-event.airline-ryanair { border-right: 3px solid #073590; }
+        .flight-event.airline-easyjet { border-right: 3px solid #FF6600; }
+        .flight-event.airline-turkish { border-right: 3px solid #C8102E; }
+        .flight-event.airline-lufthansa { border-right: 3px solid #05164D; }
+        .flight-event.airline-aegean { border-right: 3px solid #00205B; }
+        .flight-event.airline-other { border-right: 3px solid #666; }
+        
+        .flight-event .material-icons {
+            font-size: 0.9rem;
+        }
+        
+        /* List View */
+        .list-view {
+            display: none;
+        }
+        
+        .list-view.active {
+            display: block;
+        }
+        
+        .calendar-grid-view {
+            display: block;
+        }
+        
+        .calendar-grid-view.hidden {
+            display: none;
+        }
+        
+        .flight-list-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .flight-list-item:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .flight-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .flight-date-badge {
+            background: var(--navy);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 70px;
+        }
+        
+        .flight-date-badge .day {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .flight-date-badge .month {
+            font-size: 0.8rem;
+        }
+        
+        .flight-details h3 {
+            font-size: 1.1rem;
+            color: var(--navy-dark);
+            margin-bottom: 5px;
+        }
+        
+        .flight-details p {
+            color: var(--gray-dark);
+            font-size: 0.9rem;
+        }
+        
+        .flight-stats {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+        }
+        
+        .flight-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: var(--gray-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+        
+        .action-btn.whatsapp:hover {
+            background: #25D366;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.3rem;
+            color: var(--navy-dark);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-dark);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .share-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .share-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            border: 1px solid var(--gray);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .share-btn:hover {
+            border-color: var(--navy-light);
+            background: var(--gray-light);
+        }
+        
+        .share-btn .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .share-btn.whatsapp .icon {
+            background: #25D366;
+            color: white;
+        }
+        
+        .share-btn.calendar .icon {
+            background: #4285F4;
+            color: white;
+        }
+        
+        .share-btn.copy .icon {
+            background: var(--navy);
+            color: white;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--navy-dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success { background: var(--success); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .calendar-day {
+                min-height: 80px;
+                padding: 5px;
+            }
+            
+            .flight-event {
+                font-size: 0.65rem;
+                padding: 2px 4px;
+            }
+            
+            .flight-list-item {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .flight-info {
+                flex-direction: column;
+            }
+            
+            .flight-stats {
+                justify-content: center;
+            }
+        }
+    </style>
+    
+    <!-- Navigation Component -->
+    <script src="js/nav.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="material-icons">calendar_month</span>
+                לוח שנה - טיסות
+            </h1>
+            
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="exportAllToICal()">
+                    <span class="material-icons">download</span>
+                    ייצוא ליומן
+                </button>
+            </div>
+        </div>
+        
+        <div class="calendar-nav">
+            <button class="nav-btn" onclick="changeMonth(-1)">
+                <span class="material-icons">chevron_right</span>
+            </button>
+            
+            <span class="current-month" id="currentMonth"></span>
+            
+            <button class="nav-btn" onclick="changeMonth(1)">
+                <span class="material-icons">chevron_left</span>
+            </button>
+            
+            <div class="view-toggle">
+                <button class="view-btn active" id="gridViewBtn" onclick="setView('grid')">
+                    <span class="material-icons">calendar_view_month</span>
+                </button>
+                <button class="view-btn" id="listViewBtn" onclick="setView('list')">
+                    <span class="material-icons">view_list</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="calendar-container">
+            <!-- Grid View -->
+            <div class="calendar-grid-view" id="gridView">
+                <div class="calendar-header">
+                    <div>ראשון</div>
+                    <div>שני</div>
+                    <div>שלישי</div>
+                    <div>רביעי</div>
+                    <div>חמישי</div>
+                    <div>שישי</div>
+                    <div>שבת</div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Generated by JS -->
+                </div>
+            </div>
+            
+            <!-- List View -->
+            <div class="list-view" id="listView">
+                <!-- Generated by JS -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div class="modal-overlay" id="shareModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>שתף טיסה</h2>
+                <button class="modal-close" onclick="closeShareModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="share-options">
+                    <button class="share-btn whatsapp" onclick="shareViaWhatsApp()">
+                        <div class="icon"><span class="material-icons">chat</span></div>
+                        <span>שתף בוואטסאפ</span>
+                    </button>
+                    <button class="share-btn calendar" onclick="addToGoogleCalendar()">
+                        <div class="icon"><span class="material-icons">event</span></div>
+                        <span>הוסף ליומן Google</span>
+                    </button>
+                    <button class="share-btn copy" onclick="copyFlightDetails()">
+                        <div class="icon"><span class="material-icons">content_copy</span></div>
+                        <span>העתק פרטים</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // State
+        let currentDate = new Date();
+        let currentView = 'grid';
+        let flights = [];
+        let passengers = [];
+        let selectedFlight = null;
+        
+        // Hebrew month names
+        const hebrewMonths = [
+            'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
+            'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'
+        ];
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LordNav !== 'undefined') {
+                LordNav.init('calendar');
+            }
+            loadData();
+        });
+        
+        async function loadData() {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const flightsRes = await fetch(
+                        `${supabaseUrl}/rest/v1/flights?select=*&order=departure_date.asc`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    flights = flightsRes.ok ? await flightsRes.json() : [];
+                    
+                    const passengersRes = await fetch(
+                        `${supabaseUrl}/rest/v1/passengers?select=*`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    passengers = passengersRes.ok ? await passengersRes.json() : [];
+                } else {
+                    // Demo data
+                    flights = generateDemoFlights();
+                    passengers = generateDemoPassengers();
+                }
+                
+                renderCalendar();
+                renderListView();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+        
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+            renderListView();
+        }
+        
+        function setView(view) {
+            currentView = view;
+            
+            document.getElementById('gridViewBtn').classList.toggle('active', view === 'grid');
+            document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+            
+            document.getElementById('gridView').classList.toggle('hidden', view !== 'grid');
+            document.getElementById('listView').classList.toggle('active', view === 'list');
+        }
+        
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Update header
+            document.getElementById('currentMonth').textContent = `${hebrewMonths[month]} ${year}`;
+            
+            // Get first day of month and total days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = firstDay.getDay();
+            const totalDays = lastDay.getDate();
+            
+            // Get previous month days
+            const prevLastDay = new Date(year, month, 0).getDate();
+            
+            const grid = document.getElementById('calendarGrid');
+            let html = '';
+            
+            const today = new Date();
+            const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+            
+            // Previous month days
+            for (let i = startDay - 1; i >= 0; i--) {
+                const day = prevLastDay - i;
+                html += `<div class="calendar-day other-month"><div class="day-number">${day}</div></div>`;
+            }
+            
+            // Current month days
+            for (let day = 1; day <= totalDays; day++) {
+                const dateStr = `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                const isToday = isCurrentMonth && today.getDate() === day;
+                
+                // Find flights for this day
+                const dayFlights = flights.filter(f => {
+                    const depDate = f.departure_date?.split('T')[0];
+                    const retDate = f.return_date?.split('T')[0];
+                    return depDate === dateStr || retDate === dateStr;
+                });
+                
+                let eventsHtml = '';
+                dayFlights.forEach(f => {
+                    const depDate = f.departure_date?.split('T')[0];
+                    const isDeparture = depDate === dateStr;
+                    const type = isDeparture ? 'departure' : 'return';
+                    const icon = isDeparture ? 'flight_takeoff' : 'flight_land';
+                    const airlineClass = getAirlineClass(f.airline);
+                    
+                    eventsHtml += `
+                        <div class="flight-event ${type} ${airlineClass}" onclick="openFlightDetail('${f.id}')">
+                            <span class="material-icons">${icon}</span>
+                            ${f.destination || 'טיסה'}
+                        </div>
+                    `;
+                });
+                
+                html += `
+                    <div class="calendar-day ${isToday ? 'today' : ''}">
+                        <div class="day-number">${day}</div>
+                        ${eventsHtml}
+                    </div>
+                `;
+            }
+            
+            // Next month days
+            const remainingDays = 42 - (startDay + totalDays);
+            for (let i = 1; i <= remainingDays; i++) {
+                html += `<div class="calendar-day other-month"><div class="day-number">${i}</div></div>`;
+            }
+            
+            grid.innerHTML = html;
+        }
+        
+        function renderListView() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            // Filter flights for current month
+            const monthFlights = flights.filter(f => {
+                const depDate = new Date(f.departure_date);
+                return depDate.getFullYear() === year && depDate.getMonth() === month;
+            }).sort((a, b) => new Date(a.departure_date) - new Date(b.departure_date));
+            
+            const listView = document.getElementById('listView');
+            
+            if (monthFlights.length === 0) {
+                listView.innerHTML = `
+                    <div style="text-align: center; padding: 60px; color: var(--gray-dark);">
+                        <span class="material-icons" style="font-size: 4rem; color: var(--gray);">event_busy</span>
+                        <h3 style="margin-top: 15px;">אין טיסות בחודש זה</h3>
+                    </div>
+                `;
+                return;
+            }
+            
+            listView.innerHTML = monthFlights.map(f => {
+                const depDate = new Date(f.departure_date);
+                const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+                const seats = f.total_seats || 0;
+                const revenue = flightPassengers.reduce((sum, p) => sum + (parseFloat(p.price_paid) || 0), 0);
+                
+                return `
+                    <div class="flight-list-item" onclick="openFlightDetail('${f.id}')">
+                        <div class="flight-info">
+                            <div class="flight-date-badge">
+                                <div class="day">${depDate.getDate()}</div>
+                                <div class="month">${hebrewMonths[depDate.getMonth()]}</div>
+                            </div>
+                            <div class="flight-details">
+                                <h3>${f.destination || 'טיסה'}</h3>
+                                <p>${formatDate(f.departure_date)} - ${formatDate(f.return_date)}</p>
+                            </div>
+                        </div>
+                        <div class="flight-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${flightPassengers.length}/${seats}</div>
+                                <div class="stat-label">נוסעים</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">€${revenue.toLocaleString()}</div>
+                                <div class="stat-label">הכנסות</div>
+                            </div>
+                        </div>
+                        <div class="flight-actions" onclick="event.stopPropagation()">
+                            <button class="action-btn" onclick="openShareModal('${f.id}')" title="שתף">
+                                <span class="material-icons">share</span>
+                            </button>
+                            <button class="action-btn whatsapp" onclick="quickWhatsAppShare('${f.id}')" title="שתף בוואטסאפ">
+                                <span class="material-icons">chat</span>
+                            </button>
+                            <button class="action-btn" onclick="downloadICal('${f.id}')" title="הורד ליומן">
+                                <span class="material-icons">event</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function openFlightDetail(flightId) {
+            window.location.href = `flight-detail.html?id=${flightId}`;
+        }
+        
+        function openShareModal(flightId) {
+            selectedFlight = flights.find(f => f.id === flightId);
+            document.getElementById('shareModal').classList.add('show');
+        }
+        
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.remove('show');
+            selectedFlight = null;
+        }
+        
+        // WhatsApp Share
+        function shareViaWhatsApp() {
+            if (!selectedFlight) return;
+            
+            const f = selectedFlight;
+            const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+            
+            const message = `✈️ *${f.destination}*
+📅 יציאה: ${formatDate(f.departure_date)}
+📅 חזרה: ${formatDate(f.return_date)}
+👥 נוסעים: ${flightPassengers.length}
+
+_Lord Tickets_`;
+            
+            const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+        
+        function quickWhatsAppShare(flightId) {
+            const f = flights.find(fl => fl.id === flightId);
+            if (!f) return;
+            
+            const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+            
+            const message = `✈️ *${f.destination}*
+📅 ${formatDate(f.departure_date)} - ${formatDate(f.return_date)}
+👥 ${flightPassengers.length} נוסעים`;
+            
+            window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        }
+        
+        // Google Calendar
+        function addToGoogleCalendar() {
+            if (!selectedFlight) return;
+            
+            const f = selectedFlight;
+            const startDate = new Date(f.departure_date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            const endDate = new Date(f.return_date).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('טיסה ל' + f.destination)}&dates=${startDate}/${endDate}&details=${encodeURIComponent('Lord Tickets Flight')}`;
+            
+            window.open(url, '_blank');
+            closeShareModal();
+        }
+        
+        // iCal Export
+        function downloadICal(flightId) {
+            const f = flights.find(fl => fl.id === flightId);
+            if (!f) return;
+            
+            const ical = generateICalEvent(f);
+            downloadFile(`flight-${f.destination || 'trip'}.ics`, ical, 'text/calendar');
+            showToast('קובץ יומן הורד');
+        }
+        
+        function exportAllToICal() {
+            let ical = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lord Tickets//Flight Calendar//HE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+`;
+            
+            flights.forEach(f => {
+                ical += generateICalEventBody(f);
+            });
+            
+            ical += 'END:VCALENDAR';
+            
+            downloadFile('lord-tickets-flights.ics', ical, 'text/calendar');
+            showToast('כל הטיסות יוצאו ליומן');
+        }
+        
+        function generateICalEvent(f) {
+            return `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Lord Tickets//Flight Calendar//HE
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+${generateICalEventBody(f)}END:VCALENDAR`;
+        }
+        
+        function generateICalEventBody(f) {
+            const startDate = formatICalDate(f.departure_date);
+            const endDate = formatICalDate(f.return_date);
+            const uid = `${f.id}@lordtickets.com`;
+            
+            return `BEGIN:VEVENT
+UID:${uid}
+DTSTART:${startDate}
+DTEND:${endDate}
+SUMMARY:טיסה ל${f.destination || 'יעד'}
+DESCRIPTION:Lord Tickets Flight
+STATUS:CONFIRMED
+END:VEVENT
+`;
+        }
+        
+        function formatICalDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        }
+        
+        // Copy Details
+        function copyFlightDetails() {
+            if (!selectedFlight) return;
+            
+            const f = selectedFlight;
+            const flightPassengers = passengers.filter(p => p.flight_id === f.id && (p.status === 'active' || !p.status));
+            
+            const text = `טיסה ל${f.destination}
+יציאה: ${formatDate(f.departure_date)}
+חזרה: ${formatDate(f.return_date)}
+נוסעים: ${flightPassengers.length}`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('פרטים הועתקו');
+                closeShareModal();
+            });
+        }
+        
+        // Utilities
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        }
+        
+        function getAirlineClass(airline) {
+            const name = (airline || '').toLowerCase().trim();
+            if (name.includes('el al') || name === 'elal') return 'airline-elal';
+            if (name.includes('wizz')) return 'airline-wizz';
+            if (name.includes('centrum')) return 'airline-centrum';
+            if (name.includes('lot')) return 'airline-lot';
+            if (name.includes('smartwings')) return 'airline-smartwings';
+            if (name.includes('ryanair')) return 'airline-ryanair';
+            if (name.includes('easyjet')) return 'airline-easyjet';
+            if (name.includes('turkish')) return 'airline-turkish';
+            if (name.includes('lufthansa')) return 'airline-lufthansa';
+            if (name.includes('aegean')) return 'airline-aegean';
+            return 'airline-other';
+        }
+        
+        function downloadFile(filename, content, type) {
+            const blob = new Blob([content], { type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast success show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // Demo Data
+        function generateDemoFlights() {
+            const destinations = ['מדריד', 'ברצלונה', 'רומא', 'פריז', 'אמסטרדם'];
+            const now = new Date();
+            return destinations.map((dest, i) => {
+                const dep = new Date(now.getFullYear(), now.getMonth(), 5 + i * 5);
+                const ret = new Date(dep);
+                ret.setDate(ret.getDate() + 4);
+                return {
+                    id: `demo-${i}`,
+                    destination: dest,
+                    departure_date: dep.toISOString(),
+                    return_date: ret.toISOString(),
+                    total_seats: 50
+                };
+            });
+        }
+        
+        function generateDemoPassengers() {
+            const result = [];
+            for (let i = 0; i < 30; i++) {
+                result.push({
+                    id: `p-${i}`,
+                    flight_id: `demo-${i % 5}`,
+                    first_name: 'נוסע',
+                    last_name: (i + 1).toString(),
+                    price_paid: 800 + Math.random() * 500,
+                    status: 'active'
+                });
+            }
+            return result;
+        }
+    </script>
+</body>
+</html>

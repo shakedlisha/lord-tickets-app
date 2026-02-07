@@ -1,143 +1,83 @@
-// Lord Tickets - Service Worker
-// Provides offline support and caching
+// Lord Tickets - Service Worker v3
+// NEVER caches HTML files — always fetches fresh from network
+// Only caches external CDN resources for offline use
 
-const CACHE_NAME = 'lord-tickets-v2';
-const STATIC_CACHE = 'lord-tickets-static-v2';
-const DATA_CACHE = 'lord-tickets-data-v2';
+const CACHE_NAME = 'lord-tickets-v3';
 
-// Files to cache for offline use
-const STATIC_FILES = [
-    '/',
-    '/index.html',
-    '/inventory.html',
-    '/login.html',
-    '/calendar.html',
-    '/analytics.html',
-    '/users.html',
-    '/flight-detail.html',
-    '/setup.html',
-    '/js/nav.js',
-    '/js/documents.js',
-    '/manifest.json',
-    'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap',
-    'https://fonts.googleapis.com/icon?family=Material+Icons',
-    'https://cdn.jsdelivr.net/npm/chart.js',
-    'https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js'
+// Only cache external CDN resources (never local HTML/JS files)
+const CDN_HOSTS = [
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'cdn.jsdelivr.net',
+    'cdn.sheetjs.com'
 ];
 
-// Install event - cache static files
+// Install — skip waiting immediately
 self.addEventListener('install', event => {
-    console.log('[SW] Installing Service Worker...');
-    
-    event.waitUntil(
-        caches.open(STATIC_CACHE)
-            .then(cache => {
-                console.log('[SW] Caching static files');
-                return cache.addAll(STATIC_FILES.filter(url => !url.startsWith('http')));
-            })
-            .then(() => self.skipWaiting())
-            .catch(err => console.log('[SW] Cache error:', err))
-    );
+    console.log('[SW v3] Installing...');
+    self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate — delete ALL old caches, claim clients
 self.addEventListener('activate', event => {
-    console.log('[SW] Activating Service Worker...');
-    
+    console.log('[SW v3] Activating...');
     event.waitUntil(
         caches.keys()
-            .then(cacheNames => {
-                return Promise.all(
-                    cacheNames
-                        .filter(name => name !== STATIC_CACHE && name !== DATA_CACHE)
-                        .map(name => {
-                            console.log('[SW] Deleting old cache:', name);
-                            return caches.delete(name);
-                        })
-                );
-            })
+            .then(names => Promise.all(
+                names.filter(n => n !== CACHE_NAME).map(n => {
+                    console.log('[SW v3] Deleting old cache:', n);
+                    return caches.delete(n);
+                })
+            ))
             .then(() => self.clients.claim())
     );
 });
 
-// Listen for skip waiting message from client
+// Listen for skip waiting message
 self.addEventListener('message', event => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
     }
 });
 
-// Fetch event - network first, cache fallback
+// Fetch — NEVER cache local files, only cache CDN resources
 self.addEventListener('fetch', event => {
     const { request } = event;
-    const url = new URL(request.url);
-    
-    // Skip non-GET requests
     if (request.method !== 'GET') return;
-    
-    // Skip Supabase API requests (always fetch fresh)
-    if (url.hostname.includes('supabase')) {
+
+    const url = new URL(request.url);
+
+    // CDN resources: cache-first (fonts, chart.js, xlsx)
+    if (CDN_HOSTS.some(host => url.hostname.includes(host))) {
         event.respondWith(
-            fetch(request)
-                .then(response => {
-                    // Clone and cache data responses
-                    if (response.ok && url.pathname.includes('/rest/v1/')) {
-                        const responseClone = response.clone();
-                        caches.open(DATA_CACHE).then(cache => {
-                            cache.put(request, responseClone);
-                        });
+            caches.match(request).then(cached => {
+                if (cached) return cached;
+                return fetch(request).then(response => {
+                    if (response.ok) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(c => c.put(request, clone));
                     }
                     return response;
-                })
-                .catch(() => {
-                    // Return cached data if offline
-                    return caches.match(request);
-                })
+                });
+            })
         );
         return;
     }
-    
-    // For static files - network first, cache fallback
-    event.respondWith(
-        fetch(request)
-            .then(response => {
-                // Cache successful responses for offline use
-                if (response.ok) {
-                    const responseClone = response.clone();
-                    caches.open(STATIC_CACHE).then(cache => {
-                        cache.put(request, responseClone);
-                    });
-                }
-                return response;
-            })
-            .catch(() => {
-                // Network failed - try cache
-                return caches.match(request)
-                    .then(cachedResponse => {
-                        if (cachedResponse) return cachedResponse;
-                        // Offline fallback for HTML pages
-                        if (request.headers.get('accept')?.includes('text/html')) {
-                            return caches.match('/offline.html');
-                        }
-                    });
-            })
-    );
+
+    // Everything else (HTML, JS, API): ALWAYS fetch from network, no caching
+    // This ensures code changes are immediately visible
 });
 
-// Background sync for offline actions
+// Background sync
 self.addEventListener('sync', event => {
-    console.log('[SW] Background sync:', event.tag);
-    
     if (event.tag === 'sync-passengers') {
         event.waitUntil(syncOfflineData());
     }
 });
 
-// Sync offline data when back online
 async function syncOfflineData() {
     try {
         const offlineData = await getOfflineQueue();
-        
         for (const item of offlineData) {
             await fetch(item.url, {
                 method: item.method,
@@ -145,42 +85,31 @@ async function syncOfflineData() {
                 body: JSON.stringify(item.body)
             });
         }
-        
-        // Clear offline queue after successful sync
         await clearOfflineQueue();
-        
-        // Notify clients
         const clients = await self.clients.matchAll();
-        clients.forEach(client => {
-            client.postMessage({ type: 'SYNC_COMPLETE' });
-        });
+        clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
     } catch (error) {
-        console.error('[SW] Sync failed:', error);
+        console.error('[SW v3] Sync failed:', error);
     }
 }
 
-// IndexedDB helpers for offline queue
 function getOfflineQueue() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('LordTicketsOffline', 1);
-        
         request.onerror = () => reject(request.error);
-        
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
             if (!db.objectStoreNames.contains('queue')) {
                 db.createObjectStore('queue', { keyPath: 'id', autoIncrement: true });
             }
         };
-        
         request.onsuccess = () => {
             const db = request.result;
             const tx = db.transaction('queue', 'readonly');
             const store = tx.objectStore('queue');
-            const getAllRequest = store.getAll();
-            
-            getAllRequest.onsuccess = () => resolve(getAllRequest.result || []);
-            getAllRequest.onerror = () => reject(getAllRequest.error);
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
         };
     });
 }
@@ -188,50 +117,37 @@ function getOfflineQueue() {
 function clearOfflineQueue() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('LordTicketsOffline', 1);
-        
         request.onsuccess = () => {
             const db = request.result;
             const tx = db.transaction('queue', 'readwrite');
-            const store = tx.objectStore('queue');
-            store.clear();
+            tx.objectStore('queue').clear();
             tx.oncomplete = () => resolve();
             tx.onerror = () => reject(tx.error);
         };
     });
 }
 
-// Push notifications (for future use)
+// Push notifications
 self.addEventListener('push', event => {
     const data = event.data?.json() || {};
-    
-    const options = {
-        body: data.body || 'התראה חדשה מ-Lord Tickets',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-72.png',
-        vibrate: [100, 50, 100],
-        data: data.url || '/',
-        dir: 'rtl',
-        lang: 'he',
-        actions: [
-            { action: 'open', title: 'פתח' },
-            { action: 'close', title: 'סגור' }
-        ]
-    };
-    
     event.waitUntil(
-        self.registration.showNotification(data.title || 'Lord Tickets', options)
+        self.registration.showNotification(data.title || 'Lord Tickets', {
+            body: data.body || 'התראה חדשה',
+            icon: '/icons/icon-192.png',
+            badge: '/icons/icon-72.png',
+            vibrate: [100, 50, 100],
+            data: data.url || '/',
+            dir: 'rtl',
+            lang: 'he'
+        })
     );
 });
 
-// Notification click handler
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-    
     if (event.action === 'open' || !event.action) {
-        event.waitUntil(
-            clients.openWindow(event.notification.data || '/')
-        );
+        event.waitUntil(clients.openWindow(event.notification.data || '/'));
     }
 });
 
-console.log('[SW] Service Worker loaded');
+console.log('[SW v3] Service Worker loaded');

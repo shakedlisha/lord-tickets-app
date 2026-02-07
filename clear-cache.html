@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>Clearing cache...</title></head>
+<body>
+<h2>Clearing all caches and service workers...</h2>
+<pre id="log"></pre>
+<script>
+(async function() {
+    const log = document.getElementById('log');
+    function msg(t) { log.textContent += t + '\n'; }
+    
+    try {
+        // 1. Unregister ALL service workers
+        if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            msg('Found ' + regs.length + ' service worker(s)');
+            for (const r of regs) {
+                await r.unregister();
+                msg('Unregistered: ' + r.scope);
+            }
+        }
+        
+        // 2. Delete ALL caches
+        const names = await caches.keys();
+        msg('Found ' + names.length + ' cache(s)');
+        for (const n of names) {
+            await caches.delete(n);
+            msg('Deleted cache: ' + n);
+        }
+        
+        msg('\nAll cleared! Redirecting to inventory in 2 seconds...');
+        setTimeout(() => { window.location.href = '/inventory.html'; }, 2000);
+    } catch(e) {
+        msg('Error: ' + e.message);
+    }
+})();
+</script>
+</body>
+</html>

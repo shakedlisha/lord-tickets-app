@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - ניהול משתמשים</title>
+    
+    <!-- Google Fonts - Heebo for Hebrew -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E8C547;
+            --gold-dark: #B8960C;
+            --navy: #1B365D;
+            --navy-light: #2A4A7A;
+            --navy-dark: #0F1F3A;
+            --white: #FFFFFF;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --gray-dark: #666666;
+            --success: #28A745;
+            --warning: #FFC107;
+            --danger: #DC3545;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: var(--gray-light);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title .material-icons {
+            color: var(--gold);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--gold);
+            color: var(--navy-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--gold-light);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--gray);
+            color: var(--gray-dark);
+        }
+        
+        .btn-outline:hover {
+            background: var(--gray-light);
+        }
+        
+        /* Users Table */
+        .users-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 15px 20px;
+            text-align: right;
+            border-bottom: 1px solid var(--gray);
+        }
+        
+        th {
+            background: var(--gray-light);
+            font-weight: 600;
+            color: var(--navy-dark);
+            font-size: 0.9rem;
+        }
+        
+        td {
+            color: var(--gray-dark);
+        }
+        
+        tr:hover {
+            background: rgba(212, 175, 55, 0.05);
+        }
+        
+        /* Role Badge */
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .role-badge.admin {
+            background: rgba(220, 53, 69, 0.15);
+            color: #a71d2a;
+        }
+        
+        .role-badge.manager {
+            background: rgba(26, 54, 93, 0.15);
+            color: var(--navy);
+        }
+        
+        .role-badge.agent {
+            background: rgba(40, 167, 69, 0.15);
+            color: #1e7e34;
+        }
+        
+        /* Status Toggle */
+        .status-toggle {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .status-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .status-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray);
+            transition: .3s;
+            border-radius: 26px;
+        }
+        
+        .status-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .status-slider {
+            background-color: var(--success);
+        }
+        
+        input:checked + .status-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* Actions */
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--gray-light);
+            color: var(--gray-dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: var(--navy-light);
+            color: white;
+        }
+        
+        .action-btn .material-icons {
+            font-size: 1.1rem;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.3rem;
+            color: var(--navy-dark);
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-dark);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--navy-dark);
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--gray);
+            border-radius: 10px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid var(--gray);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray-dark);
+        }
+        
+        .empty-state .material-icons {
+            font-size: 4rem;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--navy-dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            background: var(--success);
+        }
+        
+        .toast.error {
+            background: var(--danger);
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: rgba(26, 54, 93, 0.1);
+            border: 1px solid var(--navy-light);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+        }
+        
+        .info-box .material-icons {
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+    </style>
+    
+    <!-- Navigation Component -->
+    <script src="js/nav.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <span class="material-icons">people</span>
+                ניהול משתמשים
+            </h1>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <span class="material-icons">person_add</span>
+                הוסף משתמש
+            </button>
+        </div>
+        
+        <div class="users-card">
+            <div class="card-header">
+                <span class="card-title">רשימת משתמשים</span>
+                <span id="usersCount">0 משתמשים</span>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>שם</th>
+                        <th>אימייל</th>
+                        <th>תפקיד</th>
+                        <th>עמלה</th>
+                        <th>פעיל</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable">
+                    <!-- Users will be rendered here -->
+                </tbody>
+            </table>
+            
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <span class="material-icons">person_off</span>
+                <h3>אין משתמשים עדיין</h3>
+                <p>לחץ על "הוסף משתמש" ליצירת משתמש ראשון</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit User Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">הוסף משתמש</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <div class="modal-body">
+                    <div class="info-box">
+                        <span class="material-icons">info</span>
+                        לאחר יצירת המשתמש, יש ליצור לו חשבון התחברות ב-Supabase Authentication
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>שם מלא *</label>
+                        <input type="text" id="userName" required placeholder="שם המשתמש">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>אימייל *</label>
+                        <input type="email" id="userEmail" required placeholder="user@example.com" dir="ltr">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>תפקיד *</label>
+                        <select id="userRole" required>
+                            <option value="agent">סוכן</option>
+                            <option value="manager">מנהל צוות</option>
+                            <option value="admin">מנהל ראשי</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>עמלה (%)</label>
+                        <input type="number" id="userCommission" step="0.5" min="0" max="100" placeholder="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">ביטול</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-icons">save</span>
+                        שמור
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        let users = [];
+        let editingUserId = null;
+        let isRefreshing = false;
+        let refreshPromise = null;
+        
+        // Token refresh and auth functions
+        async function getAccessToken() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            if (!supabaseUrl || !supabaseKey) return null;
+            
+            // Check if token needs refresh
+            const expiresAt = parseInt(localStorage.getItem('token_expires_at') || '0');
+            const now = Math.floor(Date.now() / 1000);
+            
+            if (expiresAt && now >= expiresAt - 60) {
+                // Token expired or expiring soon, refresh it
+                if (isRefreshing) {
+                    await refreshPromise;
+                    return localStorage.getItem('access_token');
+                }
+                
+                isRefreshing = true;
+                refreshPromise = refreshAccessToken();
+                const result = await refreshPromise;
+                isRefreshing = false;
+                return result;
+            }
+            
+            // Try direct access_token first
+            let token = localStorage.getItem('access_token');
+            if (token) return token;
+            
+            // Fall back to userSession
+            try {
+                const session = JSON.parse(localStorage.getItem('userSession') || '{}');
+                if (session.access_token) {
+                    localStorage.setItem('access_token', session.access_token);
+                    if (session.refresh_token) {
+                        localStorage.setItem('refresh_token', session.refresh_token);
+                    }
+                    if (session.expires_at) {
+                        localStorage.setItem('token_expires_at', String(session.expires_at));
+                    }
+                    return session.access_token;
+                }
+            } catch (e) {}
+            
+            return null;
+        }
+        
+        async function refreshAccessToken() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const refreshToken = localStorage.getItem('refresh_token');
+            
+            if (!refreshToken) {
+                handleSessionExpired();
+                return null;
+            }
+            
+            try {
+                const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ refresh_token: refreshToken })
+                });
+                
+                if (!response.ok) {
+                    handleSessionExpired();
+                    return null;
+                }
+                
+                const data = await response.json();
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+                localStorage.setItem('token_expires_at', String(data.expires_at));
+                localStorage.setItem('userSession', JSON.stringify({
+                    access_token: data.access_token,
+                    refresh_token: data.refresh_token,
+                    user: data.user,
+                    expires_at: data.expires_at
+                }));
+                
+                return data.access_token;
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+                handleSessionExpired();
+                return null;
+            }
+        }
+        
+        function handleSessionExpired() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('token_expires_at');
+            localStorage.removeItem('userSession');
+            
+            showToast('פג תוקף ההתחברות - מעביר לדף התחברות', 'error');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        }
+        
+        async function getAuthHeaders() {
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return null;
+            return {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize navigation
+            if (typeof LordNav !== 'undefined') {
+                LordNav.init('users');
+                
+                // Check if user can access this page
+                if (!LordNav.canManageUsers()) {
+                    showToast('אין לך הרשאה לצפות בדף זה', 'error');
+                    setTimeout(() => window.location.href = 'inventory.html', 2000);
+                    return;
+                }
+            }
+            
+            loadUsers();
+        });
+        
+        async function loadUsers() {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired, redirect handled
+                    
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/users?select=*&order=name.asc`,
+                        { headers }
+                    );
+                    
+                    if (response.ok) {
+                        users = await response.json();
+                    } else if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
+                    } else {
+                        users = [];
+                    }
+                } else {
+                    // Demo mode
+                    users = [
+                        { id: '1', name: 'Admin User', email: 'admin@lord.com', role: 'admin', commission_rate: 0, is_active: true },
+                        { id: '2', name: 'Manager User', email: 'manager@lord.com', role: 'manager', commission_rate: 5, is_active: true },
+                        { id: '3', name: 'Agent User', email: 'agent@lord.com', role: 'agent', commission_rate: 10, is_active: true }
+                    ];
+                }
+                
+                renderUsers();
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('שגיאה בטעינת משתמשים', 'error');
+            }
+        }
+        
+        function renderUsers() {
+            const table = document.getElementById('usersTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (users.length === 0) {
+                table.innerHTML = '';
+                emptyState.style.display = 'block';
+                document.getElementById('usersCount').textContent = '0 משתמשים';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            document.getElementById('usersCount').textContent = `${users.length} משתמשים`;
+            
+            const roleLabels = {
+                admin: 'מנהל ראשי',
+                manager: 'מנהל צוות',
+                agent: 'סוכן'
+            };
+            
+            table.innerHTML = users.map(user => `
+                <tr>
+                    <td><strong>${escapeHtml(user.name)}</strong></td>
+                    <td style="direction: ltr; text-align: right;">${escapeHtml(user.email)}</td>
+                    <td><span class="role-badge ${user.role}">${roleLabels[user.role] || user.role}</span></td>
+                    <td>${user.commission_rate ? user.commission_rate + '%' : '-'}</td>
+                    <td>
+                        <label class="status-toggle">
+                            <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleUserStatus('${user.id}', this.checked)">
+                            <span class="status-slider"></span>
+                        </label>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn" onclick="editUser('${user.id}')" title="ערוך">
+                                <span class="material-icons">edit</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        function openAddModal() {
+            editingUserId = null;
+            document.getElementById('modalTitle').textContent = 'הוסף משתמש';
+            document.getElementById('userForm').reset();
+            document.getElementById('userModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('show');
+        }
+        
+        function editUser(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            
+            editingUserId = id;
+            document.getElementById('modalTitle').textContent = 'ערוך משתמש';
+            document.getElementById('userName').value = user.name;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userCommission').value = user.commission_rate || '';
+            
+            document.getElementById('userModal').classList.add('show');
+        }
+        
+        async function saveUser(event) {
+            event.preventDefault();
+            
+            const userData = {
+                name: document.getElementById('userName').value.trim(),
+                email: document.getElementById('userEmail').value.trim(),
+                role: document.getElementById('userRole').value,
+                commission_rate: parseFloat(document.getElementById('userCommission').value) || 0
+            };
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const accessToken = await getAccessToken();
+                    if (!accessToken) return; // Session expired, redirect handled
+                    
+                    let response;
+                    
+                    if (editingUserId) {
+                        // Update existing user - use REST API directly
+                        const headers = await getAuthHeaders();
+                        if (!headers) return;
+                        
+                        response = await fetch(
+                            `${supabaseUrl}/rest/v1/users?id=eq.${editingUserId}`,
+                            {
+                                method: 'PATCH',
+                                headers,
+                                body: JSON.stringify(userData)
+                            }
+                        );
+                        
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        if (!response.ok) throw new Error('Failed to update user');
+                    } else {
+                        // Create new user - use Edge Function to create both Auth and DB record
+                        response = await fetch(
+                            `${supabaseUrl}/functions/v1/create-user`,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(userData)
+                            }
+                        );
+                        
+                        if (response.status === 401) {
+                            handleSessionExpired();
+                            return;
+                        }
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                            throw new Error(result.error || 'Failed to create user');
+                        }
+                        
+                        // Show success message with email notification
+                        showToast('המשתמש נוצר בהצלחה! נשלח מייל לאיפוס סיסמה', 'success');
+                    }
+                    
+                    await loadUsers();
+                } else {
+                    // Demo mode
+                    if (editingUserId) {
+                        const index = users.findIndex(u => u.id === editingUserId);
+                        if (index >= 0) {
+                            users[index] = { ...users[index], ...userData };
+                        }
+                    } else {
+                        users.push({
+                            id: Date.now().toString(),
+                            ...userData,
+                            is_active: true
+                        });
+                    }
+                    renderUsers();
+                }
+                
+                closeModal();
+                // Toast for updates or demo mode (new users via Edge Function already showed toast)
+                if (editingUserId || !supabaseUrl || !supabaseKey) {
+                    showToast(editingUserId ? 'המשתמש עודכן בהצלחה' : 'המשתמש נוסף בהצלחה', 'success');
+                }
+                
+            } catch (error) {
+                console.error('Error saving user:', error);
+                showToast(error.message || 'שגיאה בשמירת משתמש', 'error');
+            }
+        }
+        
+        async function toggleUserStatus(id, isActive) {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return; // Session expired
+                    
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/users?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers,
+                            body: JSON.stringify({ is_active: isActive })
+                        }
+                    );
+                    
+                    if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Failed to update status');
+                } else {
+                    // Demo mode
+                    const index = users.findIndex(u => u.id === id);
+                    if (index >= 0) {
+                        users[index].is_active = isActive;
+                    }
+                }
+                
+                showToast(isActive ? 'המשתמש הופעל' : 'המשתמש הושבת', 'success');
+                
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                showToast('שגיאה בעדכון סטטוס', 'error');
+                loadUsers();  // Reload to revert UI
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

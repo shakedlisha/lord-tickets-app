@@ -7,50 +7,56 @@
     let deferredPrompt = null;
     let installButton = null;
     
-    // Register service worker (force-update old v1 caches on first load)
+    // Register service worker (force-clear ALL old caches on every load)
     async function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                // Force clear old caches if v1 still exists
+                // Force clear ALL old caches (anything not v3)
                 const cacheNames = await caches.keys();
-                const oldCaches = cacheNames.filter(n => n.includes('-v1'));
+                const oldCaches = cacheNames.filter(n => n !== 'lord-tickets-v3');
                 if (oldCaches.length > 0) {
-                    console.log('[PWA] Clearing old v1 caches:', oldCaches);
+                    console.log('[PWA] Clearing old caches:', oldCaches);
                     await Promise.all(oldCaches.map(n => caches.delete(n)));
-                    // Unregister old service worker
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(registrations.map(r => r.unregister()));
-                    console.log('[PWA] Old service workers unregistered, reloading...');
-                    location.reload();
-                    return;
+                }
+                
+                // Unregister any existing service workers and re-register fresh
+                const existingRegs = await navigator.serviceWorker.getRegistrations();
+                let hadOldSW = false;
+                for (const reg of existingRegs) {
+                    // Check if the active SW is outdated (not v3)
+                    if (reg.active && !reg.active.scriptURL.includes('sw.js')) {
+                        await reg.unregister();
+                        hadOldSW = true;
+                    }
                 }
                 
                 const registration = await navigator.serviceWorker.register('/sw.js', {
-                    scope: '/'
+                    scope: '/',
+                    updateViaCache: 'none' // Always fetch sw.js from network
                 });
                 
                 console.log('[PWA] Service Worker registered:', registration.scope);
                 
-                // Check for updates
+                // Force update check on every page load
+                await registration.update();
+                
+                // When a new SW is found, activate it immediately
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
-                    console.log('[PWA] New Service Worker installing...');
+                    console.log('[PWA] New Service Worker found, installing...');
                     
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available — activate immediately
                             newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            console.log('[PWA] New SW activated, reloading...');
                             location.reload();
                         }
                     });
                 });
                 
-                // Force update check
-                registration.update();
-                
                 // Listen for sync complete messages
                 navigator.serviceWorker.addEventListener('message', event => {
-                    if (event.data.type === 'SYNC_COMPLETE') {
+                    if (event.data && event.data.type === 'SYNC_COMPLETE') {
                         showToast('הנתונים סונכרנו בהצלחה');
                     }
                 });
