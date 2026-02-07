@@ -248,6 +248,74 @@
             font-size: 1.1rem;
         }
         
+        .action-btn.approve {
+            background: rgba(40, 167, 69, 0.15);
+            color: #1e7e34;
+        }
+        
+        .action-btn.approve:hover {
+            background: #28A745;
+            color: white;
+        }
+        
+        .action-btn.ban {
+            background: rgba(255, 153, 0, 0.15);
+            color: #cc7a00;
+        }
+        
+        .action-btn.ban:hover {
+            background: #ff9900;
+            color: white;
+        }
+        
+        .action-btn.delete {
+            background: rgba(220, 53, 69, 0.15);
+            color: #a71d2a;
+        }
+        
+        .action-btn.delete:hover {
+            background: #dc3545;
+            color: white;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .status-badge.pending {
+            background: rgba(255, 193, 7, 0.2);
+            color: #856404;
+        }
+        
+        .status-badge.banned {
+            background: rgba(220, 53, 69, 0.15);
+            color: #a71d2a;
+        }
+        
+        .status-badge.active {
+            background: rgba(40, 167, 69, 0.15);
+            color: #1e7e34;
+        }
+        
+        /* Pending row highlight */
+        tr.pending-row {
+            background: rgba(255, 193, 7, 0.08);
+        }
+        
+        tr.pending-row:hover {
+            background: rgba(255, 193, 7, 0.15);
+        }
+        
+        tr.banned-row {
+            opacity: 0.65;
+        }
+        
         /* Modal */
         .modal-overlay {
             position: fixed;
@@ -424,7 +492,7 @@
                         <th>אימייל</th>
                         <th>תפקיד</th>
                         <th>עמלה</th>
-                        <th>פעיל</th>
+                        <th>סטטוס</th>
                         <th>פעולות</th>
                     </tr>
                 </thead>
@@ -685,27 +753,71 @@
                 agent: 'סוכן'
             };
             
-            table.innerHTML = users.map(user => `
-                <tr>
+            // Sort: pending (inactive) first, then active, then banned
+            const sortedUsers = [...users].sort((a, b) => {
+                // Pending users first (is_active === false and recently created)
+                if (a.is_active !== b.is_active) return a.is_active ? 1 : -1;
+                // Then by name
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            
+            table.innerHTML = sortedUsers.map(user => {
+                const isPending = !user.is_active;
+                const rowClass = isPending ? 'pending-row' : '';
+                
+                // Status badge
+                let statusBadge;
+                if (user.is_active) {
+                    statusBadge = '<span class="status-badge active">פעיל</span>';
+                } else {
+                    statusBadge = '<span class="status-badge pending">ממתין לאישור</span>';
+                }
+                
+                // Action buttons based on status
+                let actionButtons = '';
+                if (isPending) {
+                    // Pending user: Approve + Delete
+                    actionButtons = `
+                        <button class="action-btn approve" onclick="approveUser('${user.id}')" title="אשר משתמש">
+                            <span class="material-icons">check_circle</span>
+                        </button>
+                        <button class="action-btn" onclick="editUser('${user.id}')" title="ערוך">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteUser('${user.id}', '${escapeHtml(user.name)}')" title="מחק">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    `;
+                } else {
+                    // Active user: Edit + Ban + Delete
+                    actionButtons = `
+                        <button class="action-btn" onclick="editUser('${user.id}')" title="ערוך">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <button class="action-btn ban" onclick="banUser('${user.id}')" title="השבת משתמש">
+                            <span class="material-icons">block</span>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteUser('${user.id}', '${escapeHtml(user.name)}')" title="מחק">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    `;
+                }
+                
+                return `
+                <tr class="${rowClass}">
                     <td><strong>${escapeHtml(user.name)}</strong></td>
                     <td style="direction: ltr; text-align: right;">${escapeHtml(user.email)}</td>
                     <td><span class="role-badge ${user.role}">${roleLabels[user.role] || user.role}</span></td>
                     <td>${user.commission_rate ? user.commission_rate + '%' : '-'}</td>
-                    <td>
-                        <label class="status-toggle">
-                            <input type="checkbox" ${user.is_active ? 'checked' : ''} onchange="toggleUserStatus('${user.id}', this.checked)">
-                            <span class="status-slider"></span>
-                        </label>
-                    </td>
+                    <td>${statusBadge}</td>
                     <td>
                         <div class="actions-cell">
-                            <button class="action-btn" onclick="editUser('${user.id}')" title="ערוך">
-                                <span class="material-icons">edit</span>
-                            </button>
+                            ${actionButtons}
                         </div>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
         
         function openAddModal() {
@@ -868,6 +980,119 @@
                 console.error('Error toggling status:', error);
                 showToast('שגיאה בעדכון סטטוס', 'error');
                 loadUsers();  // Reload to revert UI
+            }
+        }
+        
+        async function approveUser(id) {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return;
+                    
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/users?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers,
+                            body: JSON.stringify({ is_active: true })
+                        }
+                    );
+                    
+                    if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Failed to approve user');
+                } else {
+                    const index = users.findIndex(u => u.id === id);
+                    if (index >= 0) users[index].is_active = true;
+                }
+                
+                showToast('המשתמש אושר בהצלחה', 'success');
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Error approving user:', error);
+                showToast('שגיאה באישור משתמש', 'error');
+            }
+        }
+        
+        async function banUser(id) {
+            if (!confirm('האם להשבית את המשתמש? הוא לא יוכל להתחבר למערכת.')) return;
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return;
+                    
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/users?id=eq.${id}`,
+                        {
+                            method: 'PATCH',
+                            headers,
+                            body: JSON.stringify({ is_active: false })
+                        }
+                    );
+                    
+                    if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Failed to ban user');
+                } else {
+                    const index = users.findIndex(u => u.id === id);
+                    if (index >= 0) users[index].is_active = false;
+                }
+                
+                showToast('המשתמש הושבת', 'success');
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Error banning user:', error);
+                showToast('שגיאה בהשבתת משתמש', 'error');
+            }
+        }
+        
+        async function deleteUser(id, name) {
+            if (!confirm(`האם למחוק את המשתמש "${name}"? פעולה זו אינה ניתנת לביטול.`)) return;
+            
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                
+                if (supabaseUrl && supabaseKey) {
+                    const headers = await getAuthHeaders();
+                    if (!headers) return;
+                    
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/users?id=eq.${id}`,
+                        {
+                            method: 'DELETE',
+                            headers
+                        }
+                    );
+                    
+                    if (response.status === 401) {
+                        handleSessionExpired();
+                        return;
+                    }
+                    if (!response.ok) throw new Error('Failed to delete user');
+                } else {
+                    users = users.filter(u => u.id !== id);
+                }
+                
+                showToast('המשתמש נמחק', 'success');
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Error deleting user:', error);
+                showToast('שגיאה במחיקת משתמש', 'error');
             }
         }
         
