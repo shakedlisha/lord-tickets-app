@@ -167,9 +167,31 @@ async function generateFlightReport(supabase: any, flightId: string) {
     .select("*, users!passengers_agent_id_fkey(name)")
     .eq("flight_id", flightId);
 
+  // Fetch deposit milestones
+  const { data: depositMilestones } = await supabase
+    .from("deposit_milestones")
+    .select("*")
+    .eq("flight_id", flightId)
+    .order("sort_order", { ascending: true })
+    .order("due_date", { ascending: true });
+
   const activePassengers = passengers?.filter((p: any) => p.status === "active") || [];
   const totalRevenue = activePassengers.reduce((sum: number, p: any) => sum + (p.selling_price || 0), 0);
   const totalCost = activePassengers.reduce((sum: number, p: any) => sum + (p.cost_price || 0), 0);
+
+  // Calculate exposure data using price_paid for cash-in (actual money received)
+  const cashIn = activePassengers.reduce((sum: number, p: any) => sum + (p.price_paid || 0), 0);
+  const activeMilestones = (depositMilestones || []).filter((m: any) => m.status !== "cancelled");
+  const totalSeats = flight?.total_seats || 0;
+  
+  const totalObligations = activeMilestones.reduce((sum: number, m: any) => {
+    const amount = parseFloat(m.amount) || 0;
+    return sum + (m.amount_type === "per_seat" ? amount * totalSeats : amount);
+  }, 0);
+  
+  const depositsPaid = activeMilestones.reduce((sum: number, m: any) => sum + (parseFloat(m.paid_amount) || 0), 0);
+  const depositsRemaining = totalObligations - depositsPaid;
+  const exposure = depositsRemaining - cashIn;
 
   // Group by agent
   const byAgent: Record<string, any[]> = {};
@@ -182,13 +204,22 @@ async function generateFlightReport(supabase: any, flightId: string) {
   return {
     flight,
     summary: {
-      totalSeats: flight?.total_seats || 0,
+      totalSeats,
       bookedSeats: activePassengers.length,
-      availableSeats: (flight?.total_seats || 0) - activePassengers.length,
-      occupancyRate: flight?.total_seats ? ((activePassengers.length / flight.total_seats) * 100).toFixed(1) : 0,
+      availableSeats: totalSeats - activePassengers.length,
+      occupancyRate: totalSeats ? ((activePassengers.length / totalSeats) * 100).toFixed(1) : 0,
       totalRevenue,
       totalCost,
       totalProfit: totalRevenue - totalCost,
+    },
+    exposure: {
+      hasMilestones: activeMilestones.length > 0,
+      totalObligations,
+      depositsPaid,
+      depositsRemaining,
+      cashIn,
+      exposure,
+      milestones: activeMilestones,
     },
     passengers: passengers || [],
     byAgent,
@@ -363,7 +394,45 @@ function generateFlightReportHtml(data: any) {
         </div>
       </div>
       
-      <h3>רשימת נוסעים</h3>
+      ${data.exposure?.hasMilestones ? `
+      <h3 style="margin-top: 30px;">💰 לוח תשלומים לספק</h3>
+      <div class="flight-info" style="margin-bottom: 20px;">
+        <div class="info-card">
+          <div class="info-label">סה"כ התחייבויות</div>
+          <div class="info-value">$${data.exposure.totalObligations.toLocaleString()}</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">שולם</div>
+          <div class="info-value" style="color: #28A745;">$${data.exposure.depositsPaid.toLocaleString()}</div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">חשיפה</div>
+          <div class="info-value" style="color: ${data.exposure.exposure > 0 ? '#DC3545' : '#28A745'};">
+            ${data.exposure.exposure > 0 ? '-' : '+'}$${Math.abs(data.exposure.exposure).toLocaleString()}
+          </div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>תשלום</th><th>תאריך יעד</th><th>סכום</th><th>שולם</th><th>סטטוס</th></tr>
+        </thead>
+        <tbody>
+          ${data.exposure.milestones.map((m: any) => {
+            const statusMap: Record<string, string> = { paid: '✓ שולם', partial: '⟳ חלקי', pending: '⏳ ממתין', overdue: '⚠️ באיחור' };
+            return `
+            <tr>
+              <td>${m.name}</td>
+              <td>${m.due_date ? new Date(m.due_date).toLocaleDateString('he-IL') : '-'}</td>
+              <td>$${(parseFloat(m.amount) || 0).toLocaleString()}</td>
+              <td>$${(parseFloat(m.paid_amount) || 0).toLocaleString()}</td>
+              <td>${statusMap[m.status] || m.status}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      ` : ''}
+      
+      <h3 style="margin-top: 30px;">רשימת נוסעים</h3>
       <table>
         <thead>
           <tr><th>#</th><th>שם</th><th>טלפון</th><th>סוכן</th><th>מחיר</th><th>סטטוס</th></tr>

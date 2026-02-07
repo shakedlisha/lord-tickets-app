@@ -333,6 +333,7 @@
     
     <!-- Navigation Component -->
     <script src="js/nav.js"></script>
+    <script src="js/exposure.js"></script>
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay">
@@ -407,6 +408,14 @@
                 <div class="kpi-value" id="pendingCancellations">0</div>
                 <div class="kpi-label">ממתינים לביטול</div>
             </div>
+            
+            <div class="kpi-card" style="border-right: 4px solid #6F42C1;">
+                <div class="kpi-icon" style="background: rgba(111, 66, 193, 0.15); color: #6F42C1;">
+                    <span class="material-icons">shield</span>
+                </div>
+                <div class="kpi-value" id="totalExposure">$0</div>
+                <div class="kpi-label">חשיפה כוללת</div>
+            </div>
         </div>
         
         <!-- Charts -->
@@ -461,6 +470,43 @@
                 </div>
             </div>
             
+            <!-- Cash Flow Exposure Chart -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <span class="material-icons" style="color:#6F42C1; font-size:1.1rem; vertical-align:middle;">shield</span>
+                        חשיפת תזרים מזומנים
+                    </h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="exposureChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Upcoming Milestones Table -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <span class="material-icons" style="color:#D4AF37; font-size:1.1rem; vertical-align:middle;">account_balance</span>
+                        תשלומים קרובים
+                    </h3>
+                </div>
+                <table class="data-table" id="upcomingMilestonesTable">
+                    <thead>
+                        <tr>
+                            <th>טיסה</th>
+                            <th>תשלום</th>
+                            <th>סכום</th>
+                            <th>תאריך יעד</th>
+                            <th>סטטוס</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+            
             <!-- Upcoming Flights -->
             <div class="chart-card full-width">
                 <div class="chart-header">
@@ -486,12 +532,13 @@
     
     <script>
         // Chart instances
-        let revenueChart, passengersChart, destinationsChart;
+        let revenueChart, passengersChart, destinationsChart, exposureChart;
         
         // Data storage
         let flights = [];
         let passengers = [];
         let users = [];
+        let milestones = [];
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -552,6 +599,13 @@
                         { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
                     );
                     users = usersRes.ok ? await usersRes.json() : [];
+                    
+                    // Fetch deposit milestones
+                    const milestonesRes = await fetch(
+                        `${supabaseUrl}/rest/v1/deposit_milestones?select=*&status=neq.cancelled&order=due_date.asc`,
+                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+                    );
+                    milestones = milestonesRes.ok ? await milestonesRes.json() : [];
                 } else {
                     // Demo data
                     flights = generateDemoFlights();
@@ -568,6 +622,8 @@
                 renderDestinationsChart();
                 renderAgentsTable();
                 renderUpcomingFlights();
+                renderExposureChart();
+                renderUpcomingMilestones();
                 
             } catch (error) {
                 console.error('Error loading analytics:', error);
@@ -611,6 +667,33 @@
             // Pending cancellations
             const pending = passengers.filter(p => p.status === 'cancellation_requested');
             document.getElementById('pendingCancellations').textContent = pending.length;
+            
+            // Total exposure across all flights
+            if (typeof Exposure !== 'undefined' && milestones.length > 0) {
+                let totalExposure = 0;
+                // Group milestones by flight
+                const grouped = {};
+                milestones.forEach(m => {
+                    if (!grouped[m.flight_id]) grouped[m.flight_id] = [];
+                    grouped[m.flight_id].push(m);
+                });
+                Object.keys(grouped).forEach(fId => {
+                    const fl = flights.find(f => f.id === fId);
+                    const flPax = passengers.filter(p => p.flight_id === fId && (p.status === 'active' || !p.status));
+                    const exp = Exposure.calculateExposure(fl, grouped[fId], flPax);
+                    if (exp.hasMilestones && exp.exposure > 0) {
+                        totalExposure += exp.exposure;
+                    }
+                });
+                const exposureEl = document.getElementById('totalExposure');
+                if (totalExposure > 0) {
+                    exposureEl.textContent = `-$${totalExposure.toLocaleString()}`;
+                    exposureEl.style.color = '#DC3545';
+                } else {
+                    exposureEl.textContent = '$0';
+                    exposureEl.style.color = '#28A745';
+                }
+            }
         }
         
         function renderRevenueByDestChart() {
@@ -868,6 +951,115 @@
             }
             
             return result;
+        }
+        
+        function renderExposureChart() {
+            if (typeof Exposure === 'undefined' || milestones.length === 0) return;
+            
+            const ctx = document.getElementById('exposureChart').getContext('2d');
+            
+            // Group milestones by flight
+            const grouped = {};
+            milestones.forEach(m => {
+                if (!grouped[m.flight_id]) grouped[m.flight_id] = [];
+                grouped[m.flight_id].push(m);
+            });
+            
+            const labels = [];
+            const cashInData = [];
+            const obligationsData = [];
+            
+            Object.keys(grouped).forEach(fId => {
+                const fl = flights.find(f => f.id === fId);
+                if (!fl) return;
+                const flPax = passengers.filter(p => p.flight_id === fId && (p.status === 'active' || !p.status));
+                const exp = Exposure.calculateExposure(fl, grouped[fId], flPax);
+                if (!exp.hasMilestones) return;
+                
+                labels.push(fl.destination_name || fl.destination_code || 'טיסה');
+                cashInData.push(exp.cashIn);
+                obligationsData.push(exp.totalObligations);
+            });
+            
+            if (labels.length === 0) return;
+            
+            if (exposureChart) exposureChart.destroy();
+            
+            exposureChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'כסף שנכנס ($)',
+                            data: cashInData,
+                            backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                            borderColor: '#28A745',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'התחייבויות ($)',
+                            data: obligationsData,
+                            backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                            borderColor: '#DC3545',
+                            borderWidth: 1,
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '$' + value.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function renderUpcomingMilestones() {
+            const tbody = document.querySelector('#upcomingMilestonesTable tbody');
+            if (!tbody) return;
+            
+            if (typeof Exposure === 'undefined' || milestones.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">אין תשלומים מוגדרים</td></tr>';
+                return;
+            }
+            
+            // Get pending/partial milestones sorted by due date
+            const upcoming = milestones
+                .filter(m => m.status === 'pending' || m.status === 'partial' || m.status === 'overdue')
+                .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
+                .slice(0, 10);
+            
+            if (upcoming.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#28A745; padding:20px;">כל התשלומים שולמו!</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = upcoming.map(m => {
+                const fl = flights.find(f => f.id === m.flight_id);
+                const color = Exposure.getMilestoneColor(m);
+                const amount = parseFloat(m.amount) || 0;
+                const dueDate = new Date(m.due_date + 'T00:00:00');
+                
+                return `<tr>
+                    <td>${fl?.destination_name || '—'}</td>
+                    <td>${m.name}</td>
+                    <td>$${amount.toLocaleString()}</td>
+                    <td>${dueDate.toLocaleDateString('he-IL')}</td>
+                    <td><span style="padding:2px 8px; border-radius:10px; font-size:0.75rem; background:${color.color}22; color:${color.color}">${color.labelHe}</span></td>
+                </tr>`;
+            }).join('');
         }
         
         function generateDemoUsers() {

@@ -933,9 +933,16 @@
         .financial-summary {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
+            gap: 12px;
             padding: 0 30px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 1100px) {
+            .financial-summary {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
         }
         
         @media (max-width: 900px) {
@@ -1030,6 +1037,411 @@
             margin: 2px 0 0;
         }
         
+        /* Exposure Row - Financial Cards Row 2 */
+        .financial-card.cash-in {
+            border-right-color: #28A745;
+        }
+        .financial-card.cash-in .financial-icon {
+            background: rgba(40, 167, 69, 0.15);
+            color: #28A745;
+        }
+        .financial-card.cash-out {
+            border-right-color: #DC3545;
+        }
+        .financial-card.cash-out .financial-icon {
+            background: rgba(220, 53, 69, 0.15);
+            color: #DC3545;
+        }
+        .financial-card.exposure {
+            border-right-color: var(--navy);
+        }
+        .financial-card.exposure .financial-icon {
+            background: rgba(27, 54, 93, 0.15);
+            color: var(--navy);
+        }
+        .financial-card.exposure.surplus {
+            border-right-color: #28A745;
+        }
+        .financial-card.exposure.surplus .financial-icon {
+            background: rgba(40, 167, 69, 0.15);
+            color: #28A745;
+        }
+        .financial-card.exposure.gap {
+            border-right-color: #DC3545;
+        }
+        .financial-card.exposure.gap .financial-icon {
+            background: rgba(220, 53, 69, 0.15);
+            color: #DC3545;
+        }
+        .financial-card.break-even {
+            border-right-color: #6F42C1;
+        }
+        .financial-card.break-even .financial-icon {
+            background: rgba(111, 66, 193, 0.15);
+            color: #6F42C1;
+        }
+        .break-even-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 4px;
+        }
+        .break-even-date input[type="date"] {
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.7rem;
+            padding: 2px 5px;
+            border: 1px solid var(--gray);
+            border-radius: 4px;
+            color: var(--navy-dark);
+            direction: ltr;
+        }
+        .financial-card .no-data {
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            font-style: italic;
+        }
+
+        /* Exposure Meter Bar */
+        .exposure-meter {
+            padding: 0 30px;
+            margin-bottom: 15px;
+        }
+        .exposure-bar-container {
+            background: var(--gray-light);
+            border-radius: 8px;
+            height: 10px;
+            overflow: hidden;
+            display: flex;
+        }
+        .exposure-bar-in {
+            background: #28A745;
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .exposure-bar-out {
+            background: #DC3545;
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        /* Gap Analysis Banner */
+        .gap-banner {
+            margin: 0 30px 15px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .gap-banner.visible {
+            display: flex;
+        }
+        .gap-banner.info {
+            background: rgba(27, 54, 93, 0.08);
+            border: 1px solid rgba(27, 54, 93, 0.2);
+            color: var(--navy-dark);
+        }
+        .gap-banner.warning {
+            background: rgba(255, 193, 7, 0.12);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            color: #856404;
+        }
+        .gap-banner.critical {
+            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #721C24;
+        }
+        .gap-banner .gap-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .gap-banner .gap-content {
+            flex: 1;
+        }
+        .gap-banner .gap-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 3px;
+        }
+        .gap-banner .gap-detail {
+            font-size: 0.85rem;
+            opacity: 0.85;
+        }
+
+        /* Deposit Schedule Section */
+        .deposit-section {
+            padding: 0 30px;
+            margin-bottom: 20px;
+        }
+        .deposit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .deposit-header h3 {
+            color: var(--navy-dark);
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .deposit-header h3 .material-icons {
+            color: var(--gold);
+        }
+        .deposit-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .deposit-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .deposit-panel.collapsed .deposit-panel-body {
+            display: none;
+        }
+
+        /* Timeline Progress Bar */
+        .deposit-timeline {
+            display: flex;
+            height: 8px;
+            background: var(--gray-light);
+        }
+        .deposit-timeline .timeline-paid {
+            background: #28A745;
+            transition: width 0.4s ease;
+        }
+        .deposit-timeline .timeline-partial {
+            background: #007BFF;
+            transition: width 0.4s ease;
+        }
+        .deposit-timeline .timeline-remaining {
+            background: var(--gray);
+            flex: 1;
+        }
+
+        /* Deposit Table */
+        .deposit-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .deposit-table th, .deposit-table td {
+            padding: 10px 14px;
+            text-align: right;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        .deposit-table th {
+            background: var(--gray-light);
+            font-weight: 600;
+            color: var(--navy-dark);
+            font-size: 0.8rem;
+        }
+        .deposit-table tr:last-child td {
+            border-bottom: none;
+        }
+        .deposit-table .total-row {
+            background: var(--gray-light);
+            font-weight: 600;
+        }
+
+        /* Deposit Status Badges */
+        .deposit-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .deposit-status.paid {
+            background: rgba(40, 167, 69, 0.12);
+            color: #28A745;
+        }
+        .deposit-status.partial {
+            background: rgba(0, 123, 255, 0.12);
+            color: #007BFF;
+        }
+        .deposit-status.pending {
+            background: rgba(108, 117, 125, 0.12);
+            color: #6C757D;
+        }
+        .deposit-status.due-soon {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+        }
+        .deposit-status.due-critical, .deposit-status.partial-urgent {
+            background: rgba(220, 53, 69, 0.12);
+            color: #DC3545;
+        }
+        .deposit-status.overdue {
+            background: rgba(220, 53, 69, 0.15);
+            color: #DC3545;
+            font-weight: 600;
+        }
+        .deposit-status.cancelled {
+            background: rgba(108, 117, 125, 0.08);
+            color: #999;
+            text-decoration: line-through;
+        }
+
+        /* Deposit Action Buttons */
+        .deposit-btn {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.2s;
+        }
+        .deposit-btn .material-icons {
+            font-size: 14px;
+        }
+        .deposit-btn.pay {
+            background: rgba(40, 167, 69, 0.12);
+            color: #28A745;
+        }
+        .deposit-btn.pay:hover {
+            background: rgba(40, 167, 69, 0.25);
+        }
+        .deposit-btn.edit {
+            background: rgba(0, 123, 255, 0.12);
+            color: #007BFF;
+        }
+        .deposit-btn.edit:hover {
+            background: rgba(0, 123, 255, 0.25);
+        }
+        .deposit-btn.delete {
+            background: rgba(220, 53, 69, 0.08);
+            color: #DC3545;
+        }
+        .deposit-btn.delete:hover {
+            background: rgba(220, 53, 69, 0.2);
+        }
+        .deposit-btn.template {
+            background: rgba(212, 175, 55, 0.12);
+            color: var(--gold-dark);
+        }
+        .deposit-btn.template:hover {
+            background: rgba(212, 175, 55, 0.25);
+        }
+
+        /* Inline Add/Edit Form */
+        .deposit-inline-form {
+            display: none;
+            padding: 12px 14px;
+            background: rgba(212, 175, 55, 0.04);
+            border-top: 1px dashed var(--gray);
+        }
+        .deposit-inline-form.visible {
+            display: block;
+        }
+        .deposit-form-row {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .deposit-form-group {
+            flex: 1;
+            min-width: 120px;
+        }
+        .deposit-form-group label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            margin-bottom: 3px;
+        }
+        .deposit-form-group input, .deposit-form-group select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--gray);
+            border-radius: 6px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.85rem;
+        }
+        .deposit-form-group input[type="date"] {
+            direction: ltr;
+        }
+        .deposit-form-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            padding-bottom: 2px;
+        }
+
+        /* Pay Inline Form */
+        .pay-inline-form {
+            display: none;
+            padding: 8px 14px;
+            background: rgba(40, 167, 69, 0.04);
+            border-top: 1px dashed rgba(40, 167, 69, 0.3);
+        }
+        .pay-inline-form.visible {
+            display: block;
+        }
+
+        /* No deposits placeholder */
+        .deposit-empty {
+            padding: 30px;
+            text-align: center;
+            color: var(--gray-dark);
+        }
+        .deposit-empty .material-icons {
+            font-size: 2.5rem;
+            color: var(--gray);
+            margin-bottom: 10px;
+        }
+
+        /* Template dropdown */
+        .template-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .template-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 220px;
+            padding: 6px 0;
+            margin-top: 4px;
+        }
+        .template-dropdown-menu.show {
+            display: block;
+        }
+        .template-dropdown-item {
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+        }
+        .template-dropdown-item:hover {
+            background: var(--gray-light);
+        }
+        .template-dropdown-empty {
+            padding: 12px 14px;
+            color: var(--gray-dark);
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+
         /* Packages Section */
         .packages-section {
             padding: 0 30px;
@@ -1472,6 +1884,7 @@
     <!-- Navigation Component -->
     <script src="js/nav.js"></script>
     <script src="js/documents.js"></script>
+    <script src="js/exposure.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -1556,8 +1969,9 @@
         </div>
     </div>
     
-    <!-- Financial Summary -->
+    <!-- Financial Summary - 8 Cards (2 rows of 4) -->
     <div class="financial-summary" id="financialSummary">
+        <!-- Row 1: Classic -->
         <div class="financial-card revenue">
             <div class="financial-icon">
                 <span class="material-icons">payments</span>
@@ -1592,6 +2006,138 @@
             <div class="financial-info">
                 <h3 id="totalCommission">$0</h3>
                 <p>עמלות סוכנים</p>
+            </div>
+        </div>
+        <!-- Row 2: Exposure -->
+        <div class="financial-card cash-in">
+            <div class="financial-icon">
+                <span class="material-icons">arrow_downward</span>
+            </div>
+            <div class="financial-info">
+                <h3 id="cashIn"><span class="no-data">—</span></h3>
+                <p>כסף שנכנס</p>
+            </div>
+        </div>
+        <div class="financial-card cash-out">
+            <div class="financial-icon">
+                <span class="material-icons">arrow_upward</span>
+            </div>
+            <div class="financial-info">
+                <h3 id="cashOut"><span class="no-data">—</span></h3>
+                <p>כסף ששולם לספק</p>
+            </div>
+        </div>
+        <div class="financial-card exposure">
+            <div class="financial-icon">
+                <span class="material-icons">shield</span>
+            </div>
+            <div class="financial-info">
+                <h3 id="exposureAmount"><span class="no-data">—</span></h3>
+                <p>חשיפה</p>
+            </div>
+        </div>
+        <div class="financial-card break-even">
+            <div class="financial-icon">
+                <span class="material-icons">balance</span>
+            </div>
+            <div class="financial-info">
+                <h3 id="breakEvenCount"><span class="no-data">—</span></h3>
+                <p>נקודת איזון</p>
+                <div class="break-even-date">
+                    <input type="date" id="breakEvenDate" onchange="updateBreakEven()" title="בחר תאריך לחישוב נקודת איזון">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Exposure Meter Bar -->
+    <div class="exposure-meter" id="exposureMeter" style="display: none;">
+        <div class="exposure-bar-container">
+            <div class="exposure-bar-in" id="exposureBarIn" style="width: 0%;"></div>
+            <div class="exposure-bar-out" id="exposureBarOut" style="width: 0%;"></div>
+        </div>
+    </div>
+    
+    <!-- Gap Analysis Banner -->
+    <div class="gap-banner" id="gapBanner">
+        <span class="material-icons gap-icon" id="gapIcon">warning</span>
+        <div class="gap-content">
+            <div class="gap-title" id="gapTitle"></div>
+            <div class="gap-detail" id="gapDetail"></div>
+        </div>
+    </div>
+    
+    <!-- Deposit Schedule Section -->
+    <div class="deposit-section" id="depositSection">
+        <div class="deposit-header">
+            <h3>
+                <span class="material-icons">account_balance</span>
+                לוח תשלומים לספק
+            </h3>
+            <div class="deposit-actions" id="depositActions">
+                <div class="template-dropdown" id="templateDropdown">
+                    <button class="deposit-btn template" onclick="toggleTemplateDropdown()">
+                        <span class="material-icons">file_copy</span>
+                        החל תבנית
+                    </button>
+                    <div class="template-dropdown-menu" id="templateMenu"></div>
+                </div>
+                <button class="deposit-btn template" onclick="saveAsTemplate()">
+                    <span class="material-icons">save</span>
+                    שמור כתבנית
+                </button>
+                <button class="deposit-btn pay" onclick="toggleAddMilestoneForm()">
+                    <span class="material-icons">add_circle</span>
+                    הוסף אבן דרך
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="toggleDepositPanel()">
+                    <span class="material-icons" id="depositToggleIcon">expand_less</span>
+                </button>
+            </div>
+        </div>
+        <div class="deposit-panel" id="depositPanel">
+            <!-- Timeline bar -->
+            <div class="deposit-timeline" id="depositTimeline">
+                <div class="timeline-paid" id="timelinePaid" style="width: 0%;"></div>
+                <div class="timeline-partial" id="timelinePartial" style="width: 0%;"></div>
+                <div class="timeline-remaining"></div>
+            </div>
+            <div class="deposit-panel-body">
+                <!-- Milestones table rendered by JS -->
+                <div id="depositTableContainer"></div>
+                
+                <!-- Add milestone inline form -->
+                <div class="deposit-inline-form" id="addMilestoneForm">
+                    <div class="deposit-form-row">
+                        <div class="deposit-form-group">
+                            <label>שם</label>
+                            <input type="text" id="newMilestoneName" placeholder="למשל: מקדמה">
+                        </div>
+                        <div class="deposit-form-group">
+                            <label>תאריך יעד</label>
+                            <input type="date" id="newMilestoneDue">
+                        </div>
+                        <div class="deposit-form-group">
+                            <label>סכום ($)</label>
+                            <input type="number" id="newMilestoneAmount" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                        <div class="deposit-form-group" style="min-width: 100px;">
+                            <label>סוג סכום</label>
+                            <select id="newMilestoneAmountType">
+                                <option value="global">סכום כולל</option>
+                                <option value="per_seat">למושב</option>
+                            </select>
+                        </div>
+                        <div class="deposit-form-actions">
+                            <button class="deposit-btn pay" onclick="saveMilestone()">
+                                <span class="material-icons">check</span> שמור
+                            </button>
+                            <button class="deposit-btn delete" onclick="toggleAddMilestoneForm()">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2332,6 +2878,11 @@
         let packages = [];
         let packagesExpanded = true;
         
+        // Deposits
+        let milestones = [];
+        let depositPanelExpanded = true;
+        let editingMilestoneId = null;
+        
         // ==========================================
         // Packages Management
         // ==========================================
@@ -2675,6 +3226,18 @@
                     financialSummary.style.display = 'none';
                 }
                 
+                // Hide exposure meter and gap banner for agents
+                const exposureMeter = document.getElementById('exposureMeter');
+                if (exposureMeter) exposureMeter.style.display = 'none';
+                const gapBanner = document.getElementById('gapBanner');
+                if (gapBanner) gapBanner.style.display = 'none';
+                
+                // Hide deposit section for agents
+                const depositSection = document.getElementById('depositSection');
+                if (depositSection) {
+                    depositSection.style.display = 'none';
+                }
+                
                 // Hide export dropdown for agents
                 const exportDropdown = document.querySelector('.export-dropdown');
                 if (exportDropdown) {
@@ -2794,8 +3357,9 @@
                 updateStats();
                 filterPassengers();
                 
-                // Load packages for this flight
+                // Load packages and deposit milestones for this flight
                 await loadPackages();
+                await loadMilestones();
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -2924,6 +3488,678 @@
                 profitCard.classList.add('negative');
             } else {
                 profitCard.classList.remove('negative');
+            }
+            
+            // Update exposure row (Row 2)
+            updateExposureCards();
+        }
+        
+        // ==========================================
+        // Exposure Dashboard
+        // ==========================================
+        function updateExposureCards() {
+            if (typeof Exposure === 'undefined') return;
+            
+            const exp = Exposure.calculateExposure(flight, milestones, passengers);
+            
+            if (!exp.hasMilestones) {
+                document.getElementById('cashIn').innerHTML = '<span class="no-data">—</span>';
+                document.getElementById('cashOut').innerHTML = '<span class="no-data">—</span>';
+                document.getElementById('exposureAmount').innerHTML = '<span class="no-data">—</span>';
+                document.getElementById('breakEvenCount').innerHTML = '<span class="no-data">—</span>';
+                document.getElementById('exposureMeter').style.display = 'none';
+                document.getElementById('gapBanner').classList.remove('visible');
+                document.getElementById('breakEvenDate').disabled = true;
+                return;
+            }
+            
+            // Cash In / Cash Out
+            document.getElementById('cashIn').textContent = `$${exp.cashIn.toLocaleString()}`;
+            document.getElementById('cashOut').textContent = `$${exp.cashOut.toLocaleString()}`;
+            
+            // Exposure
+            const exposureEl = document.getElementById('exposureAmount');
+            const exposureCard = document.querySelector('.financial-card.exposure');
+            if (exp.exposure > 0) {
+                exposureEl.textContent = `-$${exp.exposure.toLocaleString()}`;
+                exposureCard.className = 'financial-card exposure gap';
+            } else if (exp.exposure < 0) {
+                exposureEl.textContent = `+$${Math.abs(exp.exposure).toLocaleString()}`;
+                exposureCard.className = 'financial-card exposure surplus';
+            } else {
+                exposureEl.textContent = '$0';
+                exposureCard.className = 'financial-card exposure surplus';
+            }
+            
+            // Break-even
+            updateBreakEven();
+            document.getElementById('breakEvenDate').disabled = false;
+            
+            // Set default break-even date to next milestone if not set
+            const beDateInput = document.getElementById('breakEvenDate');
+            if (!beDateInput.value) {
+                const nextM = Exposure.getNextPendingMilestone(milestones);
+                if (nextM) beDateInput.value = nextM.due_date;
+            }
+            
+            // Exposure meter bar
+            const meterEl = document.getElementById('exposureMeter');
+            if (exp.totalObligations > 0) {
+                meterEl.style.display = 'block';
+                const total = Math.max(exp.cashIn, exp.totalObligations);
+                const inPct = total > 0 ? (exp.cashIn / total * 100) : 0;
+                const outPct = total > 0 ? (exp.cashOut / total * 100) : 0;
+                document.getElementById('exposureBarIn').style.width = `${Math.min(inPct, 100)}%`;
+                document.getElementById('exposureBarOut').style.width = `${Math.min(outPct, 100 - inPct)}%`;
+            } else {
+                meterEl.style.display = 'none';
+            }
+            
+            // Gap analysis banner
+            updateGapBanner();
+        }
+        
+        function updateBreakEven() {
+            if (typeof Exposure === 'undefined') return;
+            
+            const asOfDate = document.getElementById('breakEvenDate').value || null;
+            const be = Exposure.dynamicBreakEven(flight, milestones, passengers, asOfDate);
+            
+            if (!be.hasMilestones) {
+                document.getElementById('breakEvenCount').innerHTML = '<span class="no-data">—</span>';
+                return;
+            }
+            
+            const beEl = document.getElementById('breakEvenCount');
+            beEl.textContent = `${be.ticketsSold}/${be.ticketsNeeded}`;
+            if (be.gap > 0) {
+                beEl.title = `חסרים ${be.gap} כרטיסים לכיסוי תשלומים עד ${asOfDate || 'אבן הדרך הבאה'}`;
+            } else {
+                beEl.title = 'מכירות מכסות את התשלומים';
+            }
+        }
+        
+        function updateGapBanner() {
+            if (typeof Exposure === 'undefined') return;
+            
+            const gap = Exposure.gapAnalysis(flight, milestones, passengers);
+            const banner = document.getElementById('gapBanner');
+            
+            if (!gap || !gap.hasGap) {
+                banner.classList.remove('visible');
+                return;
+            }
+            
+            // Determine severity
+            let severity = 'info';
+            if (gap.daysUntilDue < 0) severity = 'critical';
+            else if (gap.daysUntilDue <= 3) severity = 'critical';
+            else if (gap.daysUntilDue <= 7) severity = 'warning';
+            else if (gap.daysUntilDue <= 14) severity = 'warning';
+            
+            banner.className = `gap-banner visible ${severity}`;
+            
+            const icon = document.getElementById('gapIcon');
+            icon.textContent = severity === 'critical' ? 'error' : severity === 'warning' ? 'warning' : 'info';
+            
+            const dueText = gap.daysUntilDue < 0
+                ? `באיחור של ${Math.abs(gap.daysUntilDue)} ימים`
+                : gap.daysUntilDue === 0 ? 'היום!' : `בעוד ${gap.daysUntilDue} ימים`;
+            
+            document.getElementById('gapTitle').textContent = 
+                `תשלום הבא: "${gap.nextMilestone.name}" $${gap.remaining.toLocaleString()} — ${dueText}`;
+            document.getElementById('gapDetail').textContent = 
+                `שולם: $${gap.alreadyPaid.toLocaleString()} | נותר: $${gap.remaining.toLocaleString()} | כסף שנכנס: $${gap.cashIn.toLocaleString()} | פער: $${gap.gap.toLocaleString()} (${gap.ticketsNeeded} כרטיסים)`;
+        }
+        
+        // ==========================================
+        // Deposit Milestones - CRUD
+        // ==========================================
+        async function loadMilestones() {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                if (!supabaseUrl || !supabaseKey) { milestones = []; renderMilestones(); return; }
+                
+                const accessToken = await getAccessToken();
+                if (!accessToken) { milestones = []; renderMilestones(); return; }
+                
+                const res = await fetch(
+                    `${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${flightId}&order=sort_order.asc,due_date.asc`,
+                    {
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    }
+                );
+                
+                if (res.ok) {
+                    milestones = await res.json();
+                } else {
+                    milestones = [];
+                }
+            } catch (err) {
+                console.error('Error loading milestones:', err);
+                milestones = [];
+            }
+            
+            renderMilestones();
+            updateExposureCards();
+        }
+        
+        function renderMilestones() {
+            const container = document.getElementById('depositTableContainer');
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            const canManage = ['admin', 'manager'].includes(userRole);
+            
+            // Hide action buttons for agents
+            const actionsEl = document.getElementById('depositActions');
+            if (actionsEl) {
+                actionsEl.style.display = canManage ? 'flex' : 'none';
+            }
+            
+            if (!milestones || milestones.length === 0) {
+                container.innerHTML = `
+                    <div class="deposit-empty">
+                        <span class="material-icons">account_balance</span>
+                        <p>לא הוגדר לוח תשלומים</p>
+                        ${canManage ? '<p style="font-size:0.8rem; margin-top:5px;">לחץ "הוסף אבן דרך" להוספת תשלום</p>' : ''}
+                    </div>
+                `;
+                updateTimeline();
+                return;
+            }
+            
+            const totalSeats = parseInt(flight?.total_seats) || 0;
+            let totalAmount = 0;
+            let totalPaid = 0;
+            
+            let html = `<table class="deposit-table">
+                <thead><tr>
+                    <th>שם</th>
+                    <th>תאריך יעד</th>
+                    <th>סכום</th>
+                    <th>שולם</th>
+                    <th>סטטוס</th>
+                    ${canManage ? '<th>פעולות</th>' : ''}
+                </tr></thead><tbody>`;
+            
+            milestones.forEach(m => {
+                const effective = Exposure.getEffectiveAmount(m, totalSeats);
+                const paid = parseFloat(m.paid_amount) || 0;
+                const color = Exposure.getMilestoneColor(m);
+                totalAmount += effective;
+                totalPaid += paid;
+                
+                const amountLabel = m.amount_type === 'per_seat'
+                    ? `$${parseFloat(m.amount).toLocaleString()} × ${totalSeats} = $${effective.toLocaleString()}`
+                    : `$${effective.toLocaleString()}`;
+                
+                html += `<tr>
+                    <td><strong>${m.name}</strong>${m.notes ? `<br><small style="color:var(--gray-dark)">${m.notes}</small>` : ''}</td>
+                    <td>${formatDateShort(m.due_date)}</td>
+                    <td>${amountLabel}</td>
+                    <td>$${paid.toLocaleString()}</td>
+                    <td><span class="deposit-status ${color.cssClass}">${color.labelHe}</span></td>
+                    ${canManage ? `<td>
+                        ${m.status !== 'paid' && m.status !== 'cancelled' ? `<button class="deposit-btn pay" onclick="showPayForm('${m.id}')"><span class="material-icons">payment</span></button>` : ''}
+                        <button class="deposit-btn edit" onclick="editMilestone('${m.id}')"><span class="material-icons">edit</span></button>
+                        <button class="deposit-btn delete" onclick="deleteMilestone('${m.id}')"><span class="material-icons">delete</span></button>
+                    </td>` : ''}
+                </tr>`;
+                
+                // Pay inline form (hidden by default)
+                if (canManage && m.status !== 'paid' && m.status !== 'cancelled') {
+                    html += `<tr id="payRow_${m.id}" style="display:none;">
+                        <td colspan="${canManage ? 6 : 5}">
+                            <div class="pay-inline-form visible">
+                                <div class="deposit-form-row">
+                                    <div class="deposit-form-group">
+                                        <label>סכום לתשלום ($)</label>
+                                        <input type="number" id="payAmount_${m.id}" step="0.01" min="0" value="${(effective - paid).toFixed(2)}" max="${effective}">
+                                    </div>
+                                    <div class="deposit-form-group">
+                                        <label>תאריך תשלום</label>
+                                        <input type="date" id="payDate_${m.id}" value="${new Date().toISOString().split('T')[0]}">
+                                    </div>
+                                    <div class="deposit-form-actions">
+                                        <button class="deposit-btn pay" onclick="recordPayment('${m.id}')">
+                                            <span class="material-icons">check</span> שמור תשלום
+                                        </button>
+                                        <button class="deposit-btn delete" onclick="hidePayForm('${m.id}')">
+                                            <span class="material-icons">close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }
+            });
+            
+            // Total row
+            html += `<tr class="total-row">
+                <td><strong>סה"כ</strong></td>
+                <td></td>
+                <td><strong>$${totalAmount.toLocaleString()}</strong></td>
+                <td><strong>$${totalPaid.toLocaleString()}</strong></td>
+                <td></td>
+                ${canManage ? '<td></td>' : ''}
+            </tr>`;
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            
+            updateTimeline();
+        }
+        
+        function updateTimeline() {
+            if (!milestones || milestones.length === 0) {
+                document.getElementById('timelinePaid').style.width = '0%';
+                document.getElementById('timelinePartial').style.width = '0%';
+                return;
+            }
+            
+            const totalSeats = parseInt(flight?.total_seats) || 0;
+            const activeMilestones = milestones.filter(m => m.status !== 'cancelled');
+            const totalObligation = activeMilestones.reduce((sum, m) => sum + Exposure.getEffectiveAmount(m, totalSeats), 0);
+            
+            if (totalObligation <= 0) return;
+            
+            const paidFull = activeMilestones
+                .filter(m => m.status === 'paid')
+                .reduce((sum, m) => sum + Exposure.getEffectiveAmount(m, totalSeats), 0);
+            
+            const partialPaid = activeMilestones
+                .filter(m => m.status === 'partial')
+                .reduce((sum, m) => sum + (parseFloat(m.paid_amount) || 0), 0);
+            
+            document.getElementById('timelinePaid').style.width = `${(paidFull / totalObligation * 100).toFixed(1)}%`;
+            document.getElementById('timelinePartial').style.width = `${(partialPaid / totalObligation * 100).toFixed(1)}%`;
+        }
+        
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '—';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        
+        // Toggle panel
+        function toggleDepositPanel() {
+            depositPanelExpanded = !depositPanelExpanded;
+            const panel = document.getElementById('depositPanel');
+            const icon = document.getElementById('depositToggleIcon');
+            panel.classList.toggle('collapsed', !depositPanelExpanded);
+            icon.textContent = depositPanelExpanded ? 'expand_less' : 'expand_more';
+        }
+        
+        // Toggle add form
+        function toggleAddMilestoneForm() {
+            const form = document.getElementById('addMilestoneForm');
+            form.classList.toggle('visible');
+            if (form.classList.contains('visible')) {
+                document.getElementById('newMilestoneName').focus();
+            }
+            editingMilestoneId = null;
+        }
+        
+        // Show/hide pay form
+        function showPayForm(milestoneId) {
+            const row = document.getElementById(`payRow_${milestoneId}`);
+            if (row) row.style.display = 'table-row';
+        }
+        function hidePayForm(milestoneId) {
+            const row = document.getElementById(`payRow_${milestoneId}`);
+            if (row) row.style.display = 'none';
+        }
+        
+        // Save new milestone
+        async function saveMilestone() {
+            const name = document.getElementById('newMilestoneName').value.trim();
+            const dueDate = document.getElementById('newMilestoneDue').value;
+            const amount = parseFloat(document.getElementById('newMilestoneAmount').value);
+            const amountType = document.getElementById('newMilestoneAmountType').value;
+            
+            if (!name || !dueDate || !amount || amount <= 0) {
+                showToast('נא למלא את כל השדות', 'error');
+                return;
+            }
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            const body = {
+                flight_id: flightId,
+                name,
+                due_date: dueDate,
+                amount,
+                amount_type: amountType,
+                status: 'pending',
+                paid_amount: 0,
+                sort_order: milestones.length
+            };
+            
+            if (editingMilestoneId) {
+                // Update
+                const res = await fetch(
+                    `${supabaseUrl}/rest/v1/deposit_milestones?id=eq.${editingMilestoneId}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({ name, due_date: dueDate, amount, amount_type: amountType })
+                    }
+                );
+                if (res.ok) {
+                    showToast('אבן דרך עודכנה', 'success');
+                } else {
+                    showToast('שגיאה בעדכון', 'error');
+                    return;
+                }
+            } else {
+                // Insert
+                const res = await fetch(
+                    `${supabaseUrl}/rest/v1/deposit_milestones`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(body)
+                    }
+                );
+                if (res.ok) {
+                    showToast('אבן דרך נוספה', 'success');
+                } else {
+                    showToast('שגיאה בהוספה', 'error');
+                    return;
+                }
+            }
+            
+            // Reset form
+            document.getElementById('newMilestoneName').value = '';
+            document.getElementById('newMilestoneDue').value = '';
+            document.getElementById('newMilestoneAmount').value = '';
+            document.getElementById('addMilestoneForm').classList.remove('visible');
+            editingMilestoneId = null;
+            
+            await loadMilestones();
+        }
+        
+        // Edit milestone (populate form)
+        function editMilestone(id) {
+            const m = milestones.find(ms => ms.id === id);
+            if (!m) return;
+            
+            editingMilestoneId = id;
+            document.getElementById('newMilestoneName').value = m.name;
+            document.getElementById('newMilestoneDue').value = m.due_date;
+            document.getElementById('newMilestoneAmount').value = m.amount;
+            document.getElementById('newMilestoneAmountType').value = m.amount_type;
+            
+            const form = document.getElementById('addMilestoneForm');
+            form.classList.add('visible');
+            document.getElementById('newMilestoneName').focus();
+        }
+        
+        // Delete milestone
+        async function deleteMilestone(id) {
+            if (!confirm('האם למחוק את אבן הדרך?')) return;
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            const res = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_milestones?id=eq.${id}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                }
+            );
+            
+            if (res.ok) {
+                showToast('אבן דרך נמחקה', 'success');
+                await loadMilestones();
+            } else {
+                showToast('שגיאה במחיקה', 'error');
+            }
+        }
+        
+        // Record payment
+        async function recordPayment(milestoneId) {
+            const payAmount = parseFloat(document.getElementById(`payAmount_${milestoneId}`).value);
+            const payDate = document.getElementById(`payDate_${milestoneId}`).value;
+            
+            if (!payAmount || payAmount <= 0 || !payDate) {
+                showToast('נא למלא סכום ותאריך', 'error');
+                return;
+            }
+            
+            const m = milestones.find(ms => ms.id === milestoneId);
+            if (!m) return;
+            
+            const totalSeats = parseInt(flight?.total_seats) || 0;
+            const effective = Exposure.getEffectiveAmount(m, totalSeats);
+            const newPaidAmount = (parseFloat(m.paid_amount) || 0) + payAmount;
+            const newStatus = newPaidAmount >= effective ? 'paid' : 'partial';
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            const res = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_milestones?id=eq.${milestoneId}`,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        paid_amount: newPaidAmount,
+                        paid_date: payDate,
+                        status: newStatus
+                    })
+                }
+            );
+            
+            if (res.ok) {
+                // Audit log
+                Exposure.logAuditEvent(supabaseUrl, accessToken, {
+                    action: 'deposit_payment',
+                    tableName: 'deposit_milestones',
+                    recordId: milestoneId,
+                    userId: localStorage.getItem('userId'),
+                    userEmail: localStorage.getItem('userEmail'),
+                    oldValues: { paid_amount: m.paid_amount, status: m.status },
+                    newValues: { paid_amount: newPaidAmount, paid_date: payDate, status: newStatus, payment_recorded: payAmount }
+                });
+                
+                showToast(`תשלום $${payAmount.toLocaleString()} נרשם`, 'success');
+                await loadMilestones();
+            } else {
+                showToast('שגיאה ברישום תשלום', 'error');
+            }
+        }
+        
+        // ==========================================
+        // Template Management
+        // ==========================================
+        async function toggleTemplateDropdown() {
+            const menu = document.getElementById('templateMenu');
+            if (menu.classList.contains('show')) {
+                menu.classList.remove('show');
+                return;
+            }
+            
+            // Lazy load templates
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            const airline = flight?.airline || '';
+            const res = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_templates?airline=eq.${encodeURIComponent(airline)}&order=name.asc`,
+                {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                }
+            );
+            
+            let templates = [];
+            if (res.ok) templates = await res.json();
+            
+            if (templates.length === 0) {
+                menu.innerHTML = '<div class="template-dropdown-empty">אין תבניות עבור ' + airline + '</div>';
+            } else {
+                menu.innerHTML = templates.map(t => 
+                    `<div class="template-dropdown-item" onclick="applyTemplateToFlight('${t.id}')">${t.name}</div>`
+                ).join('');
+            }
+            
+            menu.classList.add('show');
+            
+            // Close on outside click
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if (!e.target.closest('.template-dropdown')) {
+                        menu.classList.remove('show');
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 10);
+        }
+        
+        async function applyTemplateToFlight(templateId) {
+            document.getElementById('templateMenu').classList.remove('show');
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            // Fetch template
+            const res = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_templates?id=eq.${templateId}`,
+                {
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                }
+            );
+            if (!res.ok) { showToast('שגיאה בטעינת תבנית', 'error'); return; }
+            const templates = await res.json();
+            if (templates.length === 0) return;
+            
+            const template = templates[0];
+            const generatedMilestones = Exposure.applyTemplate(template, flight);
+            
+            if (generatedMilestones.length === 0) {
+                showToast('התבנית ריקה', 'warning');
+                return;
+            }
+            
+            if (milestones.length > 0 && !confirm('כבר קיימים תשלומים. האם להחליף אותם?')) return;
+            
+            // Delete existing milestones if any
+            if (milestones.length > 0) {
+                await fetch(
+                    `${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${flightId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`
+                        }
+                    }
+                );
+            }
+            
+            // Insert new milestones
+            const insertBody = generatedMilestones.map(m => ({ ...m, flight_id: flightId }));
+            const insertRes = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_milestones`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify(insertBody)
+                }
+            );
+            
+            if (insertRes.ok) {
+                showToast(`תבנית "${template.name}" הוחלה (${generatedMilestones.length} תשלומים)`, 'success');
+                await loadMilestones();
+            } else {
+                showToast('שגיאה בהחלת תבנית', 'error');
+            }
+        }
+        
+        async function saveAsTemplate() {
+            if (!milestones || milestones.length === 0) {
+                showToast('אין אבני דרך לשמירה כתבנית', 'warning');
+                return;
+            }
+            
+            const templateName = prompt(`שם התבנית עבור ${flight?.airline || 'חברת תעופה'}:`);
+            if (!templateName || !templateName.trim()) return;
+            
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const accessToken = await getAccessToken();
+            if (!accessToken) return;
+            
+            const milestonesJson = Exposure.milestonesToTemplate(milestones, flight);
+            
+            const res = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_templates`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        airline: flight?.airline || '',
+                        name: templateName.trim(),
+                        milestones: milestonesJson,
+                        created_by: localStorage.getItem('userId') || null
+                    })
+                }
+            );
+            
+            if (res.ok) {
+                showToast(`תבנית "${templateName}" נשמרה`, 'success');
+            } else {
+                showToast('שגיאה בשמירת תבנית', 'error');
             }
         }
         

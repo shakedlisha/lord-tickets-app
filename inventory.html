@@ -461,6 +461,20 @@
             background: var(--white);
         }
         
+        /* Risk indicator dot */
+        .risk-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .risk-dot.green { background: #28A745; }
+        .risk-dot.amber { background: #FFC107; }
+        .risk-dot.red { background: #DC3545; }
+        .risk-dot.none { display: none; }
+        
         .airline-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -1207,6 +1221,7 @@
     
     <!-- Navigation Component -->
     <script src="js/nav.js"></script>
+    <script src="js/exposure.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -1618,6 +1633,7 @@ Return: 14:00-18:30
         let sortDirection = 'asc';
         let editingFlightId = null;
         let csvData = null;
+        let flightMilestoneStatus = {}; // { flightId: { level, label, labelHe } }
         let uploadedImage = null;
         
         // Airline aliases for normalization
@@ -2094,6 +2110,42 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             }
         }
         
+        async function fetchMilestoneStatus() {
+            try {
+                const supabaseUrl = localStorage.getItem('supabaseUrl');
+                const supabaseKey = localStorage.getItem('supabaseKey');
+                if (!supabaseUrl || !supabaseKey || typeof Exposure === 'undefined') return;
+                
+                const res = await fetch(
+                    `${supabaseUrl}/rest/v1/deposit_milestones?select=id,flight_id,due_date,status,amount,amount_type,paid_amount&status=neq.cancelled&order=due_date.asc`,
+                    {
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${supabaseKey}`
+                        }
+                    }
+                );
+                
+                if (res.ok) {
+                    const allMilestones = await res.json();
+                    // Group by flight_id
+                    const grouped = {};
+                    allMilestones.forEach(m => {
+                        if (!grouped[m.flight_id]) grouped[m.flight_id] = [];
+                        grouped[m.flight_id].push(m);
+                    });
+                    
+                    // Calculate risk level per flight
+                    flightMilestoneStatus = {};
+                    Object.keys(grouped).forEach(fId => {
+                        flightMilestoneStatus[fId] = Exposure.getFlightRiskLevel(grouped[fId]);
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching milestone status:', err);
+            }
+        }
+        
         async function loadFlights() {
             showLoading(true);
             
@@ -2119,6 +2171,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     
                     // Fetch passenger counts to compute remaining seats
                     await fetchPassengerCounts();
+                    // Fetch deposit milestone status for risk indicators
+                    await fetchMilestoneStatus();
                 } else {
                     // Load sample data
                     flights = getSampleFlights();
@@ -2356,7 +2410,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     </td>
                     <td>${formatDateRange(flight.departure_date, flight.return_date)}</td>
                     <td>
-                        <strong>${flight.destination_name}</strong>
+                        <strong>${flight.destination_name}</strong>${flightMilestoneStatus[flight.id] ? `<span class="risk-dot ${flightMilestoneStatus[flight.id].level}" title="${flightMilestoneStatus[flight.id].labelHe}"></span>` : ''}
                         <br><small style="color: var(--gray-dark);">${flight.destination_code}</small>
                     </td>
                     <td>
@@ -2842,6 +2896,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         async function deleteFlight(id) {
+            // Check for active deposit milestones
+            if (flightMilestoneStatus[id] && flightMilestoneStatus[id].level !== 'none') {
+                const hasActive = flightMilestoneStatus[id].level !== 'green' || true; // any milestones exist
+                if (hasActive && !confirm('לטיסה זו יש לוח תשלומים פעיל. המחיקה תיכשל אם קיימים תשלומים.\nהאם להמשיך?')) return;
+            }
+            
             if (!confirm('האם למחוק את הטיסה?')) return;
             
             showLoading(true);
@@ -2859,7 +2919,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         }
                     });
                     
-                    if (!response.ok) throw new Error('Failed to delete');
+                    if (!response.ok) {
+                        // Check if it's a RESTRICT violation
+                        const errText = await response.text();
+                        if (errText.includes('violates foreign key') || errText.includes('RESTRICT')) {
+                            showToast('לא ניתן למחוק טיסה עם לוח תשלומים פעיל. יש למחוק את התשלומים תחילה.', 'error');
+                            return;
+                        }
+                        throw new Error('Failed to delete');
+                    }
                     await loadFlights();
                 } else {
                     flights = flights.filter(f => f.id !== id);

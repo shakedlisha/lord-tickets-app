@@ -291,6 +291,94 @@
             font-size: 0.9rem;
         }
         
+        /* Deposit Events on Calendar */
+        .deposit-event {
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-bottom: 3px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            border-right: 3px solid transparent;
+        }
+        .deposit-event:hover {
+            transform: scale(1.02);
+            opacity: 0.9;
+        }
+        .deposit-event .material-icons {
+            font-size: 0.8rem;
+        }
+        .deposit-event.deposit-paid {
+            background: rgba(40, 167, 69, 0.12);
+            color: #28A745;
+            border-right-color: #28A745;
+        }
+        .deposit-event.deposit-partial {
+            background: rgba(0, 123, 255, 0.12);
+            color: #007BFF;
+            border-right-color: #007BFF;
+        }
+        .deposit-event.deposit-due-soon {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+            border-right-color: #FFC107;
+        }
+        .deposit-event.deposit-overdue, .deposit-event.deposit-due-critical {
+            background: rgba(220, 53, 69, 0.12);
+            color: #DC3545;
+            border-right-color: #DC3545;
+        }
+        .deposit-event.deposit-pending {
+            background: rgba(108, 117, 125, 0.08);
+            color: #6C757D;
+            border-right-color: #6C757D;
+        }
+        
+        /* Calendar day overflow */
+        .calendar-day {
+            max-height: 130px;
+            overflow-y: auto;
+        }
+        
+        /* Deposit filter toggle */
+        .deposit-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--navy-dark);
+            cursor: pointer;
+        }
+        .deposit-toggle input[type="checkbox"] {
+            cursor: pointer;
+        }
+        
+        /* Deposit badge in list view */
+        .deposit-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .deposit-badge.has-pending {
+            background: rgba(255, 193, 7, 0.15);
+            color: #856404;
+        }
+        .deposit-badge.has-overdue {
+            background: rgba(220, 53, 69, 0.12);
+            color: #DC3545;
+        }
+        .deposit-badge.all-paid {
+            background: rgba(40, 167, 69, 0.12);
+            color: #28A745;
+        }
+        
         /* List View */
         .list-view {
             display: none;
@@ -572,6 +660,11 @@
             </h1>
             
             <div class="header-actions">
+                <label class="deposit-toggle">
+                    <input type="checkbox" id="showDepositsToggle" checked onchange="toggleDeposits()">
+                    <span class="material-icons" style="font-size:1rem; color:var(--gold);">account_balance</span>
+                    תשלומים
+                </label>
                 <button class="btn btn-outline" onclick="exportAllToICal()">
                     <span class="material-icons">download</span>
                     ייצוא ליומן
@@ -653,12 +746,15 @@
     <!-- Toast -->
     <div class="toast" id="toast"></div>
     
+    <script src="js/exposure.js"></script>
     <script>
         // State
         let currentDate = new Date();
         let currentView = 'grid';
         let flights = [];
         let passengers = [];
+        let milestones = [];
+        let showDeposits = true;
         let selectedFlight = null;
         
         // Hebrew month names
@@ -687,19 +783,27 @@
                     );
                     flights = flightsRes.ok ? await flightsRes.json() : [];
                     
-                    const passengersRes = await fetch(
-                        `${supabaseUrl}/rest/v1/passengers?select=*`,
-                        { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
-                    );
-                    passengers = passengersRes.ok ? await passengersRes.json() : [];
-                } else {
-                    // Demo data
-                    flights = generateDemoFlights();
-                    passengers = generateDemoPassengers();
-                }
-                
-                renderCalendar();
-                renderListView();
+            const passengersRes = await fetch(
+                `${supabaseUrl}/rest/v1/passengers?select=*`,
+                { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+            );
+            passengers = passengersRes.ok ? await passengersRes.json() : [];
+            
+            // Fetch deposit milestones
+            const milestonesRes = await fetch(
+                `${supabaseUrl}/rest/v1/deposit_milestones?select=*&status=neq.cancelled&order=due_date.asc`,
+                { headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` } }
+            );
+            milestones = milestonesRes.ok ? await milestonesRes.json() : [];
+        } else {
+            // Demo data
+            flights = generateDemoFlights();
+            passengers = generateDemoPassengers();
+            milestones = [];
+        }
+        
+        renderCalendar();
+        renderListView();
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -772,10 +876,30 @@
                     eventsHtml += `
                         <div class="flight-event ${type} ${airlineClass}" onclick="openFlightDetail('${f.id}')">
                             <span class="material-icons">${icon}</span>
-                            ${f.destination || 'טיסה'}
+                            ${f.destination_name || f.destination || 'טיסה'}
                         </div>
                     `;
                 });
+                
+                // Deposit milestones for this day
+                if (showDeposits && typeof Exposure !== 'undefined') {
+                    const dayMilestones = milestones.filter(m => {
+                        const mDate = m.due_date?.split('T')[0];
+                        return mDate === dateStr;
+                    });
+                    dayMilestones.forEach(m => {
+                        const color = Exposure.getMilestoneColor(m);
+                        const fl = flights.find(f => f.id === m.flight_id);
+                        const dest = fl?.destination_name || fl?.destination || '';
+                        const amount = parseFloat(m.amount) || 0;
+                        eventsHtml += `
+                            <div class="deposit-event deposit-${color.cssClass}" onclick="openFlightDetail('${m.flight_id}')" title="${m.name} - ${dest} - $${amount.toLocaleString()} (${color.labelHe})">
+                                <span class="material-icons">account_balance</span>
+                                $${amount.toLocaleString()}
+                            </div>
+                        `;
+                    });
+                }
                 
                 html += `
                     <div class="calendar-day ${isToday ? 'today' : ''}">
@@ -822,6 +946,29 @@
                 const seats = f.total_seats || 0;
                 const revenue = flightPassengers.reduce((sum, p) => sum + (parseFloat(p.price_paid) || 0), 0);
                 
+                // Deposit info for this flight
+                let depositHtml = '';
+                if (showDeposits && typeof Exposure !== 'undefined') {
+                    const flightMilestones = milestones.filter(m => m.flight_id === f.id);
+                    if (flightMilestones.length > 0) {
+                        const risk = Exposure.getFlightRiskLevel(flightMilestones);
+                        const nextM = Exposure.getNextPendingMilestone(flightMilestones);
+                        let badgeClass = 'all-paid';
+                        if (risk.level === 'red') badgeClass = 'has-overdue';
+                        else if (risk.level === 'amber') badgeClass = 'has-pending';
+                        
+                        depositHtml = `<div class="stat-item">
+                            <div class="stat-value">
+                                <span class="deposit-badge ${badgeClass}">
+                                    <span class="material-icons" style="font-size:0.7rem;">account_balance</span>
+                                    ${nextM ? '$' + parseFloat(nextM.amount).toLocaleString() : risk.labelHe}
+                                </span>
+                            </div>
+                            <div class="stat-label">${nextM ? formatDateShort(nextM.due_date) : 'תשלומים'}</div>
+                        </div>`;
+                    }
+                }
+                
                 return `
                     <div class="flight-list-item" onclick="openFlightDetail('${f.id}')">
                         <div class="flight-info">
@@ -830,7 +977,7 @@
                                 <div class="month">${hebrewMonths[depDate.getMonth()]}</div>
                             </div>
                             <div class="flight-details">
-                                <h3>${f.destination || 'טיסה'}</h3>
+                                <h3>${f.destination_name || f.destination || 'טיסה'}</h3>
                                 <p>${formatDate(f.departure_date)} - ${formatDate(f.return_date)}</p>
                             </div>
                         </div>
@@ -843,6 +990,7 @@
                                 <div class="stat-value">€${revenue.toLocaleString()}</div>
                                 <div class="stat-label">הכנסות</div>
                             </div>
+                            ${depositHtml}
                         </div>
                         <div class="flight-actions" onclick="event.stopPropagation()">
                             <button class="action-btn" onclick="openShareModal('${f.id}')" title="שתף">
@@ -1052,6 +1200,18 @@ END:VEVENT
                     total_seats: 50
                 };
             });
+        }
+        
+        function toggleDeposits() {
+            showDeposits = document.getElementById('showDepositsToggle').checked;
+            renderCalendar();
+            renderListView();
+        }
+        
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
         }
         
         function generateDemoPassengers() {
