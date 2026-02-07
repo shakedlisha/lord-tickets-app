@@ -3617,11 +3617,16 @@
             // Update main stat cards
             const statsRole = localStorage.getItem('userRole') || 'agent';
             if (statsRole === 'agent') {
-                // Agents see their OWN passenger count, not total
+                // Agents see only 2 cards: "הנוסעים שלי" + "מקומות פנויים"
                 document.getElementById('totalPassengers').textContent = info.active.length;
-                // Update the label to "הנוסעים שלי"
                 const totalLabel = document.getElementById('totalPassengers').parentElement.querySelector('p');
                 if (totalLabel) totalLabel.textContent = 'הנוסעים שלי';
+                
+                // Hide outbound and return cards
+                const outboundCard = document.getElementById('outboundCount').closest('.stat-card');
+                const returnCard = document.getElementById('returnCount').closest('.stat-card');
+                if (outboundCard) outboundCard.style.display = 'none';
+                if (returnCard) returnCard.style.display = 'none';
             } else {
                 document.getElementById('totalPassengers').textContent = info.active.length;
             }
