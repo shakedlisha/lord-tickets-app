@@ -1,8 +1,8 @@
-// Lord Tickets - Service Worker v3
+// Lord Tickets - Service Worker v4
 // NEVER caches HTML files — always fetches fresh from network
 // Only caches external CDN resources for offline use
 
-const CACHE_NAME = 'lord-tickets-v3';
+const CACHE_NAME = 'lord-tickets-v4';
 
 // Only cache external CDN resources (never local HTML/JS files)
 const CDN_HOSTS = [
@@ -14,18 +14,18 @@ const CDN_HOSTS = [
 
 // Install — skip waiting immediately
 self.addEventListener('install', event => {
-    console.log('[SW v3] Installing...');
+    console.log('[SW v4] Installing...');
     self.skipWaiting();
 });
 
 // Activate — delete ALL old caches, claim clients
 self.addEventListener('activate', event => {
-    console.log('[SW v3] Activating...');
+    console.log('[SW v4] Activating...');
     event.waitUntil(
         caches.keys()
             .then(names => Promise.all(
                 names.filter(n => n !== CACHE_NAME).map(n => {
-                    console.log('[SW v3] Deleting old cache:', n);
+                    console.log('[SW v4] Deleting old cache:', n);
                     return caches.delete(n);
                 })
             ))
@@ -89,7 +89,7 @@ async function syncOfflineData() {
         const clients = await self.clients.matchAll();
         clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
     } catch (error) {
-        console.error('[SW v3] Sync failed:', error);
+        console.error('[SW v4] Sync failed:', error);
     }
 }
 
@@ -133,8 +133,8 @@ self.addEventListener('push', event => {
     event.waitUntil(
         self.registration.showNotification(data.title || 'Lord Tickets', {
             body: data.body || 'התראה חדשה',
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-72.png',
+            icon: './icons/icon.svg',
+            badge: './icons/icon.svg',
             vibrate: [100, 50, 100],
             data: data.url || '/',
             dir: 'rtl',
@@ -146,8 +146,8 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
     event.notification.close();
     if (event.action === 'open' || !event.action) {
-        event.waitUntil(clients.openWindow(event.notification.data || '/'));
+        event.waitUntil(clients.openWindow(event.notification.data || './'));
     }
 });
 
-console.log('[SW v3] Service Worker loaded');
+console.log('[SW v4] Service Worker loaded');

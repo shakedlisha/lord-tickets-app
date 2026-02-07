@@ -11,9 +11,9 @@
     async function registerServiceWorker() {
         if ('serviceWorker' in navigator) {
             try {
-                // Force clear ALL old caches (anything not v3)
+                // Force clear ALL old caches (anything not v4)
                 const cacheNames = await caches.keys();
-                const oldCaches = cacheNames.filter(n => n !== 'lord-tickets-v3');
+                const oldCaches = cacheNames.filter(n => n !== 'lord-tickets-v4');
                 if (oldCaches.length > 0) {
                     console.log('[PWA] Clearing old caches:', oldCaches);
                     await Promise.all(oldCaches.map(n => caches.delete(n)));
@@ -30,8 +30,10 @@
                     }
                 }
                 
-                const registration = await navigator.serviceWorker.register('/sw.js', {
-                    scope: '/',
+                // Use relative paths so it works on GitHub Pages subdirectories
+                const basePath = new URL('.', document.baseURI).pathname;
+                const registration = await navigator.serviceWorker.register(basePath + 'sw.js', {
+                    scope: basePath,
                     updateViaCache: 'none' // Always fetch sw.js from network
                 });
                 
