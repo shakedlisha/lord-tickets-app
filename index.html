@@ -6107,6 +6107,58 @@
             return `${startStr} - ${endStr}`;
         }
         
+        // Shared text-based flight details parser
+        function parseFlightDetailsText(detailsStr) {
+            if (!detailsStr || detailsStr.trim() === '-' || detailsStr.trim() === '') return '-';
+            
+            const str = detailsStr.trim();
+            
+            // Multi-leg flights
+            const multiLegPattern = /([A-Z]{3}-[A-Z]{3}):\s*(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*\(([^)]+)\)/g;
+            const legs = [];
+            let match;
+            while ((match = multiLegPattern.exec(str)) !== null) {
+                legs.push(`${match[2]} -> ${match[3]} (${match[4].trim()})`);
+            }
+            if (legs.length > 0) return legs.join(' | ');
+            
+            // Generic: extract times and flight number
+            const timeMatches = [...str.matchAll(/(\d{1,2}:\d{2})/g)].map(m => m[1]);
+            let flightNum = '';
+            const parenFlight = str.match(/\(([A-Z0-9]{1,3}\s*\d{1,5})\)/i);
+            if (parenFlight) { flightNum = parenFlight[1].trim(); }
+            if (!flightNum) {
+                const codeFlight = str.match(/\b([A-Z]{2}\d{2,5})\b/i) || str.match(/\b([A-Z]{2,3})\s+(\d{2,5})\b/i);
+                if (codeFlight) { flightNum = codeFlight[0].trim(); }
+            }
+            
+            if (timeMatches.length >= 2) {
+                return flightNum ? `${timeMatches[0]} -> ${timeMatches[1]} (${flightNum})` : `${timeMatches[0]} -> ${timeMatches[1]}`;
+            }
+            if (timeMatches.length === 1) {
+                return flightNum ? `${timeMatches[0]} (${flightNum})` : timeMatches[0];
+            }
+            return str;
+        }
+        
+        // Helper: extract departure time from flight details string
+        function extractDepartureTime(detailsStr) {
+            if (!detailsStr) return '';
+            const timeMatches = [...detailsStr.matchAll(/(\d{1,2}:\d{2})/g)].map(m => m[1]);
+            return timeMatches.length > 0 ? timeMatches[0] : '';
+        }
+        
+        // Helper: extract flight number from flight details string
+        function extractFlightNumber(detailsStr) {
+            if (!detailsStr) return '';
+            const str = detailsStr.trim();
+            const parenFlight = str.match(/\(([A-Z0-9]{1,3}\s*\d{1,5})\)/i);
+            if (parenFlight) return parenFlight[1].trim();
+            const codeFlight = str.match(/\b([A-Z]{2}\d{2,5})\b/i) || str.match(/\b([A-Z]{2,3})\s+(\d{2,5})\b/i);
+            if (codeFlight) return codeFlight[0].trim();
+            return '';
+        }
+        
         function getAirlineClass(airline) {
             const name = (airline || '').toLowerCase().trim();
             if (name.includes('el al') || name === 'elal') return 'airline-elal';
@@ -6138,10 +6190,10 @@
                         toCity: f.destination_name,
                         date: f.departure_date,
                         returnDate: f.return_date,
-                        departureTime: f.outbound_details ? f.outbound_details.split(' ')[0] : '',
+                        departureTime: extractDepartureTime(f.outbound_details),
                         arrivalTime: '',
                         airline: f.airline,
-                        flightNumber: f.outbound_details ? f.outbound_details.split(' ').pop() : '',
+                        flightNumber: extractFlightNumber(f.outbound_details),
                         duration: '',
                         outboundDetails: f.outbound_details,
                         inboundDetails: f.inbound_details
