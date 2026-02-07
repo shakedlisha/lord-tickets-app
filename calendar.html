@@ -765,6 +765,20 @@
         
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            // Auth check
+            const session = localStorage.getItem('userSession');
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Block guests from calendar
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            if (userRole === 'guest') {
+                window.location.href = 'inventory.html';
+                return;
+            }
+            
             if (typeof LordNav !== 'undefined') {
                 LordNav.init('calendar');
             }

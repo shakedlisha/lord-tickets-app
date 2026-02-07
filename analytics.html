@@ -548,7 +548,7 @@
                 
                 // Check permissions - only admin/manager can see analytics
                 const userRole = localStorage.getItem('userRole') || 'agent';
-                if (userRole === 'agent') {
+                if (userRole === 'agent' || userRole === 'guest') {
                     alert('אין לך הרשאה לצפות בדף זה');
                     window.location.href = 'inventory.html';
                     return;

@@ -8,7 +8,8 @@
     const roleLabels = {
         admin: 'מנהל',
         manager: 'מנהל צוות',
-        agent: 'סוכן'
+        agent: 'סוכן',
+        guest: 'אורח'
     };
     
     // Navigation HTML
@@ -21,7 +22,8 @@
         const displayRole = isDemo ? 'מצב הדגמה' : roleLabel;
         
         // Determine which nav items to show based on role
-        const showUsersLink = userRole === 'admin' || userRole === 'manager';
+        const showAdminLinks = userRole === 'admin' || userRole === 'manager';
+        const isGuest = userRole === 'guest';
         
         return `
             <nav class="lord-nav">
@@ -34,11 +36,17 @@
                         <span class="material-icons">flight</span>
                         מלאי טיסות
                     </a>
-                    <a href="calendar.html" class="nav-link ${currentPage === 'calendar' ? 'active' : ''}">
-                        <span class="material-icons">calendar_month</span>
-                        לוח שנה
+                    ${!isGuest ? `
+                        <a href="calendar.html" class="nav-link ${currentPage === 'calendar' ? 'active' : ''}">
+                            <span class="material-icons">calendar_month</span>
+                            לוח שנה
+                        </a>
+                    ` : ''}
+                    <a href="quote.html" class="nav-link ${currentPage === 'quote' ? 'active' : ''}">
+                        <span class="material-icons">receipt_long</span>
+                        מחולל הצעות
                     </a>
-                    ${showUsersLink ? `
+                    ${showAdminLinks ? `
                         <a href="analytics.html" class="nav-link ${currentPage === 'analytics' ? 'active' : ''}">
                             <span class="material-icons">analytics</span>
                             לוח בקרה
@@ -225,16 +233,19 @@
         localStorage.removeItem('userName');
         localStorage.removeItem('userId');
         localStorage.removeItem('userCommission');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('token_expires_at');
         
         // Redirect to login
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
     
     // Check if user is authenticated
     function checkAuth() {
         const session = localStorage.getItem('userSession');
         if (!session) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
             return false;
         }
         return true;

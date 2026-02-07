@@ -2985,7 +2985,7 @@
             // Show message and redirect
             showToast('פג תוקף ההתחברות - מעביר לדף התחברות', 'error');
             setTimeout(() => {
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             }, 2000);
         }
         
@@ -3323,6 +3323,20 @@
         // Initialization
         // ==========================================
         document.addEventListener('DOMContentLoaded', () => {
+            // Auth check
+            const session = localStorage.getItem('userSession');
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Block guests from flight detail page
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            if (userRole === 'guest') {
+                window.location.href = 'inventory.html';
+                return;
+            }
+            
             // Initialize navigation
             if (typeof LordNav !== 'undefined') {
                 LordNav.init('flight-detail');

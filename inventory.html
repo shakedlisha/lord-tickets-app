@@ -1232,7 +1232,7 @@
                 <span class="page-title">| ניהול מלאי</span>
             </div>
             <div class="header-left">
-                <a href="index.html" class="nav-link">
+                <a href="quote.html" class="nav-link">
                     <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">receipt_long</span>
                     מחולל הצעות מחיר
                 </a>
@@ -1692,6 +1692,13 @@ Return: 14:00-18:30
         let realtimeChannel = null;
         
         document.addEventListener('DOMContentLoaded', () => {
+            // Auth check - redirect to login if no session
+            const session = localStorage.getItem('userSession');
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
             // Initialize navigation
             if (typeof LordNav !== 'undefined') {
                 LordNav.init('inventory');
@@ -1710,16 +1717,20 @@ Return: 14:00-18:30
         function applyRoleRestrictions() {
             const userRole = localStorage.getItem('userRole') || 'agent';
             
-            if (userRole === 'agent') {
+            if (userRole === 'agent' || userRole === 'guest') {
                 // Hide add flight button
                 const addFlightBtn = document.querySelector('.add-flight-btn, [onclick*="openAddModal"]');
                 if (addFlightBtn) addFlightBtn.style.display = 'none';
                 
-                // Hide import/export buttons for agents
+                // Hide import/export buttons
                 const importBtn = document.querySelector('[onclick*="openImportModal"]');
                 if (importBtn) importBtn.style.display = 'none';
                 
-                // We'll hide delete buttons in renderFlights()
+                // Hide bulk actions for guests
+                if (userRole === 'guest') {
+                    const bulkActions = document.querySelector('.bulk-actions');
+                    if (bulkActions) bulkActions.style.display = 'none';
+                }
             }
         }
         
@@ -2363,7 +2374,14 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         function renderFlights() {
             const tbody = document.getElementById('flightsTableBody');
             const thead = document.getElementById('flightsTableHead');
-            const isManagerOrAbove = (localStorage.getItem('userRole') || 'agent') !== 'agent';
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            const isManagerOrAbove = userRole === 'admin' || userRole === 'manager';
+            const isGuest = userRole === 'guest';
+            
+            // Calculate visible column count
+            let colCount = 10; // base: checkbox, dates, dest, airline, outbound, return, remaining, trolley, suitcase, price
+            if (isManagerOrAbove) colCount += 3; // total seats, cost, actions (edit/delete)
+            else colCount += 1; // actions column (no-access dash)
             
             // Dynamically render thead so column count matches tbody
             thead.innerHTML = `<tr>
@@ -2379,15 +2397,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 <th>מושבים (נותרו)</th>
                 <th>טרולי</th>
                 <th>מזוודה</th>
-                <th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>
+                ${isManagerOrAbove ? `<th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>` : ''}
                 <th onclick="sortBy('selling_price')">מחיר <span class="material-icons">unfold_more</span></th>
-                <th>פעולות</th>
+                ${!isGuest ? `<th>פעולות</th>` : ''}
             </tr>`;
             
             if (filteredFlights.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="${isManagerOrAbove ? 13 : 12}">
+                        <td colspan="${colCount}">
                             <div class="empty-state">
                                 <span class="material-icons">flight_takeoff</span>
                                 <h3>אין טיסות להצגה</h3>
@@ -2404,7 +2422,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             updateFlightSelection();
             
             tbody.innerHTML = filteredFlights.map(flight => `
-                <tr data-id="${flight.id}" ondblclick="openFlightDetail('${flight.id}')" style="cursor: pointer;" title="לחיצה כפולה לצפייה בנוסעים">
+                <tr data-id="${flight.id}" ${!isGuest ? `ondblclick="openFlightDetail('${flight.id}')" style="cursor: pointer;" title="לחיצה כפולה לצפייה בנוסעים"` : ''}>
                     <td onclick="event.stopPropagation();">
                         <input type="checkbox" class="flight-checkbox" data-flight-id="${flight.id}" onchange="updateFlightSelection()">
                     </td>
@@ -2438,6 +2456,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
                     </td>
                     <td class="baggage-cell">
+                        ${isManagerOrAbove ? `
                         <label class="baggage-inline">
                             <input type="checkbox" 
                                    ${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? 'checked' : ''} 
@@ -2448,8 +2467,13 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                                   onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                             >${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? '✓' : '$' + flight.trolley_baggage}</span>
                         </label>
+                        ` : `
+                        <span class="baggage-value ${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? 'included' : 'has-price'}"
+                        >${(flight.trolley_baggage === null || flight.trolley_baggage === undefined) ? '✓' : '$' + flight.trolley_baggage}</span>
+                        `}
                     </td>
                     <td class="baggage-cell">
+                        ${isManagerOrAbove ? `
                         <label class="baggage-inline">
                             <input type="checkbox" 
                                    ${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? 'checked' : ''} 
@@ -2460,7 +2484,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                                   onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                             >${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? '✓' : '$' + flight.suitcase_baggage}</span>
                         </label>
+                        ` : `
+                        <span class="baggage-value ${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? 'included' : 'has-price'}"
+                        >${(flight.suitcase_baggage === null || flight.suitcase_baggage === undefined) ? '✓' : '$' + flight.suitcase_baggage}</span>
+                        `}
                     </td>
+                    ${isManagerOrAbove ? `
                     <td class="cost-cell">
                         <span contenteditable="true" 
                               class="editable"
@@ -2468,16 +2497,22 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                         >${flight.cost_price ? '$' + flight.cost_price : '-'}</span>
                     </td>
+                    ` : ''}
                     <td class="price-cell">
+                        ${isManagerOrAbove ? `
                         <span contenteditable="true"
                               class="editable" 
                               onblur="updatePrice('${flight.id}', this.textContent)"
                               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
                         >$${flight.selling_price}</span>
+                        ` : `
+                        <span>$${flight.selling_price}</span>
+                        `}
                     </td>
+                    ${!isGuest ? `
                     <td>
                         <div class="actions-cell">
-                            ${(localStorage.getItem('userRole') !== 'agent') ? `
+                            ${isManagerOrAbove ? `
                                 <button class="action-btn edit" onclick="editFlight('${flight.id}')" title="ערוך">
                                     <span class="material-icons">edit</span>
                                 </button>
@@ -2489,6 +2524,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                             `}
                         </div>
                     </td>
+                    ` : ''}
                 </tr>
             `).join('');
             

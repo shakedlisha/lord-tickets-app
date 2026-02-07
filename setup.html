@@ -340,6 +340,39 @@
                     <span class="material-icons">login</span>
                     המשך להתחברות
                 </button>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: right;">
+                    <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';">
+                        <span class="material-icons" style="font-size: 1.2rem;">expand_more</span>
+                        הגדרת Google Sign-In (אופציונלי)
+                    </h3>
+                    <div style="display: none; font-size: 0.9rem; line-height: 1.8;">
+                        <p><strong>שלב 1:</strong> היכנס ל-<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud Console</a></p>
+                        <p><strong>שלב 2:</strong> צור פרויקט חדש (או בחר קיים)</p>
+                        <p><strong>שלב 3:</strong> הגדר OAuth Consent Screen:</p>
+                        <ul style="margin-right: 20px;">
+                            <li>בחר "External" User Type</li>
+                            <li>הזן שם אפליקציה: "Lord Tickets"</li>
+                            <li>הוסף Scopes: email, profile, openid</li>
+                        </ul>
+                        <p><strong>שלב 4:</strong> צור OAuth 2.0 Client ID:</p>
+                        <ul style="margin-right: 20px;">
+                            <li>Application type: Web application</li>
+                            <li>Authorized redirect URI: <code style="direction:ltr; display:inline-block;">https://YOUR_SUPABASE_PROJECT.supabase.co/auth/v1/callback</code></li>
+                        </ul>
+                        <p><strong>שלב 5:</strong> העתק את ה-Client ID וה-Client Secret</p>
+                        <p><strong>שלב 6:</strong> היכנס ל-<a href="https://supabase.com/dashboard" target="_blank" rel="noopener">Supabase Dashboard</a></p>
+                        <ul style="margin-right: 20px;">
+                            <li>בחר את הפרויקט שלך</li>
+                            <li>לך ל-Authentication → Providers</li>
+                            <li>הפעל את Google</li>
+                            <li>הדבק את ה-Client ID וה-Client Secret</li>
+                            <li>ב-Redirect URL, הוסף: <code style="direction:ltr; display:inline-block;">https://YOUR_SITE.github.io/lord-tickets-app/index.html</code></li>
+                            <li>שמור</li>
+                        </ul>
+                        <p style="margin-top: 10px; color: #28A745;"><strong>זהו! כפתור Google Sign-In יעבוד אוטומטית.</strong></p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -370,7 +403,7 @@
                         const users = await response.json();
                         if (users.length > 0) {
                             // Setup already done, redirect to login
-                            window.location.href = 'login.html';
+                            window.location.href = 'index.html';
                         }
                     }
                 } catch (e) {
@@ -481,7 +514,7 @@
         }
         
         function goToLogin() {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     </script>
 </body>

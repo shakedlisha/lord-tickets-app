@@ -629,7 +629,7 @@
             
             showToast('פג תוקף ההתחברות - מעביר לדף התחברות');
             setTimeout(() => {
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
             }, 2000);
         }
         
@@ -662,13 +662,13 @@
             // Check auth - validate session exists
             const session = localStorage.getItem('userSession');
             if (!session && !localStorage.getItem('demoMode')) {
-                window.location.href = 'login.html';
+                window.location.href = 'index.html';
                 return;
             }
             
             // Check role - only admin/manager can view reports
             const role = localStorage.getItem('userRole') || 'agent';
-            if (role === 'agent') {
+            if (role === 'agent' || role === 'guest') {
                 showToast('אין לך הרשאה לצפות בדוחות');
                 setTimeout(() => window.location.href = 'inventory.html', 2000);
                 return;
