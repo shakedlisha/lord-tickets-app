@@ -1727,6 +1727,12 @@ Return: 14:00-18:30
                 const importBtn = document.querySelector('[onclick*="openImportModal"]');
                 if (importBtn) importBtn.style.display = 'none';
                 
+                // Hide settings gear and Gemini API field
+                const apiKeySection = document.querySelector('.api-key-section');
+                if (apiKeySection) apiKeySection.style.display = 'none';
+                const settingsBtn = document.querySelector('.settings-btn');
+                if (settingsBtn) settingsBtn.style.display = 'none';
+                
                 // Hide bulk actions for guests
                 if (userRole === 'guest') {
                     const bulkActions = document.querySelector('.bulk-actions');
@@ -2447,16 +2453,18 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             const isAgent = userRole === 'agent';
             
             // Calculate visible column count
-            let colCount = 10; // base: checkbox, dates, dest, airline, outbound, return, remaining, trolley, suitcase, price
+            // base for admin/manager: checkbox, dates, dest, airline, outbound, return, remaining, trolley, suitcase, price = 10
+            // base for agent: dates, dest, airline, outbound, return, remaining, trolley, suitcase, price = 9 (no checkbox)
+            let colCount = isManagerOrAbove ? 10 : 9;
             if (isManagerOrAbove) colCount += 3; // total seats, cost, actions (edit/delete)
-            else if (isAgent) colCount += 2; // my sales, actions
+            else if (isAgent) colCount += 1; // my sales (no actions, no checkbox)
             else colCount += 0; // guest: no extra columns
             
             // Dynamically render thead so column count matches tbody
             thead.innerHTML = `<tr>
-                <th style="width: 40px;">
+                ${isManagerOrAbove ? `<th style="width: 40px;">
                     <input type="checkbox" id="selectAllFlights" class="flight-checkbox" onchange="toggleAllFlights(this.checked)">
-                </th>
+                </th>` : ''}
                 <th onclick="sortBy('departure_date')">תאריכים <span class="material-icons">unfold_more</span></th>
                 <th onclick="sortBy('destination_name')">יעד <span class="material-icons">unfold_more</span></th>
                 <th onclick="sortBy('airline')">חברה <span class="material-icons">unfold_more</span></th>
@@ -2469,7 +2477,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 <th>מזוודה</th>
                 ${isManagerOrAbove ? `<th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>` : ''}
                 <th onclick="sortBy('selling_price')">מחיר <span class="material-icons">unfold_more</span></th>
-                ${!isGuest ? `<th>פעולות</th>` : ''}
+                ${isManagerOrAbove ? `<th>פעולות</th>` : ''}
             </tr>`;
             
             if (filteredFlights.length === 0) {
@@ -2487,15 +2495,18 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return;
             }
             
-            // Clear selection when re-rendering
-            document.getElementById('selectAllFlights').checked = false;
-            updateFlightSelection();
+            // Clear selection when re-rendering (only for admin/manager who have checkboxes)
+            const selectAllEl = document.getElementById('selectAllFlights');
+            if (selectAllEl) {
+                selectAllEl.checked = false;
+                updateFlightSelection();
+            }
             
             tbody.innerHTML = filteredFlights.map(flight => `
                 <tr data-id="${flight.id}" ${!isGuest ? `ondblclick="openFlightDetail('${flight.id}')" style="cursor: pointer;" title="לחיצה כפולה לצפייה בנוסעים"` : ''}>
-                    <td onclick="event.stopPropagation();">
+                    ${isManagerOrAbove ? `<td onclick="event.stopPropagation();">
                         <input type="checkbox" class="flight-checkbox" data-flight-id="${flight.id}" onchange="updateFlightSelection()">
-                    </td>
+                    </td>` : ''}
                     <td>${formatDateRange(flight.departure_date, flight.return_date)}</td>
                     <td>
                         <strong>${flight.destination_name}</strong>${flightMilestoneStatus[flight.id] ? `<span class="risk-dot ${flightMilestoneStatus[flight.id].level}" title="${flightMilestoneStatus[flight.id].labelHe}"></span>` : ''}
@@ -2587,19 +2598,15 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         <span>$${flight.selling_price}</span>
                         `}
                     </td>
-                    ${!isGuest ? `
+                    ${isManagerOrAbove ? `
                     <td>
                         <div class="actions-cell">
-                            ${isManagerOrAbove ? `
-                                <button class="action-btn edit" onclick="editFlight('${flight.id}')" title="ערוך">
-                                    <span class="material-icons">edit</span>
-                                </button>
-                                <button class="action-btn delete" onclick="deleteFlight('${flight.id}')" title="מחק">
-                                    <span class="material-icons">delete</span>
-                                </button>
-                            ` : `
-                                <span class="no-access">-</span>
-                            `}
+                            <button class="action-btn edit" onclick="editFlight('${flight.id}')" title="ערוך">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="action-btn delete" onclick="deleteFlight('${flight.id}')" title="מחק">
+                                <span class="material-icons">delete</span>
+                            </button>
                         </div>
                     </td>
                     ` : ''}
