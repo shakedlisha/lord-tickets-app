@@ -3009,6 +3009,7 @@
         let filteredPassengers = [];
         let editingPassengerId = null;
         let currentView = 'active';  // active, waitlist, cancelled
+        let realTotalBooked = null; // For agents: real total booked count from RPC (not filtered)
         let currentGroupBy = 'none';  // none, agent, hotel, room
         let lastDeletedPassenger = null;  // For undo functionality
         let undoTimeout = null;
@@ -3516,6 +3517,31 @@
                     passengers = [];
                 }
                 
+                // For agents: fetch real total booked count via RPC
+                if (userRole === 'agent') {
+                    try {
+                        const rpcResponse = await fetch(
+                            `${supabaseUrl}/rest/v1/rpc/get_flight_seat_counts`,
+                            {
+                                method: 'POST',
+                                headers: {
+                                    'apikey': supabaseKey,
+                                    'Authorization': `Bearer ${accessToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: '{}'
+                            }
+                        );
+                        if (rpcResponse.ok) {
+                            const counts = await rpcResponse.json();
+                            const match = counts.find(c => c.flight_id === flightId);
+                            realTotalBooked = match ? match.booked_count : 0;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching real seat counts:', err);
+                    }
+                }
+                
                 renderFlightInfo();
                 updateStats();
                 filterPassengers();
@@ -3562,10 +3588,22 @@
             const active = passengers.filter(p => p.status === 'active' || !p.status);
             const waitlist = passengers.filter(p => p.status === 'waitlist');
             const cancelled = passengers.filter(p => p.status === 'cancelled');
-            const outbound = active.filter(p => p.has_outbound !== false).length;
-            const returnCount = active.filter(p => p.has_return !== false).length;
             const totalSeats = flight?.total_seats || 0;
-            const maxBooked = Math.max(outbound, returnCount);
+            
+            // For agents: use real total booked count (from RPC) instead of filtered passenger list
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            let outbound, returnCount, maxBooked;
+            if (userRole === 'agent' && realTotalBooked !== null) {
+                // Agents see filtered passengers but stats reflect real occupancy
+                outbound = realTotalBooked;
+                returnCount = realTotalBooked;
+                maxBooked = realTotalBooked;
+            } else {
+                outbound = active.filter(p => p.has_outbound !== false).length;
+                returnCount = active.filter(p => p.has_return !== false).length;
+                maxBooked = Math.max(outbound, returnCount);
+            }
+            
             const available = totalSeats - maxBooked;
             return { active, waitlist, cancelled, outbound, returnCount, totalSeats, available, isOverbooked: available < 0 };
         }
@@ -3577,7 +3615,10 @@
             const info = getSeatsInfo();
             
             // Update main stat cards
-            document.getElementById('totalPassengers').textContent = info.active.length;
+            // For agents: show real total booked, not just their own passengers
+            const statsRole = localStorage.getItem('userRole') || 'agent';
+            const displayTotal = (statsRole === 'agent' && realTotalBooked !== null) ? realTotalBooked : info.active.length;
+            document.getElementById('totalPassengers').textContent = displayTotal;
             document.getElementById('outboundCount').textContent = `${info.outbound}/${info.totalSeats}`;
             document.getElementById('returnCount').textContent = `${info.returnCount}/${info.totalSeats}`;
             document.getElementById('availableSeats').textContent = info.available;
@@ -3615,8 +3656,11 @@
                 overbookingAlert.style.display = info.isOverbooked ? 'block' : 'none';
             }
             
-            // Update financials
-            updateFinancials();
+            // Update financials (skip for agents — they don't see financial sections)
+            const currentRole = localStorage.getItem('userRole') || 'agent';
+            if (currentRole !== 'agent') {
+                updateFinancials();
+            }
         }
         
         // ==========================================
@@ -3837,7 +3881,10 @@
             }
             
             renderMilestones();
-            updateExposureCards();
+            // Skip exposure updates for agents
+            if ((localStorage.getItem('userRole') || 'agent') !== 'agent') {
+                updateExposureCards();
+            }
         }
         
         function renderMilestones() {
