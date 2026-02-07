@@ -327,10 +327,6 @@
                 כניסה כאורח
             </button>
             
-            <button class="btn btn-outline" onclick="continueWithoutAuth()" style="margin-top: 10px;">
-                <span class="material-icons">person_outline</span>
-                מצב הדגמה (Admin)
-            </button>
             
             <!-- Supabase Settings -->
             <div class="settings-section">
@@ -351,9 +347,6 @@
                 </button>
             </div>
             
-            <div class="skip-link">
-                <a href="inventory.html">חזרה לדף המלאי הישן →</a>
-            </div>
         </div>
     </div>
     
@@ -684,18 +677,6 @@
             }
         }
         
-        function continueWithoutAuth() {
-            // Allow using the system without authentication (demo mode)
-            localStorage.setItem('userSession', JSON.stringify({
-                user: { email: 'demo@local' },
-                demo: true
-            }));
-            // Demo mode defaults to admin for full access
-            localStorage.setItem('userRole', 'admin');
-            localStorage.setItem('userName', 'משתמש הדגמה');
-            localStorage.setItem('userId', 'demo-user');
-            window.location.href = 'inventory.html';
-        }
     </script>
 </body>
 </html>

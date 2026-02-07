@@ -2788,13 +2788,14 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 
                 if (supabaseUrl && supabaseKey) {
                     // Save to Supabase
+                    const accessToken = getAccessToken() || supabaseKey;
                     let response;
                     if (editingFlightId) {
                         response = await fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${editingFlightId}`, {
                             method: 'PATCH',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${accessToken}`,
                                 'Content-Type': 'application/json',
                                 'Prefer': 'return=representation'
                             },
@@ -2805,7 +2806,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                             method: 'POST',
                             headers: {
                                 'apikey': supabaseKey,
-                                'Authorization': `Bearer ${supabaseKey}`,
+                                'Authorization': `Bearer ${accessToken}`,
                                 'Content-Type': 'application/json',
                                 'Prefer': 'return=representation'
                             },
@@ -2813,7 +2814,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         });
                     }
                     
-                    if (!response.ok) throw new Error('Failed to save');
+                    if (!response.ok) {
+                        const errorBody = await response.json().catch(() => ({}));
+                        console.error('Supabase save error:', response.status, errorBody);
+                        throw new Error(errorBody.message || errorBody.msg || `Failed to save (${response.status})`);
+                    }
                     await loadFlights();
                 } else {
                     // Save locally
@@ -2835,7 +2840,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 showToast(editingFlightId ? 'טיסה עודכנה בהצלחה' : 'טיסה נוספה בהצלחה', 'success');
             } catch (error) {
                 console.error('Error saving flight:', error);
-                showToast('שגיאה בשמירת טיסה', 'error');
+                showToast('שגיאה בשמירת טיסה: ' + error.message, 'error');
             } finally {
                 showLoading(false);
             }
