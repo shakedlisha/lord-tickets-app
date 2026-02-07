@@ -930,6 +930,27 @@
         }
         
         /* Financial Summary */
+        .dashboard-section {
+            margin-bottom: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        
+        .dashboard-section:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+        
+        .dashboard-section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--gray-dark);
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            padding: 0 30px;
+        }
+        
         .financial-summary {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -966,6 +987,7 @@
             gap: 15px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             border-right: 4px solid var(--gray);
+            min-height: 80px;
         }
         
         .financial-card.revenue {
@@ -990,6 +1012,7 @@
         
         .financial-icon {
             width: 40px;
+            min-width: 40px;
             height: 40px;
             border-radius: 10px;
             display: flex;
@@ -1032,6 +1055,10 @@
             margin-right: 4px;
         }
         
+        .financial-info {
+            flex: 1;
+        }
+        
         .financial-info h3 {
             font-size: 1.2rem;
             font-weight: 700;
@@ -1043,6 +1070,12 @@
             font-size: 0.8rem;
             color: var(--gray-dark);
             margin: 2px 0 0;
+        }
+        
+        .profit-pct {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+            font-weight: 400;
         }
         
         /* Exposure Row - Financial Cards Row 2 */
@@ -1108,6 +1141,38 @@
         .financial-card.break-even.danger h3 {
             color: #DC3545;
         }
+        
+        .be-sold {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .financial-card.break-even.safe .be-sold {
+            color: #28A745;
+        }
+        
+        .financial-card.break-even.danger .be-sold {
+            color: #DC3545;
+        }
+        
+        .be-separator {
+            color: var(--gray-dark);
+            font-weight: 400;
+            margin: 0 4px;
+        }
+        
+        .be-target {
+            font-size: 0.85em;
+            color: var(--gray-dark);
+            font-weight: 400;
+        }
+        
+        .be-legend {
+            font-size: 0.7rem;
+            color: var(--gray-dark);
+            margin-top: 2px;
+        }
+        
         .break-even-date {
             display: flex;
             align-items: center;
@@ -1280,12 +1345,14 @@
             font-weight: 600;
         }
         .deposit-table .unallocated-row {
-            background: rgba(255, 193, 7, 0.12);
-            border-top: 2px dashed #FFC107;
+            background: rgba(255, 193, 7, 0.08);
+            border-top: 1px solid rgba(255, 193, 7, 0.3);
+            font-size: 0.85rem;
         }
         .deposit-table .unallocated-row td {
             color: #856404;
             font-weight: 600;
+            padding: 10px 15px;
         }
         .deposit-table .unallocated-row .material-icons {
             font-size: 1rem;
@@ -2011,80 +2078,89 @@
         </div>
     </div>
     
-    <!-- Financial Summary - 8 Cards (2 rows of 4) -->
-    <div class="financial-summary" id="financialSummary">
-        <!-- Row 1: Classic -->
-        <div class="financial-card revenue">
-            <div class="financial-icon">
-                <span class="material-icons">payments</span>
+    <!-- Financial Summary - Split into two labeled sections -->
+    <div class="dashboard-section">
+        <div class="dashboard-section-label">נתונים תפעוליים</div>
+        <div class="financial-summary" id="financialSummary">
+            <!-- Row 1: Classic -->
+            <div class="financial-card revenue">
+                <div class="financial-icon">
+                    <span class="material-icons">payments</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="totalRevenue">$0</h3>
+                    <p>סה"כ הכנסות</p>
+                </div>
             </div>
-            <div class="financial-info">
-                <h3 id="totalRevenue">$0</h3>
-                <p>סה"כ הכנסות</p>
+            <div class="financial-card cost">
+                <div class="financial-icon">
+                    <span class="material-icons">receipt_long</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="totalCost">$0</h3>
+                    <p>סה"כ עלויות</p>
+                </div>
             </div>
-        </div>
-        <div class="financial-card cost">
-            <div class="financial-icon">
-                <span class="material-icons">receipt_long</span>
+            <div class="financial-card profit">
+                <div class="financial-icon">
+                    <span class="material-icons">trending_up</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="totalProfit">$0</h3>
+                    <p>רווח גולמי</p>
+                </div>
             </div>
-            <div class="financial-info">
-                <h3 id="totalCost">$0</h3>
-                <p>סה"כ עלויות</p>
-            </div>
-        </div>
-        <div class="financial-card profit">
-            <div class="financial-icon">
-                <span class="material-icons">trending_up</span>
-            </div>
-            <div class="financial-info">
-                <h3 id="totalProfit">$0</h3>
-                <p>רווח גולמי</p>
-            </div>
-        </div>
-        <div class="financial-card commission">
-            <div class="financial-icon">
-                <span class="material-icons">account_balance_wallet</span>
-            </div>
-            <div class="financial-info">
-                <h3 id="totalCommission">$0</h3>
-                <p>עמלות סוכנים</p>
-            </div>
-        </div>
-        <!-- Row 2: Exposure -->
-        <div class="financial-card cash-in">
-            <div class="financial-icon">
-                <span class="material-icons">arrow_downward</span>
-            </div>
-            <div class="financial-info">
-                <h3 id="cashIn"><span class="no-data">—</span></h3>
-                <p>כסף שנכנס</p>
+            <div class="financial-card commission">
+                <div class="financial-icon">
+                    <span class="material-icons">account_balance_wallet</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="totalCommission">$0</h3>
+                    <p>עמלות סוכנים</p>
+                </div>
             </div>
         </div>
-        <div class="financial-card cash-out">
-            <div class="financial-icon">
-                <span class="material-icons">arrow_upward</span>
+    </div>
+    <div class="dashboard-section exposure-section-group">
+        <div class="dashboard-section-label">תזרים מזומנים וחשיפה</div>
+        <div class="financial-summary" id="exposureSummary">
+            <!-- Row 2: Exposure -->
+            <div class="financial-card cash-in">
+                <div class="financial-icon">
+                    <span class="material-icons">arrow_downward</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="cashIn"><span class="no-data">—</span></h3>
+                    <p>כסף שנכנס</p>
+                </div>
             </div>
-            <div class="financial-info">
-                <h3 id="cashOut"><span class="no-data">—</span></h3>
-                <p>כסף ששולם לספק</p>
+            <div class="financial-card cash-out">
+                <div class="financial-icon">
+                    <span class="material-icons">arrow_upward</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="cashOut"><span class="no-data">—</span></h3>
+                    <p>כסף ששולם לספק</p>
+                </div>
             </div>
-        </div>
-        <div class="financial-card exposure">
-            <div class="financial-icon">
-                <span class="material-icons">shield</span>
+            <div class="financial-card exposure">
+                <div class="financial-icon">
+                    <span class="material-icons">shield</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="exposureAmount"><span class="no-data">—</span></h3>
+                    <p>חשיפה</p>
+                </div>
             </div>
-            <div class="financial-info">
-                <h3 id="exposureAmount"><span class="no-data">—</span></h3>
-                <p>חשיפה</p>
-            </div>
-        </div>
-        <div class="financial-card break-even">
-            <div class="financial-icon">
-                <span class="material-icons">balance</span>
-            </div>
-            <div class="financial-info">
-                <h3 id="breakEvenCount"><span class="no-data">—</span></h3>
-                <p>נקודת איזון</p>
+            <div class="financial-card break-even">
+                <div class="financial-icon">
+                    <span class="material-icons">balance</span>
+                </div>
+                <div class="financial-info">
+                    <h3 id="breakEvenCount"><span class="no-data">—</span></h3>
+                    <p>נקודת איזון</p>
+                    <p class="be-legend" style="font-size: 0.7rem; color: var(--gray-dark); margin-top: 2px; display: none;">נמכרו / יעד</p>
+                </div>
             </div>
         </div>
     </div>
@@ -3520,7 +3596,7 @@
             document.getElementById('totalRevenue').textContent = `$${totalRevenue.toLocaleString()}`;
             document.getElementById('totalCost').textContent = `$${totalCost.toLocaleString()}`;
             const pct = totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : '0.0';
-            document.getElementById('totalProfit').textContent = `$${profit.toLocaleString()} (${pct}%)`;
+            document.getElementById('totalProfit').innerHTML = `$${profit.toLocaleString()} <span class="profit-pct">(${pct}%)</span>`;
             
             const hasAgentSales = active.some(p => p.agent_name || p.agent_id);
             const commEl = document.getElementById('totalCommission');
@@ -3620,6 +3696,8 @@
             if (totalCost <= 0 || soldSeats <= 0) {
                 beEl.innerHTML = '<span class="no-data">—</span>';
                 beCard.className = 'financial-card break-even';
+                const legendEl = beCard.querySelector('.be-legend');
+                if (legendEl) legendEl.style.display = 'none';
                 return;
             }
             
@@ -3629,8 +3707,12 @@
             // BEP seats = ceil(Total Cost / Avg Ticket Price)
             const bepSeats = avgTicketPrice > 0 ? Math.ceil(totalCost / avgTicketPrice) : 0;
             
-            // Display: Sold / BEP
-            beEl.textContent = `${soldSeats} / ${bepSeats}`;
+            // Display: Sold / BEP with labeled spans
+            beEl.innerHTML = `<span class="be-sold">${soldSeats}</span><span class="be-separator"> / </span><span class="be-target">${bepSeats}</span>`;
+            
+            // Show legend
+            const legendEl = beCard.querySelector('.be-legend');
+            if (legendEl) legendEl.style.display = 'block';
             
             if (soldSeats >= bepSeats) {
                 beCard.className = 'financial-card break-even safe';
@@ -3821,7 +3903,8 @@
             const unallocated = totalFlightCost - totalAmount;
             if (unallocated > 0) {
                 html += `<tr class="unallocated-row">
-                    <td colspan="2"><span class="material-icons">warning</span> התחייבות עתידית לא מתוזמנת</td>
+                    <td><span class="material-icons">warning</span> התחייבות עתידית לא מתוזמנת</td>
+                    <td></td>
                     <td><strong>$${unallocated.toLocaleString()}</strong></td>
                     <td></td>
                     <td></td>
