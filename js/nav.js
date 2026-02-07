@@ -236,18 +236,27 @@
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('token_expires_at');
+        localStorage.removeItem('userIsActive');
         
         // Redirect to login
         window.location.href = 'index.html';
     }
     
-    // Check if user is authenticated
+    // Check if user is authenticated and active
     function checkAuth() {
         const session = localStorage.getItem('userSession');
         if (!session) {
             window.location.href = 'index.html';
             return false;
         }
+        
+        // Check if user is marked as inactive (pending approval)
+        const isActive = localStorage.getItem('userIsActive');
+        if (isActive === 'false') {
+            window.location.href = 'index.html';
+            return false;
+        }
+        
         return true;
     }
     

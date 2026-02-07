@@ -351,6 +351,27 @@
         </div>
     </div>
     
+    <!-- Pending Approval Screen (hidden by default) -->
+    <div class="login-container" id="pendingApprovalScreen" style="display: none;">
+        <div class="login-header">
+            <div class="logo">Lord Tickets</div>
+            <div class="logo-subtitle">מערכת ניהול נוסעים</div>
+        </div>
+        <div class="login-body" style="text-align: center;">
+            <span class="material-icons" style="font-size: 4rem; color: #D4AF37; margin-bottom: 15px;">hourglass_empty</span>
+            <h2 style="color: #1B365D; margin-bottom: 10px;">ממתין לאישור מנהל</h2>
+            <p style="color: #666; margin-bottom: 20px; line-height: 1.6;">
+                החשבון שלך נוצר בהצלחה ומחכה לאישור מנהל המערכת.<br>
+                תקבל גישה לאחר שמנהל יאשר את החשבון.
+            </p>
+            <p id="pendingUserEmail" style="color: #999; font-size: 0.9rem; direction: ltr;"></p>
+            <button class="btn btn-outline" onclick="pendingLogout()" style="margin-top: 20px;">
+                <span class="material-icons">logout</span>
+                התנתק
+            </button>
+        </div>
+    </div>
+    
     <script>
         // Load saved settings on page load
         document.addEventListener('DOMContentLoaded', () => {
@@ -362,8 +383,15 @@
             
             // Check if already logged in
             const session = localStorage.getItem('userSession');
+            const isActive = localStorage.getItem('userIsActive');
             if (session && !window.location.hash) {
-                // Already logged in, redirect
+                if (isActive === 'false') {
+                    // User is pending approval
+                    const sessionData = JSON.parse(session);
+                    showPendingApproval(sessionData.user?.email || '');
+                    return;
+                }
+                // Already logged in and active, redirect
                 window.location.href = 'inventory.html';
                 return;
             }
@@ -418,7 +446,7 @@
                 // Fetch role from users table
                 try {
                     const roleRes = await fetch(
-                        `${supabaseUrl}/rest/v1/users?auth_id=eq.${userData.id}&select=id,name,role,commission_rate`,
+                        `${supabaseUrl}/rest/v1/users?auth_id=eq.${userData.id}&select=id,name,role,commission_rate,is_active`,
                         {
                             headers: {
                                 'apikey': supabaseKey,
@@ -431,14 +459,48 @@
                         const roleData = await roleRes.json();
                         if (roleData.length > 0) {
                             const user = roleData[0];
+                            
+                            // Check if user is active
+                            if (user.is_active === false) {
+                                window.location.hash = '';
+                                showPendingApproval(userData.email);
+                                return;
+                            }
+                            
                             localStorage.setItem('userId', user.id);
                             localStorage.setItem('userName', user.name);
                             localStorage.setItem('userRole', user.role);
                             localStorage.setItem('userCommission', user.commission_rate || '0');
+                            localStorage.setItem('userIsActive', 'true');
                         } else {
-                            // New Google user — default to agent
-                            localStorage.setItem('userRole', 'agent');
-                            localStorage.setItem('userName', userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'User');
+                            // New Google user — auto-create as inactive agent
+                            const userName = userData.user_metadata?.full_name || userData.email?.split('@')[0] || 'User';
+                            const newUser = {
+                                auth_id: userData.id,
+                                email: userData.email,
+                                name: userName,
+                                role: 'agent',
+                                is_active: false
+                            };
+                            
+                            try {
+                                await fetch(`${supabaseUrl}/rest/v1/users`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'apikey': supabaseKey,
+                                        'Authorization': `Bearer ${accessToken}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(newUser)
+                                });
+                            } catch (createErr) {
+                                console.error('Error creating user record:', createErr);
+                            }
+                            
+                            // Show pending approval screen
+                            window.location.hash = '';
+                            showPendingApproval(userData.email);
+                            return;
                         }
                     }
                 } catch (roleErr) {
@@ -474,6 +536,26 @@
             // Redirect to Supabase Google OAuth
             const redirectUrl = window.location.origin + window.location.pathname;
             window.location.href = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+        }
+        
+        function showPendingApproval(email) {
+            // Hide login container, show pending approval screen
+            document.querySelector('.login-container:not(#pendingApprovalScreen)').style.display = 'none';
+            document.getElementById('pendingApprovalScreen').style.display = 'block';
+            document.getElementById('pendingUserEmail').textContent = email || '';
+        }
+        
+        function pendingLogout() {
+            localStorage.removeItem('userSession');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userCommission');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('token_expires_at');
+            localStorage.removeItem('userIsActive');
+            window.location.reload();
         }
         
         function showError(message) {
@@ -553,7 +635,7 @@
                 // Fetch user role from users table
                 try {
                     const userResponse = await fetch(
-                        `${supabaseUrl}/rest/v1/users?auth_id=eq.${data.user.id}&select=id,name,role,commission_rate`,
+                        `${supabaseUrl}/rest/v1/users?auth_id=eq.${data.user.id}&select=id,name,role,commission_rate,is_active`,
                         {
                             headers: {
                                 'apikey': supabaseKey,
@@ -566,14 +648,43 @@
                         const userData = await userResponse.json();
                         if (userData.length > 0) {
                             const user = userData[0];
+                            
+                            // Check if user is active
+                            if (user.is_active === false) {
+                                showPendingApproval(email);
+                                return;
+                            }
+                            
                             localStorage.setItem('userId', user.id);
                             localStorage.setItem('userName', user.name);
                             localStorage.setItem('userRole', user.role);
                             localStorage.setItem('userCommission', user.commission_rate || '0');
+                            localStorage.setItem('userIsActive', 'true');
                         } else {
-                            // User exists in Auth but not in users table - default to agent
-                            localStorage.setItem('userRole', 'agent');
-                            localStorage.setItem('userName', email.split('@')[0]);
+                            // User exists in Auth but not in users table - create as inactive
+                            const userName = email.split('@')[0];
+                            try {
+                                await fetch(`${supabaseUrl}/rest/v1/users`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'apikey': supabaseKey,
+                                        'Authorization': `Bearer ${data.access_token}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        auth_id: data.user.id,
+                                        email: email,
+                                        name: userName,
+                                        role: 'agent',
+                                        is_active: false
+                                    })
+                                });
+                            } catch (createErr) {
+                                console.error('Error creating user record:', createErr);
+                            }
+                            
+                            showPendingApproval(email);
+                            return;
                         }
                     }
                 } catch (roleError) {
