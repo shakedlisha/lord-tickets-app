@@ -2103,7 +2103,7 @@
     </div>
     
     <!-- Financial Summary - Split into two labeled sections -->
-    <div class="dashboard-section">
+    <div class="dashboard-section" id="financialSection">
         <div class="dashboard-section-label">סיכום כספי</div>
         <div class="financial-summary" id="financialSummary">
             <!-- Row 1: Classic -->
@@ -2145,7 +2145,7 @@
             </div>
         </div>
     </div>
-    <div class="dashboard-section exposure-section-group">
+    <div class="dashboard-section exposure-section-group" id="exposureSection">
         <div class="dashboard-section-label">תזרים מזומנים וחשיפה</div>
         <div class="financial-summary" id="exposureSummary">
             <!-- Row 2: Exposure -->
@@ -3335,6 +3335,16 @@
             if (userRole === 'guest') {
                 window.location.href = 'inventory.html';
                 return;
+            }
+            
+            // Hide financial sections from agents
+            if (userRole === 'agent') {
+                const financialSection = document.getElementById('financialSection');
+                const exposureSection = document.getElementById('exposureSection');
+                const depositSection = document.getElementById('depositSection');
+                if (financialSection) financialSection.style.display = 'none';
+                if (exposureSection) exposureSection.style.display = 'none';
+                if (depositSection) depositSection.style.display = 'none';
             }
             
             // Initialize navigation

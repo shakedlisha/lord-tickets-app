@@ -2151,6 +2151,40 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             }
         }
         
+        // Fetch sales counts for the current agent
+        let agentSalesCounts = {};
+        async function fetchAgentSalesCounts() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole') || 'agent';
+            if (!supabaseUrl || !supabaseKey || !userId || userRole !== 'agent') return;
+            
+            const accessToken = getAccessToken() || supabaseKey;
+            
+            try {
+                const response = await fetch(
+                    `${supabaseUrl}/rest/v1/rpc/get_agent_sales_counts`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'apikey': supabaseKey,
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ p_agent_id: userId })
+                    }
+                );
+                if (response.ok) {
+                    const rows = await response.json();
+                    agentSalesCounts = {};
+                    rows.forEach(r => { agentSalesCounts[r.flight_id] = r.sales_count; });
+                }
+            } catch (err) {
+                console.error('Error fetching agent sales counts:', err);
+            }
+        }
+        
         async function fetchMilestoneStatus() {
             try {
                 const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -2212,6 +2246,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                     
                     // Fetch passenger counts to compute remaining seats
                     await fetchPassengerCounts();
+                    // Fetch agent's own sales counts
+                    await fetchAgentSalesCounts();
                     // Fetch deposit milestone status for risk indicators
                     await fetchMilestoneStatus();
                 } else {
@@ -2408,10 +2444,13 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             const isManagerOrAbove = userRole === 'admin' || userRole === 'manager';
             const isGuest = userRole === 'guest';
             
+            const isAgent = userRole === 'agent';
+            
             // Calculate visible column count
             let colCount = 10; // base: checkbox, dates, dest, airline, outbound, return, remaining, trolley, suitcase, price
             if (isManagerOrAbove) colCount += 3; // total seats, cost, actions (edit/delete)
-            else colCount += 1; // actions column (no-access dash)
+            else if (isAgent) colCount += 2; // my sales, actions
+            else colCount += 0; // guest: no extra columns
             
             // Dynamically render thead so column count matches tbody
             thead.innerHTML = `<tr>
@@ -2425,6 +2464,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 <th>חזור</th>
                 ${isManagerOrAbove ? `<th onclick="sortBy('total_seats')">סה״כ מושבים <span class="material-icons">unfold_more</span></th>` : ''}
                 <th>מושבים (נותרו)</th>
+                ${isAgent ? `<th>המכירות שלי</th>` : ''}
                 <th>טרולי</th>
                 <th>מזוודה</th>
                 ${isManagerOrAbove ? `<th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>` : ''}
@@ -2485,6 +2525,14 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                               title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
                         >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
                     </td>
+                    ${isAgent ? `
+                    <td>
+                        <span class="seats-badge ${(agentSalesCounts[flight.id] || 0) > 0 ? 'seats-high' : ''}" 
+                              style="font-weight: 600;"
+                              title="מספר הנוסעים שמכרת בטיסה זו"
+                        >${agentSalesCounts[flight.id] || 0}</span>
+                    </td>
+                    ` : ''}
                     <td class="baggage-cell">
                         ${isManagerOrAbove ? `
                         <label class="baggage-inline">
