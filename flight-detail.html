@@ -3518,7 +3518,8 @@
                 }
                 
                 // For agents: fetch real total booked count via RPC
-                if (userRole === 'agent') {
+                const currentUserRole = localStorage.getItem('userRole') || 'agent';
+                if (currentUserRole === 'agent') {
                     try {
                         const rpcResponse = await fetch(
                             `${supabaseUrl}/rest/v1/rpc/get_flight_seat_counts`,
