@@ -558,6 +558,57 @@
             accent-color: var(--success);
         }
         
+        /* Flight Details Structured Display */
+        .flight-details-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+            min-width: 120px;
+        }
+        
+        .flight-leg {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding: 3px 0;
+        }
+        
+        .flight-leg + .flight-leg {
+            border-top: 1px dashed var(--gray);
+            padding-top: 4px;
+        }
+        
+        .flight-leg .flight-times {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            direction: ltr;
+            justify-content: center;
+        }
+        
+        .flight-leg .flight-times .arrow {
+            color: var(--primary);
+            font-size: 0.8rem;
+        }
+        
+        .flight-leg .flight-route {
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        
+        .flight-leg .flight-number {
+            font-size: 0.75rem;
+            color: var(--gray-dark);
+            text-align: center;
+            font-weight: 500;
+        }
+        
         .baggage-value {
             min-width: 30px;
             padding: 2px 6px;
@@ -2184,6 +2235,55 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         // ==========================================
         // Rendering
         // ==========================================
+        
+        function formatFlightDetails(detailsStr) {
+            if (!detailsStr || detailsStr.trim() === '-') return '<span style="color:var(--gray-dark);">-</span>';
+            
+            const str = detailsStr.trim();
+            
+            // Try to detect multi-leg flights (e.g. "TLV-TAS: 22:20-06:45 (C6372)TAS-HKT: 11:40-20:30 (C6529)")
+            // Pattern: ROUTE: TIME-TIME (FLIGHT)
+            const multiLegPattern = /([A-Z]{3}-[A-Z]{3}):\s*(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*\(([^)]+)\)/g;
+            const legs = [];
+            let match;
+            while ((match = multiLegPattern.exec(str)) !== null) {
+                legs.push({
+                    route: match[1],
+                    depTime: match[2],
+                    arrTime: match[3],
+                    flightNum: match[4]
+                });
+            }
+            
+            if (legs.length > 0) {
+                return '<div class="flight-details-cell">' + legs.map(leg => `
+                    <div class="flight-leg">
+                        <div class="flight-times">${leg.depTime} <span class="arrow">&rarr;</span> ${leg.arrTime}</div>
+                        <div class="flight-route">${leg.route}</div>
+                        <div class="flight-number">${leg.flightNum}</div>
+                    </div>
+                `).join('') + '</div>';
+            }
+            
+            // Single-leg: Try pattern like "07:45 < 03:15 LY395" or "07:45 > 03:15 LY395" or "07:45 - 03:15 LY395"
+            const singlePattern = /(\d{1,2}:\d{2})\s*[<>\-–]\s*(\d{1,2}:\d{2})\s*(.*)/;
+            const singleMatch = str.match(singlePattern);
+            if (singleMatch) {
+                const time1 = singleMatch[1];
+                const time2 = singleMatch[2];
+                const flightNum = singleMatch[3].trim().replace(/^\(/, '').replace(/\)$/, '');
+                return `<div class="flight-details-cell">
+                    <div class="flight-leg">
+                        <div class="flight-times">${time1} <span class="arrow">&rarr;</span> ${time2}</div>
+                        ${flightNum ? `<div class="flight-number">${flightNum}</div>` : ''}
+                    </div>
+                </div>`;
+            }
+            
+            // Fallback: just return the raw text nicely styled
+            return `<div class="flight-details-cell"><div class="flight-leg"><div class="flight-number">${str}</div></div></div>`;
+        }
+        
         function renderFlights() {
             const tbody = document.getElementById('flightsTableBody');
             const thead = document.getElementById('flightsTableHead');
@@ -2199,8 +2299,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 <th onclick="sortBy('airline')">חברה <span class="material-icons">unfold_more</span></th>
                 <th>הלוך</th>
                 <th>חזור</th>
-                <th>מושבים (נותרו)</th>
                 ${isManagerOrAbove ? `<th onclick="sortBy('total_seats')">סה״כ מושבים <span class="material-icons">unfold_more</span></th>` : ''}
+                <th>מושבים (נותרו)</th>
                 <th>טרולי</th>
                 <th>מזוודה</th>
                 <th onclick="sortBy('cost_price')">עלות <span class="material-icons">unfold_more</span></th>
@@ -2246,13 +2346,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                             <span class="airline-badge ${getAirlineClass(flight.airline)}">${flight.airline}</span>
                         </div>
                     </td>
-                    <td style="font-size: 0.85rem;">${flight.outbound_details || '-'}</td>
-                    <td style="font-size: 0.85rem;">${flight.inbound_details || '-'}</td>
-                    <td>
-                        <span class="seats-badge ${getSeatsClass((flight.total_seats || 0) - (flight.booked_passengers || 0))}"
-                              title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
-                        >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
-                    </td>
+                    <td>${formatFlightDetails(flight.outbound_details)}</td>
+                    <td>${formatFlightDetails(flight.inbound_details)}</td>
                     ${isManagerOrAbove ? `<td>
                         <span class="seats-badge total-seats"
                               contenteditable="true"
@@ -2261,6 +2356,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                               title="סה״כ מושבים - ניתן לעריכה"
                         >${flight.total_seats || 0}</span>
                     </td>` : ''}
+                    <td>
+                        <span class="seats-badge ${getSeatsClass((flight.total_seats || 0) - (flight.booked_passengers || 0))}"
+                              title="נותרו ${(flight.total_seats || 0) - (flight.booked_passengers || 0)} מתוך ${flight.total_seats || 0}"
+                        >${(flight.total_seats || 0) - (flight.booked_passengers || 0)}</span>
+                    </td>
                     <td class="baggage-cell">
                         <label class="baggage-inline">
                             <input type="checkbox" 
@@ -3098,7 +3198,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 f.outbound_details || '',
                 f.inbound_details || '',
                 f.airline,
-                `${f.destination_name} (${f.destination_code})`,
+                `${f.destination_code} ${f.destination_name}`,
                 f.total_seats || 0,
                 formatBaggage(f.trolley_baggage),
                 formatBaggage(f.suitcase_baggage),
@@ -3144,7 +3244,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 f.outbound_details || '',
                 f.inbound_details || '',
                 f.airline,
-                `${f.destination_name} (${f.destination_code})`,
+                `${f.destination_code} ${f.destination_name}`,
                 f.total_seats || 0,
                 formatBaggage(f.trolley_baggage),
                 formatBaggage(f.suitcase_baggage),
