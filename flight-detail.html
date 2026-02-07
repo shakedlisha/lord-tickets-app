@@ -1024,6 +1024,14 @@
             color: var(--navy-light);
         }
         
+        .commission-warning {
+            color: #e6a800;
+            font-size: 1rem;
+            cursor: help;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        
         .financial-info h3 {
             font-size: 1.2rem;
             font-weight: 700;
@@ -1079,6 +1087,26 @@
         .financial-card.break-even .financial-icon {
             background: rgba(111, 66, 193, 0.15);
             color: #6F42C1;
+        }
+        .financial-card.break-even.safe {
+            border-right-color: #28A745;
+        }
+        .financial-card.break-even.safe .financial-icon {
+            background: rgba(40, 167, 69, 0.15);
+            color: #28A745;
+        }
+        .financial-card.break-even.safe h3 {
+            color: #28A745;
+        }
+        .financial-card.break-even.danger {
+            border-right-color: #DC3545;
+        }
+        .financial-card.break-even.danger .financial-icon {
+            background: rgba(220, 53, 69, 0.15);
+            color: #DC3545;
+        }
+        .financial-card.break-even.danger h3 {
+            color: #DC3545;
         }
         .break-even-date {
             display: flex;
@@ -1250,6 +1278,20 @@
         .deposit-table .total-row {
             background: var(--gray-light);
             font-weight: 600;
+        }
+        .deposit-table .unallocated-row {
+            background: rgba(255, 193, 7, 0.12);
+            border-top: 2px dashed #FFC107;
+        }
+        .deposit-table .unallocated-row td {
+            color: #856404;
+            font-weight: 600;
+        }
+        .deposit-table .unallocated-row .material-icons {
+            font-size: 1rem;
+            vertical-align: middle;
+            margin-left: 4px;
+            color: #e6a800;
         }
 
         /* Deposit Status Badges */
@@ -2043,9 +2085,6 @@
             <div class="financial-info">
                 <h3 id="breakEvenCount"><span class="no-data">—</span></h3>
                 <p>נקודת איזון</p>
-                <div class="break-even-date">
-                    <input type="date" id="breakEvenDate" onchange="updateBreakEven()" title="בחר תאריך לחישוב נקודת איזון">
-                </div>
             </div>
         </div>
     </div>
@@ -3480,8 +3519,16 @@
             
             document.getElementById('totalRevenue').textContent = `$${totalRevenue.toLocaleString()}`;
             document.getElementById('totalCost').textContent = `$${totalCost.toLocaleString()}`;
-            document.getElementById('totalProfit').textContent = `$${profit.toLocaleString()}`;
-            document.getElementById('totalCommission').textContent = `$${totalCommission.toLocaleString()}`;
+            const pct = totalRevenue > 0 ? ((profit / totalRevenue) * 100).toFixed(1) : '0.0';
+            document.getElementById('totalProfit').textContent = `$${profit.toLocaleString()} (${pct}%)`;
+            
+            const hasAgentSales = active.some(p => p.agent_name || p.agent_id);
+            const commEl = document.getElementById('totalCommission');
+            if (totalCommission === 0 && hasAgentSales) {
+                commEl.innerHTML = `$0 <span class="commission-warning" title="יש כרטיסים שנמכרו ע״י סוכנים ללא עמלה">&#9888;</span>`;
+            } else {
+                commEl.textContent = `$${totalCommission.toLocaleString()}`;
+            }
             
             const profitCard = document.querySelector('.financial-card.profit');
             if (profit < 0) {
@@ -3506,10 +3553,9 @@
                 document.getElementById('cashIn').innerHTML = '<span class="no-data">—</span>';
                 document.getElementById('cashOut').innerHTML = '<span class="no-data">—</span>';
                 document.getElementById('exposureAmount').innerHTML = '<span class="no-data">—</span>';
-                document.getElementById('breakEvenCount').innerHTML = '<span class="no-data">—</span>';
                 document.getElementById('exposureMeter').style.display = 'none';
                 document.getElementById('gapBanner').classList.remove('visible');
-                document.getElementById('breakEvenDate').disabled = true;
+                updateBreakEven();
                 return;
             }
             
@@ -3521,11 +3567,11 @@
             const exposureEl = document.getElementById('exposureAmount');
             const exposureCard = document.querySelector('.financial-card.exposure');
             if (exp.exposure > 0) {
-                exposureEl.textContent = `-$${exp.exposure.toLocaleString()}`;
-                exposureCard.className = 'financial-card exposure gap';
-            } else if (exp.exposure < 0) {
-                exposureEl.textContent = `+$${Math.abs(exp.exposure).toLocaleString()}`;
+                exposureEl.textContent = `+$${exp.exposure.toLocaleString()}`;
                 exposureCard.className = 'financial-card exposure surplus';
+            } else if (exp.exposure < 0) {
+                exposureEl.textContent = `-$${Math.abs(exp.exposure).toLocaleString()}`;
+                exposureCard.className = 'financial-card exposure gap';
             } else {
                 exposureEl.textContent = '$0';
                 exposureCard.className = 'financial-card exposure surplus';
@@ -3533,14 +3579,6 @@
             
             // Break-even
             updateBreakEven();
-            document.getElementById('breakEvenDate').disabled = false;
-            
-            // Set default break-even date to next milestone if not set
-            const beDateInput = document.getElementById('breakEvenDate');
-            if (!beDateInput.value) {
-                const nextM = Exposure.getNextPendingMilestone(milestones);
-                if (nextM) beDateInput.value = nextM.due_date;
-            }
             
             // Exposure meter bar
             const meterEl = document.getElementById('exposureMeter');
@@ -3560,22 +3598,46 @@
         }
         
         function updateBreakEven() {
-            if (typeof Exposure === 'undefined') return;
+            const active = passengers.filter(p => p.status === 'active' || !p.status);
+            const soldSeats = active.length;
+            const flightPrice = parseFloat(flight?.selling_price) || 0;
+            const flightCost = parseFloat(flight?.cost_price) || 0;
             
-            const asOfDate = document.getElementById('breakEvenDate').value || null;
-            const be = Exposure.dynamicBreakEven(flight, milestones, passengers, asOfDate);
+            const beEl = document.getElementById('breakEvenCount');
+            const beCard = document.querySelector('.financial-card.break-even');
             
-            if (!be.hasMilestones) {
-                document.getElementById('breakEvenCount').innerHTML = '<span class="no-data">—</span>';
+            // Total income from sold seats
+            let totalIncome = 0;
+            let totalCost = 0;
+            active.forEach(p => {
+                const pp = parseFloat(p.price_paid);
+                const cp = parseFloat(p.cost_price);
+                totalIncome += (pp > 0) ? pp : flightPrice;
+                totalCost += (cp > 0) ? cp : flightCost;
+            });
+            
+            // If no cost data, can't calculate BEP
+            if (totalCost <= 0 || soldSeats <= 0) {
+                beEl.innerHTML = '<span class="no-data">—</span>';
+                beCard.className = 'financial-card break-even';
                 return;
             }
             
-            const beEl = document.getElementById('breakEvenCount');
-            beEl.textContent = `${be.ticketsSold}/${be.ticketsNeeded}`;
-            if (be.gap > 0) {
-                beEl.title = `חסרים ${be.gap} כרטיסים לכיסוי תשלומים עד ${asOfDate || 'אבן הדרך הבאה'}`;
+            // Average ticket price = Total Income / Sold Seats
+            const avgTicketPrice = totalIncome / soldSeats;
+            
+            // BEP seats = ceil(Total Cost / Avg Ticket Price)
+            const bepSeats = avgTicketPrice > 0 ? Math.ceil(totalCost / avgTicketPrice) : 0;
+            
+            // Display: Sold / BEP
+            beEl.textContent = `${soldSeats} / ${bepSeats}`;
+            
+            if (soldSeats >= bepSeats) {
+                beCard.className = 'financial-card break-even safe';
+                beEl.title = `נמכרו ${soldSeats} כרטיסים, נדרשים ${bepSeats} לכיסוי עלויות — הגענו לנקודת האיזון`;
             } else {
-                beEl.title = 'מכירות מכסות את התשלומים';
+                beCard.className = 'financial-card break-even danger';
+                beEl.title = `נמכרו ${soldSeats} כרטיסים, נדרשים ${bepSeats} לכיסוי עלויות — חסרים ${bepSeats - soldSeats} כרטיסים`;
             }
         }
         
@@ -3747,6 +3809,25 @@
                 <td></td>
                 ${canManage ? '<td></td>' : ''}
             </tr>`;
+            
+            // Unallocated cost warning row
+            const active = passengers.filter(p => p.status === 'active' || !p.status);
+            const flightCostPerSeat = parseFloat(flight?.cost_price) || 0;
+            let totalFlightCost = 0;
+            active.forEach(p => {
+                const cp = parseFloat(p.cost_price);
+                totalFlightCost += (cp > 0) ? cp : flightCostPerSeat;
+            });
+            const unallocated = totalFlightCost - totalAmount;
+            if (unallocated > 0) {
+                html += `<tr class="unallocated-row">
+                    <td colspan="2"><span class="material-icons">warning</span> התחייבות עתידית לא מתוזמנת</td>
+                    <td><strong>$${unallocated.toLocaleString()}</strong></td>
+                    <td></td>
+                    <td></td>
+                    ${canManage ? '<td></td>' : ''}
+                </tr>`;
+            }
             
             html += '</tbody></table>';
             container.innerHTML = html;

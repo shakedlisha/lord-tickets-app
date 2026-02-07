@@ -75,18 +75,20 @@ const Exposure = (() => {
 
         const depositsRemaining = totalObligations - depositsPaid;
 
-        // Cash in = sum of price_paid from active passengers
+        // Cash in = booked revenue from active passengers (fallback to selling_price)
+        const flightPrice = parseFloat(flight?.selling_price) || 0;
         const cashIn = activePassengers.reduce((sum, p) => {
-            return sum + (parseFloat(p.price_paid) || 0);
+            const pp = parseFloat(p.price_paid);
+            return sum + ((pp > 0) ? pp : flightPrice);
         }, 0);
 
         // Cash out = deposits already paid to airline
         const cashOut = depositsPaid;
 
-        // Exposure = what we still owe minus what we've collected
-        // Positive = gap (we owe more than we've collected)
-        // Negative = surplus (we've collected more than we owe)
-        const exposure = depositsRemaining - cashIn;
+        // Exposure = cash collected minus what we've paid out to suppliers
+        // Positive = surplus (we've collected more than we've paid)
+        // Negative = deficit (we've paid more than we've collected)
+        const exposure = cashIn - depositsPaid;
 
         return {
             hasMilestones: true,
