@@ -1217,7 +1217,6 @@
                 <span class="page-title">| ניהול מלאי</span>
             </div>
             <div class="header-left">
-                <span id="userDisplay" class="nav-link" style="border: none; cursor: default;"></span>
                 <a href="index.html" class="nav-link">
                     <span class="material-icons" style="font-size: 1rem; vertical-align: middle;">receipt_long</span>
                     מחולל הצעות מחיר
@@ -1686,7 +1685,6 @@ Return: 14:00-18:30
             loadFlights();
             setupRealtime();
             setupPasteHandler();
-            displayCurrentUser();
             
             // Apply role-based restrictions
             applyRoleRestrictions();
@@ -1706,32 +1704,6 @@ Return: 14:00-18:30
                 if (importBtn) importBtn.style.display = 'none';
                 
                 // We'll hide delete buttons in renderFlights()
-            }
-        }
-        
-        // Display current user in header
-        function displayCurrentUser() {
-            const userDisplay = document.getElementById('userDisplay');
-            const session = localStorage.getItem('userSession');
-            
-            if (session) {
-                try {
-                    const user = JSON.parse(session);
-                    const email = user.user?.email || 'משתמש';
-                    userDisplay.innerHTML = `<span class="material-icons" style="font-size: 1rem; vertical-align: middle;">person</span> ${email.split('@')[0]}`;
-                    userDisplay.onclick = () => {
-                        if (confirm('להתנתק?')) {
-                            localStorage.removeItem('userSession');
-                            window.location.href = 'login.html';
-                        }
-                    };
-                    userDisplay.style.cursor = 'pointer';
-                    userDisplay.title = 'לחץ להתנתקות';
-                } catch (e) {
-                    userDisplay.style.display = 'none';
-                }
-            } else {
-                userDisplay.innerHTML = '<a href="login.html" style="color: var(--gold); text-decoration: none;">התחבר</a>';
             }
         }
         
