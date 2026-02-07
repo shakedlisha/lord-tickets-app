@@ -2241,46 +2241,66 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             
             const str = detailsStr.trim();
             
-            // Try to detect multi-leg flights (e.g. "TLV-TAS: 22:20-06:45 (C6372)TAS-HKT: 11:40-20:30 (C6529)")
-            // Pattern: ROUTE: TIME-TIME (FLIGHT)
+            // Helper: render one leg as HTML
+            function renderLeg(depTime, arrTime, flightNum, route) {
+                return `<div class="flight-leg">
+                    <div class="flight-times">${depTime} <span class="arrow">&rarr;</span> ${arrTime}</div>
+                    ${route ? `<div class="flight-route">${route}</div>` : ''}
+                    ${flightNum ? `<div class="flight-number">${flightNum}</div>` : ''}
+                </div>`;
+            }
+            
+            // === PATTERN 1: Multi-leg flights ===
+            // e.g. "TLV-TAS: 22:20-06:45 (C6372)TAS-HKT: 11:40-20:30 (C6529)"
             const multiLegPattern = /([A-Z]{3}-[A-Z]{3}):\s*(\d{1,2}:\d{2})\s*[-–]\s*(\d{1,2}:\d{2})\s*\(([^)]+)\)/g;
             const legs = [];
             let match;
             while ((match = multiLegPattern.exec(str)) !== null) {
-                legs.push({
-                    route: match[1],
-                    depTime: match[2],
-                    arrTime: match[3],
-                    flightNum: match[4]
-                });
+                legs.push(renderLeg(match[2], match[3], match[4], match[1]));
             }
-            
             if (legs.length > 0) {
-                return '<div class="flight-details-cell">' + legs.map(leg => `
-                    <div class="flight-leg">
-                        <div class="flight-times">${leg.depTime} <span class="arrow">&rarr;</span> ${leg.arrTime}</div>
-                        <div class="flight-route">${leg.route}</div>
-                        <div class="flight-number">${leg.flightNum}</div>
-                    </div>
-                `).join('') + '</div>';
+                return '<div class="flight-details-cell">' + legs.join('') + '</div>';
             }
             
-            // Single-leg: Try pattern like "07:45 < 03:15 LY395" or "07:45 > 03:15 LY395" or "07:45 - 03:15 LY395"
-            const singlePattern = /(\d{1,2}:\d{2})\s*[<>\-–]\s*(\d{1,2}:\d{2})\s*(.*)/;
-            const singleMatch = str.match(singlePattern);
-            if (singleMatch) {
-                const time1 = singleMatch[1];
-                const time2 = singleMatch[2];
-                const flightNum = singleMatch[3].trim().replace(/^\(/, '').replace(/\)$/, '');
+            // === GENERIC APPROACH: Extract all HH:MM times and flight number ===
+            // Find all times in the string
+            const timeMatches = [...str.matchAll(/(\d{1,2}:\d{2})/g)].map(m => m[1]);
+            
+            // Extract flight number: look for patterns like "LY395", "W6 1283", "(C6372)", "(LO 152)", etc.
+            let flightNum = '';
+            
+            // Try parenthesized flight number first: (W6 7900), (LO 152), (C6372)
+            const parenFlight = str.match(/\(([A-Z0-9]{1,3}\s*\d{1,5})\)/i);
+            if (parenFlight) {
+                flightNum = parenFlight[1].trim();
+            }
+            
+            // Try airline-code + number pattern: LY395, W6 1283, FR 4561, QS 1007
+            if (!flightNum) {
+                const codeFlight = str.match(/\b([A-Z]{2}\d{2,5})\b/i) || str.match(/\b([A-Z]{2,3})\s+(\d{2,5})\b/i);
+                if (codeFlight) {
+                    flightNum = codeFlight[0].trim();
+                }
+            }
+            
+            // If we found exactly 2 times, render as departure -> arrival
+            if (timeMatches.length >= 2) {
+                return `<div class="flight-details-cell">` +
+                    renderLeg(timeMatches[0], timeMatches[1], flightNum, '') +
+                    `</div>`;
+            }
+            
+            // If we found 1 time, show it with the flight number
+            if (timeMatches.length === 1) {
                 return `<div class="flight-details-cell">
                     <div class="flight-leg">
-                        <div class="flight-times">${time1} <span class="arrow">&rarr;</span> ${time2}</div>
+                        <div class="flight-times">${timeMatches[0]}</div>
                         ${flightNum ? `<div class="flight-number">${flightNum}</div>` : ''}
                     </div>
                 </div>`;
             }
             
-            // Fallback: just return the raw text nicely styled
+            // Fallback: display raw text cleanly
             return `<div class="flight-details-cell"><div class="flight-leg"><div class="flight-number">${str}</div></div></div>`;
         }
         
