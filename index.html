@@ -630,10 +630,7 @@
                         'apikey': supabaseKey,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        email: `guest_${Date.now()}@guest.local`,
-                        password: `guest_${Date.now()}_${Math.random().toString(36).slice(2)}`
-                    })
+                    body: JSON.stringify({})
                 });
                 
                 const data = await response.json();

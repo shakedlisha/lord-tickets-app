@@ -2096,9 +2096,38 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             const supabaseKey = localStorage.getItem('supabaseKey');
             if (!supabaseUrl || !supabaseKey) return;
             
-            // Use authenticated token (required by passengers RLS), fall back to anon key
             const accessToken = getAccessToken() || supabaseKey;
+            const userRole = localStorage.getItem('userRole') || 'agent';
             
+            // For guests/agents: use the public RPC function (bypasses passengers RLS)
+            // For admin/manager: query passengers table directly for full accuracy
+            if (userRole === 'guest' || userRole === 'agent') {
+                try {
+                    const response = await fetch(
+                        `${supabaseUrl}/rest/v1/rpc/get_flight_seat_counts`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'apikey': supabaseKey,
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: '{}'
+                        }
+                    );
+                    if (response.ok) {
+                        const rows = await response.json();
+                        const counts = {};
+                        rows.forEach(r => { counts[r.flight_id] = r.booked_count; });
+                        flights.forEach(f => { f.booked_passengers = counts[f.id] || 0; });
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Error fetching seat counts via RPC:', err);
+                }
+            }
+            
+            // Fallback: direct passengers query (works for admin/manager)
             try {
                 const response = await fetch(
                     `${supabaseUrl}/rest/v1/passengers?select=flight_id&or=(status.eq.active,status.is.null)`,
