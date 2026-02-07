@@ -1,8 +1,8 @@
-// Lord Tickets - Service Worker v4
+// Lord Tickets - Service Worker v5
 // NEVER caches HTML files — always fetches fresh from network
 // Only caches external CDN resources for offline use
 
-const CACHE_NAME = 'lord-tickets-v4';
+const CACHE_NAME = 'lord-tickets-v5';
 
 // Only cache external CDN resources (never local HTML/JS files)
 const CDN_HOSTS = [
@@ -14,18 +14,18 @@ const CDN_HOSTS = [
 
 // Install — skip waiting immediately
 self.addEventListener('install', event => {
-    console.log('[SW v4] Installing...');
+    console.log('[SW v5] Installing...');
     self.skipWaiting();
 });
 
 // Activate — delete ALL old caches, claim clients
 self.addEventListener('activate', event => {
-    console.log('[SW v4] Activating...');
+    console.log('[SW v5] Activating...');
     event.waitUntil(
         caches.keys()
             .then(names => Promise.all(
                 names.filter(n => n !== CACHE_NAME).map(n => {
-                    console.log('[SW v4] Deleting old cache:', n);
+                    console.log('[SW v5] Deleting old cache:', n);
                     return caches.delete(n);
                 })
             ))
@@ -89,7 +89,7 @@ async function syncOfflineData() {
         const clients = await self.clients.matchAll();
         clients.forEach(client => client.postMessage({ type: 'SYNC_COMPLETE' }));
     } catch (error) {
-        console.error('[SW v4] Sync failed:', error);
+        console.error('[SW v5] Sync failed:', error);
     }
 }
 
@@ -150,4 +150,4 @@ self.addEventListener('notificationclick', event => {
     }
 });
 
-console.log('[SW v4] Service Worker loaded');
+console.log('[SW v5] Service Worker loaded');

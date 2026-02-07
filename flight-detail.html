@@ -3615,10 +3615,16 @@
             const info = getSeatsInfo();
             
             // Update main stat cards
-            // For agents: show real total booked, not just their own passengers
             const statsRole = localStorage.getItem('userRole') || 'agent';
-            const displayTotal = (statsRole === 'agent' && realTotalBooked !== null) ? realTotalBooked : info.active.length;
-            document.getElementById('totalPassengers').textContent = displayTotal;
+            if (statsRole === 'agent') {
+                // Agents see their OWN passenger count, not total
+                document.getElementById('totalPassengers').textContent = info.active.length;
+                // Update the label to "הנוסעים שלי"
+                const totalLabel = document.getElementById('totalPassengers').parentElement.querySelector('p');
+                if (totalLabel) totalLabel.textContent = 'הנוסעים שלי';
+            } else {
+                document.getElementById('totalPassengers').textContent = info.active.length;
+            }
             document.getElementById('outboundCount').textContent = `${info.outbound}/${info.totalSeats}`;
             document.getElementById('returnCount').textContent = `${info.returnCount}/${info.totalSeats}`;
             document.getElementById('availableSeats').textContent = info.available;
