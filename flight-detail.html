@@ -3497,6 +3497,31 @@
                         // Table might not exist yet
                         passengers = [];
                     }
+                    
+                    // For agents: fetch real total booked count via RPC
+                    if (userRole === 'agent') {
+                        try {
+                            const rpcResponse = await fetch(
+                                `${supabaseUrl}/rest/v1/rpc/get_flight_seat_counts`,
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'apikey': supabaseKey,
+                                        'Authorization': `Bearer ${accessToken}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: '{}'
+                                }
+                            );
+                            if (rpcResponse.ok) {
+                                const counts = await rpcResponse.json();
+                                const match = counts.find(c => c.flight_id === flightId);
+                                realTotalBooked = match ? match.booked_count : 0;
+                            }
+                        } catch (err) {
+                            console.error('Error fetching real seat counts:', err);
+                        }
+                    }
                 } else {
                     // Demo mode - use mock data
                     flight = {
@@ -3515,32 +3540,6 @@
                         event_name: 'Real Madrid vs Atletico Madrid'
                     };
                     passengers = [];
-                }
-                
-                // For agents: fetch real total booked count via RPC
-                const currentUserRole = localStorage.getItem('userRole') || 'agent';
-                if (currentUserRole === 'agent') {
-                    try {
-                        const rpcResponse = await fetch(
-                            `${supabaseUrl}/rest/v1/rpc/get_flight_seat_counts`,
-                            {
-                                method: 'POST',
-                                headers: {
-                                    'apikey': supabaseKey,
-                                    'Authorization': `Bearer ${accessToken}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                body: '{}'
-                            }
-                        );
-                        if (rpcResponse.ok) {
-                            const counts = await rpcResponse.json();
-                            const match = counts.find(c => c.flight_id === flightId);
-                            realTotalBooked = match ? match.booked_count : 0;
-                        }
-                    } catch (err) {
-                        console.error('Error fetching real seat counts:', err);
-                    }
                 }
                 
                 renderFlightInfo();
