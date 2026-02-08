@@ -1,7 +1,7 @@
 {
-  "name": "Lord Tickets - מערכת ניהול נוסעים",
+  "name": "Lord Tickets - ניהול טיסות וכרטיסים",
   "short_name": "Lord Tickets",
-  "description": "מערכת לניהול טיסות ונוסעים לסוכני נסיעות",
+  "description": "מערכת לניהול טיסות, כרטיסי אירועים ונוסעים",
   "start_url": "./inventory.html",
   "scope": "./",
   "display": "standalone",
@@ -33,9 +33,21 @@
       "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     },
     {
+      "name": "כרטיסים",
+      "short_name": "כרטיסים",
+      "url": "./tickets-inventory.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
       "name": "לוח שנה",
       "short_name": "יומן",
       "url": "./calendar.html",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "לוח אירועים",
+      "short_name": "אירועים",
+      "url": "./tickets-calendar.html",
       "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]

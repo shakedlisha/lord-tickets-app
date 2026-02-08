@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Tickets - פרטי אירוע</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script src="js/nav.js"></script>
+    
+    <style>
+        :root {
+            --gold: #D4AF37;
+            --gold-light: #E8C547;
+            --gold-dark: #B8960C;
+            --navy: #1B365D;
+            --navy-light: #2A4A7A;
+            --navy-dark: #0F1F3A;
+            --white: #FFFFFF;
+            --gray-light: #F5F5F5;
+            --gray: #E0E0E0;
+            --gray-dark: #666666;
+            --success: #28A745;
+            --error: #DC3545;
+            --warning: #FFC107;
+            --info: #6366F1;
+            --primary: #6366F1;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, var(--gray-light) 0%, var(--white) 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+            color: var(--white);
+            padding: 15px 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--gold);
+        }
+        .back-link {
+            color: var(--gold);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            border: 1px solid var(--gold);
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--navy-dark);
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        /* Event Info Bar */
+        .event-info-bar {
+            background: var(--white);
+            padding: 25px;
+            margin: 20px auto;
+            max-width: 1600px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .event-title { flex: 1; }
+        .event-title h1 {
+            font-size: 1.8rem;
+            color: var(--navy-dark);
+            margin-bottom: 5px;
+        }
+        .event-title .subtitle {
+            color: var(--gray-dark);
+            font-size: 1rem;
+        }
+        .event-details {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .event-detail-item { text-align: center; }
+        .event-detail-item .label {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+            margin-bottom: 4px;
+        }
+        .event-detail-item .value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--navy-dark);
+        }
+        .event-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .event-type-badge.sports { background: #E3F2FD; color: #1565C0; }
+        .event-type-badge.concert { background: #FCE4EC; color: #C62828; }
+        .event-type-badge.theater { background: #F3E5F5; color: #7B1FA2; }
+        .event-type-badge.festival { background: #FFF3E0; color: #E65100; }
+        .event-type-badge.other { background: #E8EAF6; color: #283593; }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 1600px;
+            margin: 0 auto 20px;
+            padding: 0 20px;
+        }
+        @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+        
+        .stat-card {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-height: 80px;
+        }
+        .stat-icon {
+            width: 40px; min-width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+        .stat-icon.tickets { background: rgba(99,102,241,0.1); color: var(--primary); }
+        .stat-icon.investment { background: rgba(220,53,69,0.1); color: var(--error); }
+        .stat-icon.revenue { background: rgba(40,167,69,0.1); color: var(--success); }
+        .stat-icon.profit { background: rgba(212,175,55,0.1); color: var(--gold-dark); }
+        .stat-info h3 { font-size: 1.8rem; font-weight: 700; color: var(--navy-dark); }
+        .stat-info p { font-size: 0.85rem; color: var(--gray-dark); }
+        
+        /* Main Container */
+        .main-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px 30px;
+        }
+        
+        /* Section */
+        .section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .section-header {
+            background: var(--navy);
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .section-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .section-actions { display: flex; gap: 8px; }
+        .table-wrapper { overflow-x: auto; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: var(--gray-light);
+            padding: 12px 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--navy-dark);
+            border-bottom: 2px solid var(--gray);
+            white-space: nowrap;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--gray-light);
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+        tr:hover { background: rgba(212,175,55,0.05); }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .status-badge.in_stock { background: #E8F5E9; color: #2E7D32; }
+        .status-badge.reserved { background: #FFF3E0; color: #E65100; }
+        .status-badge.sold { background: #E3F2FD; color: #1565C0; }
+        .status-badge.cancelled { background: #FFEBEE; color: #C62828; }
+        .status-badge.refunded { background: #F3E5F5; color: #7B1FA2; }
+        .status-badge.pending { background: #FFF3E0; color: #E65100; }
+        .status-badge.confirmed { background: #E8F5E9; color: #2E7D32; }
+        .status-badge.delivered { background: #E3F2FD; color: #1565C0; }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--gold); color: var(--navy-dark); }
+        .btn-primary:hover { background: var(--gold-light); }
+        .btn-secondary { background: var(--navy); color: var(--white); }
+        .btn-secondary:hover { background: var(--navy-light); }
+        .btn-outline { background: transparent; border: 1px solid var(--gray); color: var(--gray-dark); }
+        .btn-outline:hover { background: var(--gray-light); }
+        .btn-danger { background: var(--error); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+        .btn .material-icons { font-size: 1rem; }
+        
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.visible { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--gray);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h2 { font-size: 1.2rem; color: var(--navy-dark); }
+        .modal-close {
+            width: 36px; height: 36px;
+            border: none; background: var(--gray-light);
+            border-radius: 50%; cursor: pointer;
+            font-size: 1.2rem; color: var(--gray-dark);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: var(--error); color: white; }
+        .modal-body { padding: 20px 25px; }
+        .modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid var(--gray);
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+        
+        /* Inline edit */
+        .inline-edit {
+            padding: 4px 8px;
+            border: 1px solid var(--gray);
+            border-radius: 4px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.85rem;
+            width: 80px;
+        }
+        .inline-edit:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 80px; left: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+            min-width: 280px;
+            animation: slideIn 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+        .toast.warning { background: var(--warning); color: #333; }
+        .toast.info { background: var(--info); }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Loading */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.8);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .loading-overlay.visible { display: flex; }
+        .spinner {
+            width: 50px; height: 50px;
+            border: 4px solid var(--gray);
+            border-top: 4px solid var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Empty state */
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: var(--gray-dark);
+        }
+        .empty-state .material-icons { font-size: 3rem; margin-bottom: 10px; opacity: 0.5; }
+        
+        /* Action icons */
+        .action-btn {
+            background: none; border: none; cursor: pointer;
+            padding: 4px; border-radius: 4px;
+            color: var(--gray-dark);
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: var(--gray-light); color: var(--navy-dark); }
+        .action-btn.danger:hover { color: var(--error); }
+        .action-btn .material-icons { font-size: 1.1rem; }
+        
+        /* Google Calendar link */
+        .gcal-btn {
+            background: #4285F4;
+            color: white;
+        }
+        .gcal-btn:hover { background: #3367D6; }
+        
+        /* Export dropdown */
+        .export-dropdown { position: relative; }
+        .export-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            min-width: 160px;
+            z-index: 50;
+            overflow: hidden;
+        }
+        .export-menu.show { display: block; }
+        .export-menu button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+        .export-menu button:hover { background: var(--gray-light); }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .event-header { flex-direction: column; }
+            .event-details { gap: 15px; }
+            .event-title h1 { font-size: 1.4rem; }
+            .section-header { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-right">
+                <span class="logo">Lord Tickets</span>
+                <a href="tickets-inventory.html" class="back-link">
+                    <span class="material-icons">arrow_forward</span>
+                    חזרה למלאי
+                </a>
+            </div>
+            <div class="header-actions">
+                <button class="btn gcal-btn" onclick="addToGoogleCalendar()" title="הוסף ליומן Google">
+                    <span class="material-icons">event</span>
+                    יומן Google
+                </button>
+                <button class="btn btn-outline" onclick="openEditEventModal()" id="editEventBtn">
+                    <span class="material-icons">edit</span>
+                    ערוך אירוע
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Event Info Bar -->
+    <div class="event-info-bar" id="eventInfoBar">
+        <div class="event-header">
+            <div class="event-title">
+                <h1 id="eventName">טוען...</h1>
+                <p class="subtitle" id="eventSubtitle"></p>
+            </div>
+            <div class="event-details">
+                <div class="event-detail-item">
+                    <div class="label">תאריך</div>
+                    <div class="value" id="eventDate">-</div>
+                </div>
+                <div class="event-detail-item">
+                    <div class="label">שעה</div>
+                    <div class="value" id="eventTime">-</div>
+                </div>
+                <div class="event-detail-item">
+                    <div class="label">מקום</div>
+                    <div class="value" id="eventVenue">-</div>
+                </div>
+                <div class="event-detail-item">
+                    <div class="label">סטטוס</div>
+                    <div class="value" id="eventStatus">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon tickets">
+                <span class="material-icons">confirmation_number</span>
+            </div>
+            <div class="stat-info">
+                <h3 id="statTotalTickets">0</h3>
+                <p>סה"כ כרטיסים</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon investment">
+                <span class="material-icons">account_balance_wallet</span>
+            </div>
+            <div class="stat-info">
+                <h3 id="statInvestment">0</h3>
+                <p>השקעה כוללת</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon revenue">
+                <span class="material-icons">trending_up</span>
+            </div>
+            <div class="stat-info">
+                <h3 id="statRevenue">0</h3>
+                <p>הכנסות (מכירות)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon profit">
+                <span class="material-icons">emoji_events</span>
+            </div>
+            <div class="stat-info">
+                <h3 id="statProfit">0</h3>
+                <p>רווח צפוי</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Ticket Lots Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2>כרטיסים במלאי</h2>
+                <div class="section-actions" id="ticketActions">
+                    <button class="btn btn-primary btn-sm" onclick="openAddTicketModal()">
+                        <span class="material-icons">add</span>
+                        כרטיס חדש
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="ticketsTable">
+                    <thead>
+                        <tr>
+                            <th>ספק</th>
+                            <th>אזור</th>
+                            <th>בלוק</th>
+                            <th>שורה</th>
+                            <th>מושבים</th>
+                            <th>קטגוריה</th>
+                            <th>כמות</th>
+                            <th class="cost-col">מחיר קנייה</th>
+                            <th>מחיר מכירה</th>
+                            <th class="cost-col">עלות כוללת</th>
+                            <th class="cost-col">רווח/כרטיס</th>
+                            <th>מטבע</th>
+                            <th>סטטוס</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsBody"></tbody>
+                </table>
+                <div id="ticketsEmpty" class="empty-state" style="display:none;">
+                    <span class="material-icons">confirmation_number</span>
+                    <p>אין כרטיסים עדיין</p>
+                    <p style="font-size:0.85rem;">לחץ על "כרטיס חדש" להוספה</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sales / Buyer List Section -->
+        <div class="section">
+            <div class="section-header">
+                <h2>רשימת קונים / מכירות</h2>
+                <div class="section-actions" id="salesActions">
+                    <div class="export-dropdown">
+                        <button class="btn btn-outline btn-sm" onclick="toggleSalesExport()">
+                            <span class="material-icons">download</span>
+                            ייצוא
+                        </button>
+                        <div class="export-menu" id="salesExportMenu">
+                            <button onclick="exportSalesCSV()"><span class="material-icons" style="font-size:1rem;">description</span> CSV</button>
+                            <button onclick="exportSalesExcel()"><span class="material-icons" style="font-size:1rem;">table_chart</span> Excel</button>
+                            <button onclick="exportSalesPDF()"><span class="material-icons" style="font-size:1rem;">picture_as_pdf</span> PDF</button>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="openAddSaleModal()">
+                        <span class="material-icons">person_add</span>
+                        מכירה חדשה
+                    </button>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table id="salesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>שם הקונה</th>
+                            <th>טלפון</th>
+                            <th>כרטיס (ספק)</th>
+                            <th>כמות</th>
+                            <th>מחיר/כרטיס</th>
+                            <th>סה"כ</th>
+                            <th>תשלום</th>
+                            <th>משלוח</th>
+                            <th>סטטוס</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesBody"></tbody>
+                </table>
+                <div id="salesEmpty" class="empty-state" style="display:none;">
+                    <span class="material-icons">people</span>
+                    <p>אין מכירות עדיין</p>
+                    <p style="font-size:0.85rem;">לחץ על "מכירה חדשה" להוספה</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Event Modal -->
+    <div class="modal-overlay" id="editEventModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>ערוך אירוע</h2>
+                <button class="modal-close" onclick="closeModal('editEventModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>שם האירוע *</label>
+                    <input type="text" id="editEventName" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>סוג אירוע</label>
+                        <select id="editEventType">
+                            <option value="sports">ספורט</option>
+                            <option value="concert">הופעה</option>
+                            <option value="theater">תיאטרון</option>
+                            <option value="festival">פסטיבל</option>
+                            <option value="other">אחר</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>סטטוס</label>
+                        <select id="editEventStatus">
+                            <option value="upcoming">קרוב</option>
+                            <option value="ongoing">מתקיים</option>
+                            <option value="completed">הסתיים</option>
+                            <option value="cancelled">בוטל</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>תאריך</label>
+                        <input type="date" id="editEventDate">
+                    </div>
+                    <div class="form-group">
+                        <label>שעה</label>
+                        <input type="time" id="editEventTime">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>מקום</label>
+                    <input type="text" id="editEventVenue">
+                </div>
+                <div class="form-group">
+                    <label>הערות</label>
+                    <textarea id="editEventNotes" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveEventEdits()">
+                    <span class="material-icons">save</span>
+                    שמור
+                </button>
+                <button class="btn btn-outline" onclick="closeModal('editEventModal')">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Ticket Lot Modal -->
+    <div class="modal-overlay" id="addTicketModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>כרטיס חדש לאירוע</h2>
+                <button class="modal-close" onclick="closeModal('addTicketModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ספק *</label>
+                        <input type="text" id="newTicketSupplier" required>
+                    </div>
+                    <div class="form-group">
+                        <label>אסמכתא ספק</label>
+                        <input type="text" id="newTicketSupplierRef">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>אזור</label>
+                        <input type="text" id="newTicketSection">
+                    </div>
+                    <div class="form-group">
+                        <label>בלוק</label>
+                        <input type="text" id="newTicketBlock">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>שורה</label>
+                        <input type="text" id="newTicketRow">
+                    </div>
+                    <div class="form-group">
+                        <label>קטגוריה</label>
+                        <input type="text" id="newTicketCategory" placeholder="VIP, רגיל...">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>מושב מ</label>
+                        <input type="text" id="newTicketSeatFrom">
+                    </div>
+                    <div class="form-group">
+                        <label>מושב עד</label>
+                        <input type="text" id="newTicketSeatTo">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>כמות *</label>
+                        <input type="number" id="newTicketQty" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>מטבע</label>
+                        <select id="newTicketCurrency">
+                            <option value="EUR">EUR</option>
+                            <option value="USD">USD</option>
+                            <option value="ILS">ILS</option>
+                            <option value="GBP">GBP</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>מחיר קנייה (ליחידה) *</label>
+                        <input type="number" id="newTicketCost" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>מחיר מכירה (ליחידה)</label>
+                        <input type="number" id="newTicketSell" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>הערות</label>
+                    <textarea id="newTicketNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveNewTicket()">
+                    <span class="material-icons">save</span>
+                    שמור
+                </button>
+                <button class="btn btn-outline" onclick="closeModal('addTicketModal')">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Sale Modal -->
+    <div class="modal-overlay" id="addSaleModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>מכירה חדשה</h2>
+                <button class="modal-close" onclick="closeModal('addSaleModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>כרטיס (בחר מהמלאי) *</label>
+                    <select id="saleTicketId" required onchange="updateSaleDefaults()">
+                        <option value="">בחר כרטיס...</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>שם הקונה *</label>
+                        <input type="text" id="saleBuyerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>טלפון / אימייל</label>
+                        <input type="text" id="saleBuyerContact">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>כמות *</label>
+                        <input type="number" id="saleQty" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>מחיר מכירה (ליחידה) *</label>
+                        <input type="number" id="salePricePerTicket" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>אמצעי תשלום</label>
+                        <select id="salePaymentMethod">
+                            <option value="">-</option>
+                            <option value="cash">מזומן</option>
+                            <option value="credit_card">כרטיס אשראי</option>
+                            <option value="bank_transfer">העברה בנקאית</option>
+                            <option value="bit">ביט</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="other">אחר</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>אופן משלוח</label>
+                        <select id="saleDelivery">
+                            <option value="">-</option>
+                            <option value="email">אימייל</option>
+                            <option value="hand">מסירה ידנית</option>
+                            <option value="courier">שליח</option>
+                            <option value="digital">דיגיטלי</option>
+                            <option value="will_call">איסוף בקופה</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>הערות</label>
+                    <textarea id="saleNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveSale()">
+                    <span class="material-icons">save</span>
+                    שמור מכירה
+                </button>
+                <button class="btn btn-outline" onclick="closeModal('addSaleModal')">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Sale Modal -->
+    <div class="modal-overlay" id="editSaleModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>ערוך מכירה</h2>
+                <button class="modal-close" onclick="closeModal('editSaleModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editSaleId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>שם הקונה</label>
+                        <input type="text" id="editSaleBuyerName">
+                    </div>
+                    <div class="form-group">
+                        <label>טלפון / אימייל</label>
+                        <input type="text" id="editSaleBuyerContact">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>כמות</label>
+                        <input type="number" id="editSaleQty" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>מחיר מכירה (ליחידה)</label>
+                        <input type="number" id="editSalePrice" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>אמצעי תשלום</label>
+                        <select id="editSalePayment">
+                            <option value="">-</option>
+                            <option value="cash">מזומן</option>
+                            <option value="credit_card">כרטיס אשראי</option>
+                            <option value="bank_transfer">העברה בנקאית</option>
+                            <option value="bit">ביט</option>
+                            <option value="paypal">PayPal</option>
+                            <option value="other">אחר</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>אופן משלוח</label>
+                        <select id="editSaleDelivery">
+                            <option value="">-</option>
+                            <option value="email">אימייל</option>
+                            <option value="hand">מסירה ידנית</option>
+                            <option value="courier">שליח</option>
+                            <option value="digital">דיגיטלי</option>
+                            <option value="will_call">איסוף בקופה</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>סטטוס</label>
+                    <select id="editSaleStatus">
+                        <option value="pending">ממתין</option>
+                        <option value="confirmed">אושר</option>
+                        <option value="delivered">נמסר</option>
+                        <option value="cancelled">בוטל</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>הערות</label>
+                    <textarea id="editSaleNotes" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="updateSale()">
+                    <span class="material-icons">save</span>
+                    שמור
+                </button>
+                <button class="btn btn-outline" onclick="closeModal('editSaleModal')">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ==========================================
+        // State
+        // ==========================================
+        let eventId = null;
+        let eventData = null;
+        let tickets = [];
+        let sales = [];
+        
+        const STATUS_LABELS = {
+            in_stock: 'במלאי', reserved: 'שמור', sold: 'נמכר',
+            cancelled: 'בוטל', refunded: 'הוחזר',
+            pending: 'ממתין', confirmed: 'אושר', delivered: 'נמסר'
+        };
+        const EVENT_TYPE_LABELS = {
+            sports: 'ספורט', concert: 'הופעה', theater: 'תיאטרון',
+            festival: 'פסטיבל', other: 'אחר'
+        };
+        const PAYMENT_LABELS = {
+            cash: 'מזומן', credit_card: 'אשראי', bank_transfer: 'העברה',
+            bit: 'ביט', paypal: 'PayPal', other: 'אחר'
+        };
+        const DELIVERY_LABELS = {
+            email: 'אימייל', hand: 'מסירה', courier: 'שליח',
+            digital: 'דיגיטלי', will_call: 'איסוף בקופה'
+        };
+        
+        // ==========================================
+        // Init
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const session = localStorage.getItem('userSession');
+            if (!session) { window.location.href = 'index.html'; return; }
+            
+            const params = new URLSearchParams(window.location.search);
+            eventId = params.get('id');
+            if (!eventId) { window.location.href = 'tickets-inventory.html'; return; }
+            
+            applyRoleRestrictions();
+            loadEventData();
+        });
+        
+        function applyRoleRestrictions() {
+            const role = localStorage.getItem('userRole') || 'agent';
+            if (role === 'agent' || role === 'guest') {
+                // Hide cost columns
+                document.querySelectorAll('.cost-col').forEach(el => el.style.display = 'none');
+                // Hide add/edit buttons
+                document.getElementById('editEventBtn').style.display = 'none';
+                document.getElementById('ticketActions').style.display = 'none';
+                if (role === 'guest') {
+                    document.getElementById('salesActions').style.display = 'none';
+                }
+            }
+        }
+        
+        // ==========================================
+        // Supabase Helpers
+        // ==========================================
+        function getSupabaseConfig() {
+            const supabaseUrl = localStorage.getItem('supabaseUrl');
+            const supabaseKey = localStorage.getItem('supabaseKey');
+            const session = JSON.parse(localStorage.getItem('userSession') || '{}');
+            const token = session.access_token || supabaseKey;
+            return {
+                supabaseUrl,
+                supabaseKey,
+                headers: {
+                    'apikey': supabaseKey,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                }
+            };
+        }
+        
+        // ==========================================
+        // Data Loading
+        // ==========================================
+        async function loadEventData() {
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                
+                // Load event
+                const eventRes = await fetch(`${supabaseUrl}/rest/v1/events?id=eq.${eventId}`, { headers });
+                const events = await eventRes.json();
+                if (!events || events.length === 0) {
+                    showToast('אירוע לא נמצא', 'error');
+                    setTimeout(() => window.location.href = 'tickets-inventory.html', 1500);
+                    return;
+                }
+                eventData = events[0];
+                
+                // Load tickets for this event
+                const ticketsRes = await fetch(`${supabaseUrl}/rest/v1/tickets?event_id=eq.${eventId}&order=created_at.asc`, { headers });
+                tickets = await ticketsRes.json();
+                
+                // Load sales for tickets of this event
+                const ticketIds = tickets.map(t => t.id);
+                if (ticketIds.length > 0) {
+                    const salesRes = await fetch(`${supabaseUrl}/rest/v1/ticket_sales?ticket_id=in.(${ticketIds.join(',')})&order=created_at.asc`, { headers });
+                    sales = await salesRes.json();
+                } else {
+                    sales = [];
+                }
+                
+                renderEvent();
+                renderTickets();
+                renderSales();
+                updateFinancialStats();
+            } catch (err) {
+                console.error('Load error:', err);
+                showToast('שגיאה בטעינת נתונים', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Render Event Info
+        // ==========================================
+        function renderEvent() {
+            const e = eventData;
+            document.title = `Lord Tickets - ${e.name}`;
+            document.getElementById('eventName').textContent = e.name;
+            
+            const typeBadge = `<span class="event-type-badge ${e.event_type}">${EVENT_TYPE_LABELS[e.event_type] || e.event_type}</span>`;
+            document.getElementById('eventSubtitle').innerHTML = typeBadge + (e.notes || '');
+            
+            document.getElementById('eventDate').textContent = e.event_date ? new Date(e.event_date).toLocaleDateString('he-IL') : '-';
+            document.getElementById('eventTime').textContent = e.event_time || '-';
+            document.getElementById('eventVenue').textContent = e.venue || '-';
+            
+            const statusLabels = { upcoming: 'קרוב', ongoing: 'מתקיים', completed: 'הסתיים', cancelled: 'בוטל' };
+            document.getElementById('eventStatus').textContent = statusLabels[e.status] || e.status;
+        }
+        
+        // ==========================================
+        // Financial Stats
+        // ==========================================
+        function updateFinancialStats() {
+            const role = localStorage.getItem('userRole') || 'agent';
+            const isManager = role === 'admin' || role === 'manager';
+            
+            const totalTickets = tickets.reduce((sum, t) => sum + (t.quantity || 0), 0);
+            const investment = tickets.reduce((sum, t) => sum + (t.total_cost || 0), 0);
+            const totalProfit = tickets.reduce((sum, t) => sum + (t.total_profit || 0), 0);
+            
+            // Revenue from confirmed/delivered sales
+            const revenue = sales
+                .filter(s => s.status !== 'cancelled')
+                .reduce((sum, s) => sum + ((s.sale_price || 0) * (s.quantity || 0)), 0);
+            
+            document.getElementById('statTotalTickets').textContent = totalTickets;
+            
+            if (isManager) {
+                const cur = tickets[0]?.currency || 'EUR';
+                document.getElementById('statInvestment').textContent = formatPrice(investment, cur);
+                document.getElementById('statRevenue').textContent = formatPrice(revenue, cur);
+                document.getElementById('statProfit').textContent = formatPrice(totalProfit, cur);
+            } else {
+                document.getElementById('statInvestment').textContent = '-';
+                document.getElementById('statRevenue').textContent = formatPrice(revenue, tickets[0]?.currency || 'EUR');
+                document.getElementById('statProfit').textContent = '-';
+            }
+        }
+        
+        function formatPrice(amount, currency) {
+            if (amount == null) return '-';
+            const symbols = { EUR: '€', USD: '$', ILS: '₪', GBP: '£' };
+            return `${symbols[currency] || currency}${Number(amount).toLocaleString('en', {minimumFractionDigits: 0, maximumFractionDigits: 2})}`;
+        }
+        
+        // ==========================================
+        // Render Tickets Table
+        // ==========================================
+        function renderTickets() {
+            const tbody = document.getElementById('ticketsBody');
+            const empty = document.getElementById('ticketsEmpty');
+            const role = localStorage.getItem('userRole') || 'agent';
+            const isManager = role === 'admin' || role === 'manager';
+            
+            if (tickets.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            
+            tbody.innerHTML = tickets.map(t => {
+                const seats = [t.seat_from, t.seat_to].filter(Boolean).join(' - ') || '-';
+                const profitClass = t.profit_per_ticket > 0 ? 'color:var(--success)' : t.profit_per_ticket < 0 ? 'color:var(--error)' : '';
+                
+                return `
+                <tr>
+                    <td>${t.supplier || '-'}</td>
+                    <td>${t.section || '-'}</td>
+                    <td>${t.block || '-'}</td>
+                    <td>${t.row || '-'}</td>
+                    <td>${seats}</td>
+                    <td>${t.ticket_category || '-'}</td>
+                    <td>${t.quantity}</td>
+                    <td class="cost-col"${!isManager ? ' style="display:none"' : ''}>${formatPrice(t.cost_price, t.currency)}</td>
+                    <td>${t.selling_price ? formatPrice(t.selling_price, t.currency) : '-'}</td>
+                    <td class="cost-col"${!isManager ? ' style="display:none"' : ''}>${formatPrice(t.total_cost, t.currency)}</td>
+                    <td class="cost-col"${!isManager ? ' style="display:none"' : ''} style="${profitClass}">${t.profit_per_ticket != null ? formatPrice(t.profit_per_ticket, t.currency) : '-'}</td>
+                    <td>${t.currency}</td>
+                    <td><span class="status-badge ${t.status}">${STATUS_LABELS[t.status] || t.status}</span></td>
+                    <td>
+                        ${isManager ? `
+                        <button class="action-btn" onclick="inlineEditTicket('${t.id}')" title="ערוך"><span class="material-icons">edit</span></button>
+                        <button class="action-btn danger" onclick="deleteTicket('${t.id}')" title="מחק"><span class="material-icons">delete</span></button>
+                        ` : ''}
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        // ==========================================
+        // Render Sales / Buyer Table
+        // ==========================================
+        function renderSales() {
+            const tbody = document.getElementById('salesBody');
+            const empty = document.getElementById('salesEmpty');
+            const role = localStorage.getItem('userRole') || 'agent';
+            const isManager = role === 'admin' || role === 'manager';
+            
+            if (sales.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            
+            tbody.innerHTML = sales.map((s, i) => {
+                // Find the ticket for this sale
+                const ticket = tickets.find(t => t.id === s.ticket_id);
+                const ticketLabel = ticket ? (ticket.supplier + (ticket.block ? ` / ${ticket.block}` : '')) : '-';
+                const total = (s.sale_price || 0) * (s.quantity || 0);
+                const cur = ticket?.currency || 'EUR';
+                
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${s.buyer_name || '-'}</strong></td>
+                    <td>${s.buyer_phone || s.buyer_email || '-'}</td>
+                    <td>${ticketLabel}</td>
+                    <td>${s.quantity || 0}</td>
+                    <td>${formatPrice(s.sale_price, cur)}</td>
+                    <td>${formatPrice(total, cur)}</td>
+                    <td>${PAYMENT_LABELS[s.payment_method] || s.payment_method || '-'}</td>
+                    <td>${DELIVERY_LABELS[s.delivery_method] || s.delivery_method || '-'}</td>
+                    <td><span class="status-badge ${s.status}">${STATUS_LABELS[s.status] || s.status}</span></td>
+                    <td>
+                        ${isManager || role === 'agent' ? `
+                        <button class="action-btn" onclick="openEditSaleModal('${s.id}')" title="ערוך"><span class="material-icons">edit</span></button>
+                        <button class="action-btn danger" onclick="deleteSale('${s.id}')" title="מחק"><span class="material-icons">delete</span></button>
+                        ` : ''}
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        // ==========================================
+        // Edit Event
+        // ==========================================
+        function openEditEventModal() {
+            if (!eventData) return;
+            document.getElementById('editEventName').value = eventData.name || '';
+            document.getElementById('editEventType').value = eventData.event_type || 'other';
+            document.getElementById('editEventStatus').value = eventData.status || 'upcoming';
+            document.getElementById('editEventDate').value = eventData.event_date || '';
+            document.getElementById('editEventTime').value = eventData.event_time || '';
+            document.getElementById('editEventVenue').value = eventData.venue || '';
+            document.getElementById('editEventNotes').value = eventData.notes || '';
+            openModal('editEventModal');
+        }
+        
+        async function saveEventEdits() {
+            const data = {
+                name: document.getElementById('editEventName').value.trim(),
+                event_type: document.getElementById('editEventType').value,
+                status: document.getElementById('editEventStatus').value,
+                event_date: document.getElementById('editEventDate').value || null,
+                event_time: document.getElementById('editEventTime').value || null,
+                venue: document.getElementById('editEventVenue').value.trim() || null,
+                notes: document.getElementById('editEventNotes').value.trim() || null
+            };
+            if (!data.name) { showToast('שם אירוע חובה', 'warning'); return; }
+            
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/events?id=eq.${eventId}`, {
+                    method: 'PATCH', headers, body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed to update');
+                closeModal('editEventModal');
+                showToast('אירוע עודכן', 'success');
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה בעדכון: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Add Ticket Lot
+        // ==========================================
+        function openAddTicketModal() {
+            // Clear form
+            ['newTicketSupplier','newTicketSupplierRef','newTicketSection','newTicketBlock','newTicketRow','newTicketCategory','newTicketSeatFrom','newTicketSeatTo','newTicketNotes'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('newTicketQty').value = 1;
+            document.getElementById('newTicketCost').value = '';
+            document.getElementById('newTicketSell').value = '';
+            document.getElementById('newTicketCurrency').value = 'EUR';
+            openModal('addTicketModal');
+        }
+        
+        async function saveNewTicket() {
+            const data = {
+                event_id: eventId,
+                supplier: document.getElementById('newTicketSupplier').value.trim(),
+                supplier_ref: document.getElementById('newTicketSupplierRef').value.trim() || null,
+                section: document.getElementById('newTicketSection').value.trim() || null,
+                block: document.getElementById('newTicketBlock').value.trim() || null,
+                row: document.getElementById('newTicketRow').value.trim() || null,
+                ticket_category: document.getElementById('newTicketCategory').value.trim() || null,
+                seat_from: document.getElementById('newTicketSeatFrom').value.trim() || null,
+                seat_to: document.getElementById('newTicketSeatTo').value.trim() || null,
+                quantity: parseInt(document.getElementById('newTicketQty').value) || 1,
+                currency: document.getElementById('newTicketCurrency').value,
+                cost_price: parseFloat(document.getElementById('newTicketCost').value) || 0,
+                selling_price: document.getElementById('newTicketSell').value ? parseFloat(document.getElementById('newTicketSell').value) : null,
+                notes: document.getElementById('newTicketNotes').value.trim() || null,
+                status: 'in_stock'
+            };
+            
+            if (!data.supplier) { showToast('שם ספק חובה', 'warning'); return; }
+            
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/tickets`, {
+                    method: 'POST', headers, body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed to add ticket');
+                closeModal('addTicketModal');
+                showToast('כרטיס נוסף בהצלחה', 'success');
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Inline Edit Ticket (selling_price, status)
+        // ==========================================
+        function inlineEditTicket(ticketId) {
+            const ticket = tickets.find(t => t.id === ticketId);
+            if (!ticket) return;
+            
+            const row = document.querySelector(`tr button[onclick="inlineEditTicket('${ticketId}')"]`).closest('tr');
+            const cells = row.cells;
+            
+            // Make selling price editable (index 8)
+            const sellCell = cells[8];
+            const currentSell = ticket.selling_price || '';
+            sellCell.innerHTML = `<input class="inline-edit" type="number" step="0.01" value="${currentSell}" 
+                onkeydown="if(event.key==='Enter') saveInlineTicket('${ticketId}', this.closest('tr'))" id="ie-sell-${ticketId}">`;
+            
+            // Make status editable (index 12)
+            const statusCell = cells[12];
+            statusCell.innerHTML = `<select class="inline-edit" style="width:100px" id="ie-status-${ticketId}">
+                <option value="in_stock" ${ticket.status === 'in_stock' ? 'selected' : ''}>במלאי</option>
+                <option value="reserved" ${ticket.status === 'reserved' ? 'selected' : ''}>שמור</option>
+                <option value="sold" ${ticket.status === 'sold' ? 'selected' : ''}>נמכר</option>
+                <option value="cancelled" ${ticket.status === 'cancelled' ? 'selected' : ''}>בוטל</option>
+                <option value="refunded" ${ticket.status === 'refunded' ? 'selected' : ''}>הוחזר</option>
+            </select>`;
+            
+            // Replace action buttons
+            const actCell = cells[13];
+            actCell.innerHTML = `
+                <button class="action-btn" onclick="saveInlineTicket('${ticketId}', this.closest('tr'))" title="שמור"><span class="material-icons" style="color:var(--success)">check</span></button>
+                <button class="action-btn" onclick="renderTickets()" title="ביטול"><span class="material-icons">close</span></button>`;
+            
+            document.getElementById(`ie-sell-${ticketId}`).focus();
+        }
+        
+        async function saveInlineTicket(ticketId, row) {
+            const sellVal = document.getElementById(`ie-sell-${ticketId}`).value;
+            const statusVal = document.getElementById(`ie-status-${ticketId}`).value;
+            
+            const data = {
+                selling_price: sellVal ? parseFloat(sellVal) : null,
+                status: statusVal
+            };
+            
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
+                    method: 'PATCH', headers, body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed');
+                showToast('עודכן', 'success');
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            }
+        }
+        
+        // ==========================================
+        // Delete Ticket
+        // ==========================================
+        async function deleteTicket(ticketId) {
+            if (!confirm('למחוק כרטיס זה?')) return;
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
+                    method: 'DELETE', headers
+                });
+                if (!res.ok) throw new Error('Failed');
+                showToast('כרטיס נמחק', 'success');
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Add Sale (Buyer)
+        // ==========================================
+        function openAddSaleModal() {
+            // Populate ticket selector with available tickets
+            const select = document.getElementById('saleTicketId');
+            select.innerHTML = '<option value="">בחר כרטיס...</option>' +
+                tickets.filter(t => t.status === 'in_stock' || t.status === 'reserved').map(t =>
+                    `<option value="${t.id}" data-price="${t.selling_price || ''}" data-qty="${t.quantity}">${t.supplier} ${t.block ? '/ ' + t.block : ''} ${t.row ? '/ שורה ' + t.row : ''} (${t.quantity} כרט.)</option>`
+                ).join('');
+            
+            // Clear form
+            document.getElementById('saleBuyerName').value = '';
+            document.getElementById('saleBuyerContact').value = '';
+            document.getElementById('saleQty').value = 1;
+            document.getElementById('salePricePerTicket').value = '';
+            document.getElementById('salePaymentMethod').value = '';
+            document.getElementById('saleDelivery').value = '';
+            document.getElementById('saleNotes').value = '';
+            
+            openModal('addSaleModal');
+        }
+        
+        function updateSaleDefaults() {
+            const sel = document.getElementById('saleTicketId');
+            const opt = sel.options[sel.selectedIndex];
+            if (opt && opt.dataset.price) {
+                document.getElementById('salePricePerTicket').value = opt.dataset.price;
+            }
+        }
+        
+        async function saveSale() {
+            const ticketId = document.getElementById('saleTicketId').value;
+            const buyerName = document.getElementById('saleBuyerName').value.trim();
+            const qty = parseInt(document.getElementById('saleQty').value) || 1;
+            const price = parseFloat(document.getElementById('salePricePerTicket').value);
+            
+            if (!ticketId) { showToast('בחר כרטיס', 'warning'); return; }
+            if (!buyerName) { showToast('שם קונה חובה', 'warning'); return; }
+            if (isNaN(price)) { showToast('מחיר מכירה חובה', 'warning'); return; }
+            
+            const data = {
+                ticket_id: ticketId,
+                buyer_name: buyerName,
+                buyer_phone: document.getElementById('saleBuyerContact').value.trim() || null,
+                quantity: qty,
+                sale_price: price,
+                payment_method: document.getElementById('salePaymentMethod').value || null,
+                delivery_method: document.getElementById('saleDelivery').value || null,
+                notes: document.getElementById('saleNotes').value.trim() || null,
+                status: 'confirmed'
+            };
+            
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/ticket_sales`, {
+                    method: 'POST', headers, body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed');
+                
+                closeModal('addSaleModal');
+                showToast('מכירה נשמרה', 'success');
+                
+                // Auto-update ticket status if fully sold
+                await checkAutoStatus(ticketId);
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Auto-Status Update
+        // ==========================================
+        async function checkAutoStatus(ticketId) {
+            const ticket = tickets.find(t => t.id === ticketId);
+            if (!ticket) return;
+            
+            const { supabaseUrl, headers } = getSupabaseConfig();
+            // Get total sold qty for this ticket
+            const salesRes = await fetch(`${supabaseUrl}/rest/v1/ticket_sales?ticket_id=eq.${ticketId}&status=neq.cancelled`, { headers });
+            const ticketSales = await salesRes.json();
+            const soldQty = ticketSales.reduce((sum, s) => sum + (s.quantity || 0), 0);
+            
+            if (soldQty >= ticket.quantity && ticket.status !== 'sold') {
+                await fetch(`${supabaseUrl}/rest/v1/tickets?id=eq.${ticketId}`, {
+                    method: 'PATCH', headers, body: JSON.stringify({ status: 'sold' })
+                });
+                showToast('כרטיס עודכן אוטומטית ל"נמכר"', 'info');
+            }
+        }
+        
+        // ==========================================
+        // Edit Sale
+        // ==========================================
+        function openEditSaleModal(saleId) {
+            const sale = sales.find(s => s.id === saleId);
+            if (!sale) return;
+            document.getElementById('editSaleId').value = saleId;
+            document.getElementById('editSaleBuyerName').value = sale.buyer_name || '';
+            document.getElementById('editSaleBuyerContact').value = sale.buyer_phone || sale.buyer_email || '';
+            document.getElementById('editSaleQty').value = sale.quantity || 1;
+            document.getElementById('editSalePrice').value = sale.sale_price || '';
+            document.getElementById('editSalePayment').value = sale.payment_method || '';
+            document.getElementById('editSaleDelivery').value = sale.delivery_method || '';
+            document.getElementById('editSaleStatus').value = sale.status || 'pending';
+            document.getElementById('editSaleNotes').value = sale.notes || '';
+            openModal('editSaleModal');
+        }
+        
+        async function updateSale() {
+            const saleId = document.getElementById('editSaleId').value;
+            const data = {
+                buyer_name: document.getElementById('editSaleBuyerName').value.trim(),
+                buyer_phone: document.getElementById('editSaleBuyerContact').value.trim() || null,
+                quantity: parseInt(document.getElementById('editSaleQty').value) || 1,
+                sale_price: parseFloat(document.getElementById('editSalePrice').value) || 0,
+                payment_method: document.getElementById('editSalePayment').value || null,
+                delivery_method: document.getElementById('editSaleDelivery').value || null,
+                status: document.getElementById('editSaleStatus').value,
+                notes: document.getElementById('editSaleNotes').value.trim() || null
+            };
+            
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/ticket_sales?id=eq.${saleId}`, {
+                    method: 'PATCH', headers, body: JSON.stringify(data)
+                });
+                if (!res.ok) throw new Error('Failed');
+                closeModal('editSaleModal');
+                showToast('מכירה עודכנה', 'success');
+                
+                // Check auto-status for the ticket
+                const sale = sales.find(s => s.id === saleId);
+                if (sale) await checkAutoStatus(sale.ticket_id);
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Delete Sale
+        // ==========================================
+        async function deleteSale(saleId) {
+            if (!confirm('למחוק מכירה זו?')) return;
+            showLoading(true);
+            try {
+                const { supabaseUrl, headers } = getSupabaseConfig();
+                const res = await fetch(`${supabaseUrl}/rest/v1/ticket_sales?id=eq.${saleId}`, {
+                    method: 'DELETE', headers
+                });
+                if (!res.ok) throw new Error('Failed');
+                showToast('מכירה נמחקה', 'success');
+                await loadEventData();
+            } catch (err) {
+                showToast('שגיאה: ' + err.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // ==========================================
+        // Google Calendar
+        // ==========================================
+        function addToGoogleCalendar() {
+            if (!eventData) return;
+            const title = encodeURIComponent(eventData.name || '');
+            const location = encodeURIComponent(eventData.venue || '');
+            let dates = '';
+            if (eventData.event_date) {
+                const d = eventData.event_date.replace(/-/g, '');
+                const t = (eventData.event_time || '00:00').replace(/:/g, '') + '00';
+                dates = `${d}T${t}/${d}T235900`;
+            }
+            const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&location=${location}`;
+            window.open(url, '_blank');
+        }
+        
+        // ==========================================
+        // Sales Export
+        // ==========================================
+        function toggleSalesExport() {
+            const menu = document.getElementById('salesExportMenu');
+            menu.classList.toggle('show');
+        }
+        
+        function exportSalesCSV() {
+            document.getElementById('salesExportMenu').classList.remove('show');
+            if (sales.length === 0) { showToast('אין מכירות לייצוא', 'warning'); return; }
+            
+            const headers = ['#', 'שם קונה', 'טלפון', 'כרטיס', 'כמות', 'מחיר/כרטיס', 'סה"כ', 'תשלום', 'משלוח', 'סטטוס'];
+            const rows = sales.map((s, i) => {
+                const ticket = tickets.find(t => t.id === s.ticket_id);
+                return [
+                    i + 1,
+                    s.buyer_name || '',
+                    s.buyer_phone || '',
+                    ticket ? ticket.supplier : '',
+                    s.quantity || 0,
+                    s.sale_price || 0,
+                    (s.sale_price || 0) * (s.quantity || 0),
+                    PAYMENT_LABELS[s.payment_method] || '',
+                    DELIVERY_LABELS[s.delivery_method] || '',
+                    STATUS_LABELS[s.status] || ''
+                ];
+            });
+            
+            const bom = '\uFEFF';
+            const csv = bom + [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n');
+            downloadFile(csv, `sales-${eventData.name}-${new Date().toISOString().slice(0,10)}.csv`, 'text/csv;charset=utf-8');
+        }
+        
+        function exportSalesExcel() {
+            document.getElementById('salesExportMenu').classList.remove('show');
+            if (sales.length === 0) { showToast('אין מכירות לייצוא', 'warning'); return; }
+            
+            const data = [['#', 'שם קונה', 'טלפון', 'כרטיס', 'כמות', 'מחיר/כרטיס', 'סה"כ', 'תשלום', 'משלוח', 'סטטוס']];
+            sales.forEach((s, i) => {
+                const ticket = tickets.find(t => t.id === s.ticket_id);
+                data.push([
+                    i + 1, s.buyer_name || '', s.buyer_phone || '',
+                    ticket ? ticket.supplier : '', s.quantity || 0,
+                    s.sale_price || 0, (s.sale_price || 0) * (s.quantity || 0),
+                    PAYMENT_LABELS[s.payment_method] || '', DELIVERY_LABELS[s.delivery_method] || '',
+                    STATUS_LABELS[s.status] || ''
+                ]);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Sales');
+            XLSX.writeFile(wb, `sales-${eventData.name}-${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+        
+        function exportSalesPDF() {
+            document.getElementById('salesExportMenu').classList.remove('show');
+            if (sales.length === 0) { showToast('אין מכירות לייצוא', 'warning'); return; }
+            
+            const printContent = `
+                <html dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 30px; direction: rtl; }
+                        h1 { font-size: 1.4rem; margin-bottom: 5px; }
+                        .subtitle { color: #666; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { padding: 8px 10px; border: 1px solid #ddd; text-align: right; font-size: 0.85rem; }
+                        th { background: #f5f5f5; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h1>רשימת קונים - ${eventData.name}</h1>
+                    <p class="subtitle">${eventData.event_date ? new Date(eventData.event_date).toLocaleDateString('he-IL') : ''} | ${eventData.venue || ''} | סה"כ ${sales.length} מכירות</p>
+                    <table>
+                        <thead><tr><th>#</th><th>שם קונה</th><th>טלפון</th><th>כמות</th><th>מחיר</th><th>סה"כ</th><th>תשלום</th><th>סטטוס</th></tr></thead>
+                        <tbody>
+                            ${sales.map((s, i) => `
+                                <tr>
+                                    <td>${i + 1}</td>
+                                    <td>${s.buyer_name || ''}</td>
+                                    <td>${s.buyer_phone || ''}</td>
+                                    <td>${s.quantity || 0}</td>
+                                    <td>${s.sale_price || 0}</td>
+                                    <td>${(s.sale_price || 0) * (s.quantity || 0)}</td>
+                                    <td>${PAYMENT_LABELS[s.payment_method] || ''}</td>
+                                    <td>${STATUS_LABELS[s.status] || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </body></html>`;
+            
+            const w = window.open('', '_blank');
+            w.document.write(printContent);
+            w.document.close();
+            setTimeout(() => w.print(), 500);
+        }
+        
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // ==========================================
+        // Modal helpers
+        // ==========================================
+        function openModal(id) {
+            document.getElementById(id).classList.add('visible');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('visible');
+        }
+        
+        // ==========================================
+        // UI Helpers
+        // ==========================================
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('visible', show);
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+        
+        // Close export menu on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-dropdown')) {
+                const menu = document.getElementById('salesExportMenu');
+                if (menu) menu.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

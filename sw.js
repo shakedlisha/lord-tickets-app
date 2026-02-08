@@ -9,7 +9,8 @@ const CDN_HOSTS = [
     'fonts.googleapis.com',
     'fonts.gstatic.com',
     'cdn.jsdelivr.net',
-    'cdn.sheetjs.com'
+    'cdn.sheetjs.com',
+    'cdnjs.cloudflare.com'
 ];
 
 // Install — skip waiting immediately
