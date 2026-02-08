@@ -1,0 +1,19 @@
+# Agent transcripts (may contain API keys/secrets)
+agent-transcripts/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+*.swp
+*.swo
