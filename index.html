@@ -287,6 +287,7 @@
             background: linear-gradient(135deg, #2dbc4e 0%, #28A745 100%);
         }
     </style>
+    <script src="js/config.js"></script>
 </head>
 <body>
     <div class="login-container">
@@ -329,24 +330,9 @@
             </button>
             
             
-            <!-- Supabase Settings -->
-            <div class="settings-section">
-                <h3>
-                    <span class="material-icons" style="font-size: 1.1rem;">settings</span>
-                    הגדרות Supabase
-                </h3>
-                <div class="form-group">
-                    <label>Supabase URL</label>
-                    <input type="url" id="supabaseUrl" placeholder="https://xxx.supabase.co" dir="ltr">
-                </div>
-                <div class="form-group">
-                    <label>Supabase API Key</label>
-                    <input type="password" id="supabaseKey" placeholder="your-anon-key" dir="ltr">
-                </div>
-                <button type="button" class="btn btn-outline" onclick="saveSettings()" style="margin-top: 10px;">
-                    שמור הגדרות
-                </button>
-            </div>
+            <!-- Supabase settings auto-configured via js/config.js -->
+            <input type="hidden" id="supabaseUrl">
+            <input type="hidden" id="supabaseKey">
             
         </div>
     </div>
@@ -375,11 +361,9 @@
     <script>
         // Load saved settings on page load
         document.addEventListener('DOMContentLoaded', () => {
-            const savedUrl = localStorage.getItem('supabaseUrl');
-            const savedKey = localStorage.getItem('supabaseKey');
-            
-            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
-            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+            // Auto-populate from config (config.js ensures localStorage has the values)
+            document.getElementById('supabaseUrl').value = localStorage.getItem('supabaseUrl') || LordConfig.SUPABASE_URL;
+            document.getElementById('supabaseKey').value = localStorage.getItem('supabaseKey') || LordConfig.SUPABASE_ANON_KEY;
             
             // Check if already logged in
             const session = localStorage.getItem('userSession');

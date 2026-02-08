@@ -1221,6 +1221,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
     
     <!-- Navigation Component -->
+    <script src="js/config.js"></script>
     <script src="js/nav.js"></script>
     <script src="js/exposure.js"></script>
 </head>
@@ -1538,20 +1539,12 @@ Return: 14:00-18:30
                 <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Supabase URL</label>
-                    <input type="text" id="supabaseUrl" placeholder="https://xxx.supabase.co">
-                </div>
-                <div class="form-group">
-                    <label>Supabase Anon Key</label>
-                    <input type="password" id="supabaseKey" placeholder="eyJ...">
-                </div>
-                <div class="form-group">
-                    <label>Gemini API Key</label>
-                    <input type="password" id="geminiApiKeySettings" placeholder="AI...">
-                </div>
+                <!-- Supabase settings auto-configured via js/config.js -->
+                <input type="hidden" id="supabaseUrl">
+                <input type="hidden" id="supabaseKey">
+                <input type="hidden" id="geminiApiKeySettings">
                 <p style="font-size: 0.85rem; color: var(--gray-dark); margin-top: 15px;">
-                    ההגדרות נשמרות בדפדפן שלך בלבד.
+                    הגדרות Supabase ו-Gemini מוגדרות אוטומטית.
                 </p>
                 
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--gray);">
@@ -1764,11 +1757,7 @@ Return: 14:00-18:30
         let parsedFlightsForImport = [];
         
         async function handlePastedImage(file) {
-            const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                showToast('הזן Gemini API Key בהגדרות כדי לפענח תמונות', 'warning');
-                return;
-            }
+            // Gemini API key is handled server-side via Edge Function
             
             showToast('מפענח תמונה עם AI...', 'info');
             showLoading(true);
@@ -1782,8 +1771,8 @@ Return: 14:00-18:30
                     reader.readAsDataURL(file);
                 });
                 
-                // Call Gemini API - returns array of flights
-                const results = await callGeminiAPI(apiKey, base64, true);
+                // Call Gemini API via Edge Function - returns array of flights
+                const results = await callGeminiAPI(null, base64, true);
                 
                 console.log('=== handlePastedImage results ===');
                 console.log('Is array:', Array.isArray(results));
@@ -1987,36 +1976,13 @@ Return: 14:00-18:30
         }
         
         function loadSettings() {
-            const geminiKey = localStorage.getItem('geminiApiKey') || '';
-            const supabaseUrl = localStorage.getItem('supabaseUrl') || 'https://asqdpgxizhyazoblpzin.supabase.co';
-            const supabaseKey = localStorage.getItem('supabaseKey') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcWRwZ3hpemh5YXpvYmxwemluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTM4MDAsImV4cCI6MjA4NDA2OTgwMH0.fbGM02K2QYTDDNBr0vuvXmd1k7qv2AtRQdV13tKDl38';
-            
-            // Save defaults to localStorage on first load
-            if (!localStorage.getItem('supabaseUrl')) localStorage.setItem('supabaseUrl', supabaseUrl);
-            if (!localStorage.getItem('supabaseKey')) localStorage.setItem('supabaseKey', supabaseKey);
-            
-            document.getElementById('geminiApiKey').value = geminiKey;
-            document.getElementById('geminiApiKeySettings').value = geminiKey;
-            document.getElementById('supabaseUrl').value = supabaseUrl;
-            document.getElementById('supabaseKey').value = supabaseKey;
+            // Supabase and Gemini are auto-configured via js/config.js and Edge Function
+            // No manual key entry needed
         }
         
         function saveSettings() {
-            const geminiKey = document.getElementById('geminiApiKeySettings').value.trim();
-            const supabaseUrl = document.getElementById('supabaseUrl').value.trim();
-            const supabaseKey = document.getElementById('supabaseKey').value.trim();
-            
-            localStorage.setItem('geminiApiKey', geminiKey);
-            localStorage.setItem('supabaseUrl', supabaseUrl);
-            localStorage.setItem('supabaseKey', supabaseKey);
-            
-            document.getElementById('geminiApiKey').value = geminiKey;
-            
             closeModal('settingsModal');
             showToast('הגדרות נשמרו בהצלחה', 'success');
-            
-            // Reload data with new settings
-            loadFlights();
         }
         
         async function runMigration() {
@@ -3706,17 +3672,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return;
             }
             
-            const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                showToast('הזן Gemini API Key בהגדרות', 'warning');
-                return;
-            }
-            
             document.getElementById('parseTextBtn').disabled = true;
             document.getElementById('parseTextBtn').innerHTML = '<span class="material-icons">hourglass_empty</span> מפענח...';
             
             try {
-                const result = await callGeminiAPI(apiKey, text, false);
+                const result = await callGeminiAPI(null, text, false);
                 displayParserResult(result);
             } catch (error) {
                 console.error('AI parsing error:', error);
@@ -3750,17 +3710,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return;
             }
             
-            const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                showToast('הזן Gemini API Key בהגדרות', 'warning');
-                return;
-            }
-            
             document.getElementById('parseImageBtn').disabled = true;
             document.getElementById('parseImageBtn').innerHTML = '<span class="material-icons">hourglass_empty</span> מפענח...';
             
             try {
-                const results = await callGeminiAPI(apiKey, uploadedImage, true);
+                const results = await callGeminiAPI(null, uploadedImage, true);
                 parsedFlightsFromImage = results;
                 displayParserResult(results);
             } catch (error) {
@@ -3773,8 +3727,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         async function callGeminiAPI(apiKey, content, isImage) {
-            // Use gemini-2.0-flash for image analysis
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // Route through Supabase Edge Function (Gemini key stays server-side)
+            const supabaseUrl = localStorage.getItem('supabaseUrl') || (window.LordConfig && LordConfig.SUPABASE_URL);
+            const supabaseKey = localStorage.getItem('supabaseKey') || (window.LordConfig && LordConfig.SUPABASE_ANON_KEY);
+            const accessToken = localStorage.getItem('access_token') || supabaseKey;
+            const url = `${supabaseUrl}/functions/v1/gemini-proxy`;
             
             // Aggressive prompt to extract ALL flights
             const prompt = `You are extracting flight data from a table image.
@@ -3829,12 +3786,17 @@ MANDATORY RULES:
             
             const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                    'apikey': supabaseKey
+                },
                 body: JSON.stringify(requestBody)
             });
             
             if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(`API Error ${response.status}: ${errData.error || response.statusText}`);
             }
             
             const data = await response.json();
