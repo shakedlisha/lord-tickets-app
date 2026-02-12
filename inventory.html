@@ -1346,6 +1346,10 @@
                 <span class="material-icons">picture_as_pdf</span>
                 PDF
             </button>
+            <button id="bulkDeleteBtn" class="btn btn-danger" onclick="deleteSelectedFlights()">
+                <span class="material-icons">delete</span>
+                מחק נבחרים
+            </button>
             <button class="btn btn-outline" onclick="clearSelection()" style="color: var(--white); border-color: var(--white);">
                 ביטול בחירה
             </button>
@@ -1733,6 +1737,10 @@ Return: 14:00-18:30
                 if (apiKeySection) apiKeySection.style.display = 'none';
                 const settingsBtn = document.querySelector('.settings-btn');
                 if (settingsBtn) settingsBtn.style.display = 'none';
+                
+                // Hide bulk delete button for agents/guests (admin/manager only)
+                const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+                if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
                 
                 // Hide bulk actions for guests
                 if (userRole === 'guest') {

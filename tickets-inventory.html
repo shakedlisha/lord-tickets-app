@@ -878,6 +878,23 @@
                     <span class="material-icons">picture_as_pdf</span>
                     PDF
                 </button>
+                <span class="bulk-manage-actions">
+                    <select id="bulkStatusSelect" class="filter-select" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3);">
+                        <option value="">שנה סטטוס...</option>
+                        <option value="in_stock">במלאי</option>
+                        <option value="reserved">שמור</option>
+                        <option value="sold">נמכר</option>
+                        <option value="cancelled">בוטל</option>
+                    </select>
+                    <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="bulkStatusChange()">
+                        <span class="material-icons">sync</span>
+                        החל
+                    </button>
+                    <button class="btn btn-danger" onclick="bulkDelete()">
+                        <span class="material-icons">delete</span>
+                        מחק נבחרים
+                    </button>
+                </span>
                 <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="clearSelection()">
                     ביטול בחירה
                 </button>
@@ -1242,6 +1259,11 @@
             // Hide cost columns from agents
             if (!LordNav.canSeeCosts()) {
                 document.querySelectorAll('.cost-col').forEach(el => el.style.display = 'none');
+            }
+            
+            // Hide bulk manage actions (delete, status change) from non-managers
+            if (!LordNav.canManageTickets()) {
+                document.querySelectorAll('.bulk-manage-actions').forEach(el => el.style.display = 'none');
             }
             
             // Set default purchase date to today
