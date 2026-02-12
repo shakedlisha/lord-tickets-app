@@ -1334,9 +1334,17 @@
         <!-- Selection Toolbar (hidden by default) -->
         <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
             <span class="selection-count"><span id="selectedFlightsCount">0</span> טיסות נבחרו</span>
-            <button class="btn btn-danger" onclick="deleteSelectedFlights()">
-                <span class="material-icons">delete</span>
-                מחק נבחרים
+            <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedCSV()">
+                <span class="material-icons">text_snippet</span>
+                CSV
+            </button>
+            <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedExcel()">
+                <span class="material-icons">table_chart</span>
+                Excel
+            </button>
+            <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedPDF()">
+                <span class="material-icons">picture_as_pdf</span>
+                PDF
             </button>
             <button class="btn btn-outline" onclick="clearSelection()" style="color: var(--white); border-color: var(--white);">
                 ביטול בחירה
@@ -3048,7 +3056,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         function clearSelection() {
             const checkboxes = document.querySelectorAll('#flightsTableBody .flight-checkbox');
             checkboxes.forEach(cb => cb.checked = false);
-            document.getElementById('selectAllFlights').checked = false;
+            const selectAllEl = document.getElementById('selectAllFlights');
+            if (selectAllEl) selectAllEl.checked = false;
             updateFlightSelection();
         }
         
@@ -3487,10 +3496,32 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             return '$' + value;
         }
         
-        function exportCSV() {
+        function getSelectedFlights() {
+            const ids = getSelectedFlightIds();
+            return flights.filter(f => ids.includes(f.id));
+        }
+        
+        function exportSelectedCSV() {
+            const selected = getSelectedFlights();
+            if (selected.length === 0) { showToast('לא נבחרו טיסות', 'warning'); return; }
+            exportCSV(selected);
+        }
+        function exportSelectedExcel() {
+            const selected = getSelectedFlights();
+            if (selected.length === 0) { showToast('לא נבחרו טיסות', 'warning'); return; }
+            exportExcel(selected);
+        }
+        function exportSelectedPDF() {
+            const selected = getSelectedFlights();
+            if (selected.length === 0) { showToast('לא נבחרו טיסות', 'warning'); return; }
+            exportPDF(selected);
+        }
+        
+        function exportCSV(flightsList) {
+            if (!flightsList) flightsList = flights;
             const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'סה״כ מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
-            const rows = flights.map(f => [
+            const rows = flightsList.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
                 parseFlightDetailsText(f.outbound_details),
                 parseFlightDetailsText(f.inbound_details),
@@ -3533,10 +3564,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             }
         });
         
-        function exportExcel() {
+        function exportExcel(flightsList) {
+            if (!flightsList) flightsList = flights;
             const headers = ['תאריכים', 'הלוך (פירוט מלא)', 'חזור (פירוט מלא)', 'חברה', 'יעד', 'סה״כ מושבים', 'טרולי', 'מזוודה', 'מחיר'];
             
-            const rows = flights.map(f => [
+            const rows = flightsList.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
                 parseFlightDetailsText(f.outbound_details),
                 parseFlightDetailsText(f.inbound_details),
@@ -3574,7 +3606,8 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             hideExportMenu();
         }
         
-        function exportPDF() {
+        function exportPDF(flightsList) {
+            if (!flightsList) flightsList = flights;
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({
                 orientation: 'landscape',
@@ -3605,7 +3638,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 return '$' + value;
             };
             
-            const rows = flights.map(f => [
+            const rows = flightsList.map(f => [
                 formatDateRange(f.departure_date, f.return_date),
                 parseFlightDetailsText(f.outbound_details),
                 parseFlightDetailsText(f.inbound_details),

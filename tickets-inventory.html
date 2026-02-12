@@ -866,20 +866,17 @@
         <div id="selectionToolbar" class="selection-toolbar" style="display: none;">
             <span class="selection-count"><span id="selectedCount">0</span> כרטיסים נבחרו</span>
             <div class="selection-actions">
-                <select id="bulkStatusSelect" class="filter-select" style="background: rgba(255,255,255,0.15); color: white; border-color: rgba(255,255,255,0.3);">
-                    <option value="">שנה סטטוס...</option>
-                    <option value="in_stock">במלאי</option>
-                    <option value="reserved">שמור</option>
-                    <option value="sold">נמכר</option>
-                    <option value="cancelled">בוטל</option>
-                </select>
-                <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="bulkStatusChange()">
-                    <span class="material-icons">sync</span>
-                    החל
+                <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedCSV()">
+                    <span class="material-icons">text_snippet</span>
+                    CSV
                 </button>
-                <button class="btn btn-danger" onclick="bulkDelete()">
-                    <span class="material-icons">delete</span>
-                    מחק נבחרים
+                <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedExcel()">
+                    <span class="material-icons">table_chart</span>
+                    Excel
+                </button>
+                <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="exportSelectedPDF()">
+                    <span class="material-icons">picture_as_pdf</span>
+                    PDF
                 </button>
                 <button class="btn" style="background: rgba(255,255,255,0.15); color: white;" onclick="clearSelection()">
                     ביטול בחירה
@@ -2044,7 +2041,28 @@
             menu.classList.toggle('show');
         }
         
-        function exportCSV() {
+        function getSelectedTickets() {
+            return allTickets.filter(t => selectedIds.has(t.id));
+        }
+        
+        function exportSelectedCSV() {
+            const selected = getSelectedTickets();
+            if (selected.length === 0) { showToast('לא נבחרו כרטיסים', 'warning'); return; }
+            exportCSV(selected);
+        }
+        function exportSelectedExcel() {
+            const selected = getSelectedTickets();
+            if (selected.length === 0) { showToast('לא נבחרו כרטיסים', 'warning'); return; }
+            exportExcel(selected);
+        }
+        function exportSelectedPDF() {
+            const selected = getSelectedTickets();
+            if (selected.length === 0) { showToast('לא נבחרו כרטיסים', 'warning'); return; }
+            exportPDF(selected);
+        }
+        
+        function exportCSV(ticketsList) {
+            if (!ticketsList) ticketsList = filteredTickets;
             const showCosts = LordNav.canSeeCosts();
             let headers = ['אירוע', 'תאריך', 'ספק', 'מזהה ספק', 'בלוק', 'שורה', 'כמות', 'קטגוריה', 'אזור'];
             if (showCosts) headers.push('מחיר קנייה');
@@ -2054,7 +2072,7 @@
             
             let csv = '\ufeff' + headers.join(',') + '\n';
             
-            filteredTickets.forEach(t => {
+            ticketsList.forEach(t => {
                 let row = [
                     `"${t.event_name || ''}"`, t.event_date ? new Date(t.event_date).toLocaleDateString('he-IL') : '',
                     `"${t.supplier || ''}"`, `"${t.supplier_ref || ''}"`,
@@ -2073,14 +2091,15 @@
             showToast('ייצוא CSV הושלם', 'success');
         }
         
-        function exportExcel() {
+        function exportExcel(ticketsList) {
+            if (!ticketsList) ticketsList = filteredTickets;
             if (typeof XLSX === 'undefined') {
                 showToast('ספריית Excel לא נטענה', 'error');
                 return;
             }
             
             const showCosts = LordNav.canSeeCosts();
-            const data = filteredTickets.map(t => {
+            const data = ticketsList.map(t => {
                 const row = {
                     'אירוע': t.event_name || '',
                     'תאריך': t.event_date ? new Date(t.event_date).toLocaleDateString('he-IL') : '',
@@ -2111,7 +2130,8 @@
             showToast('ייצוא Excel הושלם', 'success');
         }
         
-        function exportPDF() {
+        function exportPDF(ticketsList) {
+            if (!ticketsList) ticketsList = filteredTickets;
             if (typeof jspdf === 'undefined') {
                 showToast('ספריית PDF לא נטענה', 'error');
                 return;
@@ -2120,7 +2140,6 @@
             const { jsPDF } = jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             
-            // Add Heebo font support would be complex; use basic Latin for now
             doc.setFontSize(16);
             doc.text('Tickets Inventory', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
             doc.setFontSize(10);
@@ -2133,7 +2152,7 @@
             if (showCosts) headers.push('Profit');
             headers.push('Status');
             
-            const rows = filteredTickets.map(t => {
+            const rows = ticketsList.map(t => {
                 let row = [
                     t.event_name || '', 
                     t.event_date ? new Date(t.event_date).toLocaleDateString() : '',
