@@ -215,13 +215,33 @@ async function invokeAiFunction(action, payload) {
     const session = await getSession();
     if (!session) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase.functions.invoke('itinerary-ai', {
-        body: { action, ...payload },
+    const fnUrl = `${SUPABASE_URL}/functions/v1/itinerary-ai`;
+    const body = JSON.stringify({ action, ...payload });
+
+    const response = await fetch(fnUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+            'apikey': SUPABASE_ANON_KEY,
+        },
+        body,
     });
 
-    if (error) {
-        console.error('AI function error:', error);
-        const msg = AI_CONFIG.errorEnvelope.defaultHebrewMessages.generation_failed;
+    let data;
+    try {
+        data = await response.json();
+    } catch (e) {
+        console.error('AI function: failed to parse response', e);
+        throw new Error(AI_CONFIG.errorEnvelope.defaultHebrewMessages.generation_failed);
+    }
+
+    if (!response.ok) {
+        console.error('AI function error:', response.status, data);
+        const code = data?.error?.code || 'generation_failed';
+        const msg = AI_CONFIG.errorEnvelope.defaultHebrewMessages[code]
+            || data?.error?.message
+            || AI_CONFIG.errorEnvelope.defaultHebrewMessages.generation_failed;
         throw new Error(msg);
     }
 
