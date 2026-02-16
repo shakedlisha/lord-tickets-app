@@ -14,8 +14,13 @@
     <link rel="stylesheet" href="css/client.css">
     <link rel="stylesheet" href="css/print.css" media="print">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <meta name="description" content="מערכת בניית מסלולי טיול חכמה">
     <meta name="theme-color" content="#5C6BC0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="מסלול טיול">
 </head>
 <body>
     <noscript>
@@ -157,7 +162,10 @@
                     </div>
                 </div>
                 <div class="trip-header-actions">
-                    <button id="btn-print" class="btn btn-ghost-light" onclick="window.print()">
+                    <button id="btn-export-pdf" class="btn btn-ghost-light" title="הורד PDF">
+                        <span class="material-icons-round">picture_as_pdf</span>
+                    </button>
+                    <button id="btn-print" class="btn btn-ghost-light" onclick="window.print()" title="הדפסה">
                         <span class="material-icons-round">print</span>
                     </button>
                 </div>
@@ -196,16 +204,83 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
 
     <!-- App Scripts -->
-    <script src="js/ai-config.js?v=7"></script>
-    <script src="js/supabase-config.js?v=7"></script>
-    <script src="js/utils.js?v=7"></script>
-    <script src="js/router.js?v=7"></script>
-    <script src="js/checklist.js?v=7"></script>
-    <script src="js/sakura.js?v=7"></script>
-    <script src="js/admin-dashboard.js?v=7"></script>
-    <script src="js/admin-attractions.js?v=7"></script>
-    <script src="js/ai-panel.js?v=7"></script>
-    <script src="js/admin-form.js?v=7"></script>
-    <script src="js/client-view.js?v=7"></script>
+    <script src="js/ai-config.js?v=8"></script>
+    <script src="js/supabase-config.js?v=8"></script>
+    <script src="js/utils.js?v=8"></script>
+    <script src="js/router.js?v=8"></script>
+    <script src="js/checklist.js?v=8"></script>
+    <script src="js/sakura.js?v=8"></script>
+    <script src="js/admin-dashboard.js?v=8"></script>
+    <script src="js/admin-attractions.js?v=8"></script>
+    <script src="js/ai-panel.js?v=8"></script>
+    <script src="js/admin-form.js?v=8"></script>
+    <script src="js/client-view.js?v=8"></script>
+    <script src="js/pdf-export.js?v=8"></script>
+    <script src="js/route-optimizer.js?v=8"></script>
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="pwa-install-banner hidden">
+        <div class="pwa-install-content">
+            <span class="pwa-install-icon">📲</span>
+            <div class="pwa-install-text">
+                <strong>התקינו את האפליקציה</strong>
+                <span>גישה מהירה ותמיכה אופליין</span>
+            </div>
+            <button class="btn btn-primary btn-sm" id="pwa-install-btn">התקנה</button>
+            <button class="pwa-install-close" id="pwa-install-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', async () => {
+            try {
+                const reg = await navigator.serviceWorker.register('./sw.js');
+                console.log('[SW v11] Service Worker registered, scope:', reg.scope);
+
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated') {
+                            console.log('[SW] New version activated');
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error('[SW] Registration failed:', err);
+            }
+        });
+
+        // PWA Install Prompt
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwa-install-banner');
+            const dismissed = localStorage.getItem('pwa-install-dismissed');
+            if (banner && !dismissed) {
+                banner.classList.remove('hidden');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'pwa-install-btn' || e.target.closest('#pwa-install-btn')) {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(result => {
+                        console.log('[PWA] Install choice:', result.outcome);
+                        deferredPrompt = null;
+                        document.getElementById('pwa-install-banner')?.classList.add('hidden');
+                    });
+                }
+            }
+            if (e.target.id === 'pwa-install-close' || e.target.closest('#pwa-install-close')) {
+                document.getElementById('pwa-install-banner')?.classList.add('hidden');
+                localStorage.setItem('pwa-install-dismissed', 'true');
+            }
+        });
+    }
+    </script>
 </body>
 </html>

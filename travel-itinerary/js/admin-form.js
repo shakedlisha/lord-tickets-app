@@ -118,6 +118,9 @@ const AdminForm = {
                         <button class="btn btn-ai-suggest btn-sm" data-action="ai-suggest" data-day="${index}" title="${escapeHtml(AI_CONFIG.ui.suggestButton)}">
                             <span class="material-icons-round">auto_awesome</span>
                         </button>
+                        <button class="btn btn-ghost btn-sm btn-route-optimize" data-action="optimize-route" data-day="${index}" title="אופטימיזציית מסלול">
+                            <span class="material-icons-round">route</span>
+                        </button>
                         ${day._snapshotBeforeMerge ? `
                         <button class="btn btn-ghost btn-sm btn-undo-merge" data-action="undo-merge" data-day="${index}" title="בטל שינויי AI">
                             <span class="material-icons-round">undo</span>
@@ -334,6 +337,10 @@ const AdminForm = {
                 case 'ai-suggest':
                     e.stopPropagation();
                     this.openAiPanel(dayIdx);
+                    break;
+                case 'optimize-route':
+                    e.stopPropagation();
+                    this.optimizeRoute(dayIdx);
                     break;
                 case 'undo-merge':
                     e.stopPropagation();
@@ -645,6 +652,49 @@ const AdminForm = {
 
         this.hasUnsavedChanges = true;
         await this.save();
+    },
+
+    optimizeRoute(dayIndex) {
+        const day = this.tripData.days[dayIndex];
+        if (!day) return;
+
+        if (typeof RouteOptimizer === 'undefined') {
+            showToast('מודול אופטימיזציה לא נטען', 'error');
+            return;
+        }
+
+        const result = RouteOptimizer.optimize(day);
+
+        if (!result.optimized) {
+            showToast(result.reason, 'error');
+            return;
+        }
+
+        const msg = `אופטימיזציית מסלול:\n` +
+            `מיקומים שזוהו: ${result.resolvedCount}/${result.totalItems}\n` +
+            `מרחק כולל: ${result.stats.totalDistanceKm} ק"מ\n` +
+            `הליכה משוערת: ${result.stats.totalWalkingMinutes} דקות\n\n` +
+            `להחיל את הסדר החדש?`;
+
+        if (!confirm(msg)) return;
+
+        // Save snapshot for undo
+        day._snapshotBeforeMerge = {
+            items: JSON.parse(JSON.stringify(day.items)),
+            tips: day.tips ? [...day.tips] : [],
+        };
+
+        day.items = result.items;
+
+        this.render();
+        this.bindEvents();
+
+        const body = document.getElementById(`day-body-${dayIndex}`);
+        if (body) body.classList.add('open');
+
+        this.hasUnsavedChanges = true;
+        this.saveDebounced();
+        showToast(`מסלול עודכן! ${result.stats.totalDistanceKm} ק"מ הליכה`, 'success');
     },
 
     undoLastMerge(dayIndex) {

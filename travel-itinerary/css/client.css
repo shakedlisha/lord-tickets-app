@@ -804,3 +804,29 @@
         padding: var(--space-md);
     }
 }
+
+/* ================================================
+   ROUTE SUMMARY
+   ================================================ */
+
+.route-summary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #E3F2FD, #E8EAF6);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-md);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #3F51B5;
+}
+
+.route-summary .material-icons-round {
+    font-size: 18px;
+    color: #5C6BC0;
+}
+
+.route-summary-dot {
+    color: #9FA8DA;
+}

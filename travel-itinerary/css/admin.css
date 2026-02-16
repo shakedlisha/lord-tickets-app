@@ -765,3 +765,17 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* ================================================
+   ROUTE OPTIMIZE BUTTON
+   ================================================ */
+
+.btn-route-optimize {
+    color: #2196F3 !important;
+    transition: all 0.2s;
+}
+
+.btn-route-optimize:hover {
+    background: rgba(33, 150, 243, 0.1) !important;
+    color: #1565C0 !important;
+}

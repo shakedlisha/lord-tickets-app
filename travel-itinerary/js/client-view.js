@@ -14,8 +14,18 @@ const ClientView = {
             this.tripData = await fetchTrip(tripId);
 
             if (!this.tripData) {
-                document.getElementById('trip-not-found').style.display = '';
-                return;
+                // Try offline cache
+                const cached = await this._getCachedTrip(tripId);
+                if (cached) {
+                    this.tripData = cached;
+                    this._showOfflineBanner();
+                } else {
+                    document.getElementById('trip-not-found').style.display = '';
+                    return;
+                }
+            } else {
+                // Cache for offline use
+                this._cacheTrip(this.tripData);
             }
 
             this.renderHeader();
@@ -26,6 +36,7 @@ const ClientView = {
                 : 0;
 
             this.selectDay(startIdx);
+            this.bindActions();
             Sakura.init('sakura-container');
 
             if (this.isSakuraSeason()) {
@@ -34,8 +45,61 @@ const ClientView = {
 
         } catch (e) {
             console.error('Failed to load trip:', e);
-            document.getElementById('trip-not-found').style.display = '';
+            // Try offline cache on network error
+            const cached = await this._getCachedTrip(tripId);
+            if (cached) {
+                this.tripData = cached;
+                this._showOfflineBanner();
+                this.renderHeader();
+                this.renderDayNav();
+                this.selectDay(0);
+            } else {
+                document.getElementById('trip-not-found').style.display = '';
+            }
         }
+    },
+
+    _cacheTrip(trip) {
+        if (navigator.serviceWorker?.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'CACHE_TRIP',
+                data: trip,
+            });
+        }
+    },
+
+    _getCachedTrip(tripId) {
+        return new Promise((resolve) => {
+            if (!navigator.serviceWorker?.controller) {
+                resolve(null);
+                return;
+            }
+            const handler = (event) => {
+                if (event.data?.type === 'CACHED_TRIP') {
+                    navigator.serviceWorker.removeEventListener('message', handler);
+                    resolve(event.data.data);
+                }
+            };
+            navigator.serviceWorker.addEventListener('message', handler);
+            navigator.serviceWorker.controller.postMessage({
+                type: 'GET_CACHED_TRIP',
+                data: { tripId },
+            });
+            setTimeout(() => {
+                navigator.serviceWorker.removeEventListener('message', handler);
+                resolve(null);
+            }, 3000);
+        });
+    },
+
+    _showOfflineBanner() {
+        const existing = document.getElementById('offline-banner');
+        if (existing) return;
+        const banner = document.createElement('div');
+        banner.id = 'offline-banner';
+        banner.className = 'offline-indicator visible';
+        banner.textContent = '📡 מצב אופליין - מציג גרסה שמורה';
+        document.body.prepend(banner);
     },
 
     isSakuraSeason() {
@@ -166,6 +230,22 @@ const ClientView = {
         }
 
         if (day.items && day.items.length > 0) {
+            // Get route info for distance badges
+            const routeInfo = typeof RouteOptimizer !== 'undefined'
+                ? RouteOptimizer.getRouteInfo(day)
+                : null;
+
+            if (routeInfo) {
+                html += `
+                    <div class="route-summary">
+                        <span class="material-icons-round">route</span>
+                        <span>${routeInfo.totalDistanceKm} ק"מ הליכה</span>
+                        <span class="route-summary-dot">•</span>
+                        <span>כ-${routeInfo.totalWalkingMinutes} דקות</span>
+                    </div>
+                `;
+            }
+
             html += '<div class="timeline">';
             day.items.forEach(item => {
                 html += this.renderTimelineItem(item, day);
@@ -346,5 +426,16 @@ const ClientView = {
 
         if (fill) fill.style.width = percent + '%';
         if (text) text.textContent = `ביקרתם ב-${checked} מתוך ${total}`;
+    },
+
+    bindActions() {
+        const pdfBtn = document.getElementById('btn-export-pdf');
+        if (pdfBtn) {
+            pdfBtn.onclick = () => {
+                if (typeof PdfExport !== 'undefined' && this.tripData) {
+                    PdfExport.exportTrip(this.tripData);
+                }
+            };
+        }
     }
 };
