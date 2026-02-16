@@ -216,12 +216,7 @@ async function invokeAiFunction(action, payload) {
     if (!session) throw new Error('Not authenticated');
 
     const fnUrl = `${SUPABASE_URL}/functions/v1/itinerary-ai`;
-    const requestBody = { action, ...payload };
-    const body = JSON.stringify(requestBody);
-
-    console.log('[AI] Sending request:', action, 'payload keys:', Object.keys(payload), 'body length:', body.length);
-    console.log('[AI] Token prefix:', session.access_token?.substring(0, 20) + '...');
-    console.log('[AI] URL:', fnUrl);
+    const body = JSON.stringify({ action, ...payload });
 
     const response = await fetch(fnUrl, {
         method: 'POST',
@@ -233,22 +228,17 @@ async function invokeAiFunction(action, payload) {
         body,
     });
 
-    console.log('[AI] Response status:', response.status, 'headers:', Object.fromEntries(response.headers.entries()));
-
-    const responseText = await response.text();
-    console.log('[AI] Response body (first 500):', responseText.substring(0, 500));
-
     let data;
     try {
+        const responseText = await response.text();
         data = JSON.parse(responseText);
     } catch (e) {
-        console.error('[AI] Failed to parse response as JSON:', responseText.substring(0, 200));
+        console.error('AI function: failed to parse response', e);
         throw new Error(AI_CONFIG.errorEnvelope.defaultHebrewMessages.generation_failed);
     }
 
     if (!response.ok) {
-        console.error('[AI] Error response:', response.status, JSON.stringify(data, null, 2));
-        console.error('[AI] Request was:', action, JSON.stringify(payload).substring(0, 500));
+        console.error('AI function error:', response.status, data);
         const code = data?.error?.code || 'generation_failed';
         const msg = AI_CONFIG.errorEnvelope.defaultHebrewMessages[code]
             || data?.error?.message

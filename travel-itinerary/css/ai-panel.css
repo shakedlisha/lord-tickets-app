@@ -703,3 +703,31 @@
         justify-content: center;
     }
 }
+
+/* ---- City Input Section ---- */
+.ai-city-section {
+    background: var(--surface-variant, #f5f5f5);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    border: 2px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.ai-city-required {
+    border-color: var(--danger, #ef5350);
+    background: rgba(239, 83, 80, 0.05);
+}
+
+.ai-city-hint {
+    color: var(--danger, #ef5350);
+    font-size: 0.85rem;
+    margin-top: var(--space-xs);
+    font-weight: 500;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(6px); }
+    75% { transform: translateX(-4px); }
+}

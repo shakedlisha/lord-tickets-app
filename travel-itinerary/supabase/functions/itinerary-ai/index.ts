@@ -135,11 +135,7 @@ async function handleIngestAttraction(body: any, supabase: any, userId: string) 
 async function handleCityOptions(body: any, supabase: any, userId: string) {
   const { city, city_en, date, dayOfWeek, preferences, approvedAttractions } = body;
 
-  if (!city_en && !city) {
-    return errorResponse("validation_failed", "city is required");
-  }
-
-  const cityName = city_en || city;
+  const cityName = city_en || city || "Japan";
   const prefText = preferences ? JSON.stringify(preferences) : "balanced pace, mixed interests";
 
   // Get approved must-do attractions for this city

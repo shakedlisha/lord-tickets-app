@@ -142,6 +142,8 @@ const AiPanel = {
         const p = this.preferences;
         const day = this.dayData;
 
+        const hasCity = !!(day.city || day.cityEn);
+
         body.innerHTML = `
             <div class="ai-day-context">
                 <div class="ai-day-context-icon">📍</div>
@@ -152,6 +154,15 @@ const AiPanel = {
             </div>
 
             <div class="ai-prefs-form">
+                <div class="ai-prefs-section ai-city-section ${hasCity ? '' : 'ai-city-required'}">
+                    <label>עיר / יעד <span style="color:var(--danger)">*</span></label>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" class="ai-prefs-input" id="ai-city-he" placeholder="שם בעברית (למשל: טוקיו)" value="${escapeHtml(day.city || '')}" style="flex:1;">
+                        <input type="text" class="ai-prefs-input" id="ai-city-en" placeholder="English name (e.g. Tokyo)" value="${escapeHtml(day.cityEn || '')}" dir="ltr" style="flex:1;">
+                    </div>
+                    ${!hasCity ? '<div class="ai-city-hint">⚠️ חובה למלא עיר כדי לקבל הצעות</div>' : ''}
+                </div>
+
                 <div class="ai-prefs-section">
                     <label>קצב הטיול</label>
                     <div class="ai-prefs-radio-group">
@@ -243,6 +254,31 @@ const AiPanel = {
     },
 
     async _onPreferencesConfirm() {
+        // Read city from the form inputs
+        const cityHe = (document.getElementById('ai-city-he')?.value || '').trim();
+        const cityEn = (document.getElementById('ai-city-en')?.value || '').trim();
+
+        if (!cityHe && !cityEn) {
+            const hint = document.querySelector('.ai-city-hint');
+            if (hint) {
+                hint.style.animation = 'none';
+                void hint.offsetHeight;
+                hint.style.animation = 'shake 0.4s ease';
+            }
+            document.getElementById('ai-city-he')?.focus();
+            return;
+        }
+
+        // Save city back to day data so it persists
+        this.dayData.city = cityHe || this.dayData.city;
+        this.dayData.cityEn = cityEn || this.dayData.cityEn;
+
+        // Also update the trip data so AdminForm can save it
+        if (this.tripData?.days?.[this.dayIndex]) {
+            this.tripData.days[this.dayIndex].city = this.dayData.city;
+            this.tripData.days[this.dayIndex].cityEn = this.dayData.cityEn;
+        }
+
         const prefs = this._collectPreferences();
         this.preferences = prefs;
 
