@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel Itinerary | מסלול טיול</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/ai-panel.css">
+    <link rel="stylesheet" href="css/client.css">
+    <link rel="stylesheet" href="css/print.css" media="print">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+    <meta name="description" content="מערכת בניית מסלולי טיול חכמה">
+    <meta name="theme-color" content="#5C6BC0">
+</head>
+<body>
+    <noscript>
+        <div style="text-align:center;padding:48px;font-family:sans-serif;direction:rtl;">
+            <h1>נדרש JavaScript</h1>
+            <p>האפליקציה דורשת JavaScript כדי לפעול. אנא הפעילו JavaScript בדפדפן.</p>
+        </div>
+    </noscript>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>טוען...</p>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="app" style="display:none;">
+
+        <!-- ==================== ADMIN: Login ==================== -->
+        <div id="view-login" class="view" style="display:none;">
+            <div class="login-container">
+                <div class="login-card">
+                    <div class="login-logo">🌸✈️</div>
+                    <h1>מערכת מסלולי טיול</h1>
+                    <p class="login-subtitle">התחברות למנהל</p>
+                    <form id="login-form" class="login-form">
+                        <div class="form-group">
+                            <label for="login-email">אימייל</label>
+                            <input type="email" id="login-email" required placeholder="you@example.com" dir="ltr">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">סיסמה</label>
+                            <input type="password" id="login-password" required placeholder="••••••••" dir="ltr">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                            <span class="material-icons-round">login</span>
+                            התחבר
+                        </button>
+                        <p id="login-error" class="error-text" style="display:none;"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN: Dashboard ==================== -->
+        <div id="view-dashboard" class="view" style="display:none;">
+            <header class="admin-header">
+                <div class="admin-header-right">
+                    <span class="admin-logo">🌸✈️</span>
+                    <h1>המסלולים שלי</h1>
+                </div>
+                <div class="admin-header-left">
+                    <button id="btn-new-trip" class="btn btn-primary">
+                        <span class="material-icons-round">add</span>
+                        מסלול חדש
+                    </button>
+                    <button id="btn-attractions" class="btn btn-secondary btn-sm">
+                        <span class="material-icons-round">place</span>
+                        אטרקציות
+                    </button>
+                    <button id="btn-logout" class="btn btn-ghost">
+                        <span class="material-icons-round">logout</span>
+                    </button>
+                </div>
+            </header>
+            <main class="dashboard-main">
+                <div id="trips-grid" class="trips-grid">
+                    <!-- Trip cards rendered by JS -->
+                </div>
+                <div id="no-trips" class="empty-state" style="display:none;">
+                    <span class="empty-icon">📋</span>
+                    <h2>אין מסלולים עדיין</h2>
+                    <p>לחצו על "מסלול חדש" כדי להתחיל</p>
+                </div>
+            </main>
+        </div>
+
+        <!-- ==================== ADMIN: Attractions Manager ==================== -->
+        <div id="view-attractions" class="view" style="display:none;">
+            <header class="admin-header">
+                <div class="admin-header-right">
+                    <button id="btn-back-from-attractions" class="btn btn-ghost">
+                        <span class="material-icons-round">arrow_forward</span>
+                        חזרה
+                    </button>
+                    <h1>🗺️ ניהול אטרקציות</h1>
+                </div>
+            </header>
+            <main class="dashboard-main">
+                <div id="attractions-content">
+                    <!-- Attractions rendered by JS -->
+                </div>
+            </main>
+        </div>
+
+        <!-- ==================== ADMIN: Form Builder ==================== -->
+        <div id="view-editor" class="view" style="display:none;">
+            <header class="editor-header">
+                <div class="editor-header-right">
+                    <button id="btn-back-dashboard" class="btn btn-ghost">
+                        <span class="material-icons-round">arrow_forward</span>
+                        חזרה
+                    </button>
+                    <h2 id="editor-trip-name">עריכת מסלול</h2>
+                </div>
+                <div class="editor-header-left">
+                    <span id="save-status" class="save-status">נשמר ✓</span>
+                    <button id="btn-preview" class="btn btn-secondary">
+                        <span class="material-icons-round">visibility</span>
+                        תצוגה מקדימה
+                    </button>
+                </div>
+            </header>
+            <main class="editor-main">
+                <div id="editor-content">
+                    <!-- Form builder rendered by JS -->
+                </div>
+            </main>
+        </div>
+
+        <!-- ==================== CLIENT: Trip View ==================== -->
+        <div id="view-trip" class="view" style="display:none;">
+            <!-- Sakura petals animation container -->
+            <div id="sakura-container" class="sakura-container"></div>
+
+            <!-- Trip Header -->
+            <header id="trip-header" class="trip-header">
+                <div class="trip-header-content">
+                    <h1 id="trip-title" class="trip-title"></h1>
+                    <p id="trip-subtitle" class="trip-subtitle"></p>
+                    <div id="trip-progress" class="trip-progress">
+                        <div class="progress-ring-container">
+                            <svg class="progress-ring" width="48" height="48">
+                                <circle class="progress-ring-bg" cx="24" cy="24" r="20" />
+                                <circle id="progress-ring-fill" class="progress-ring-fill" cx="24" cy="24" r="20" />
+                            </svg>
+                            <span id="progress-percent" class="progress-percent">0%</span>
+                        </div>
+                        <span class="progress-label">התקדמות הטיול</span>
+                    </div>
+                </div>
+                <div class="trip-header-actions">
+                    <button id="btn-print" class="btn btn-ghost-light" onclick="window.print()">
+                        <span class="material-icons-round">print</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Sakura Season Banner -->
+            <div id="sakura-banner" class="sakura-banner" style="display:none;">
+                🌸 הטיול שלכם בעונת פריחת הדובדבן! 🌸
+            </div>
+
+            <!-- Day Navigation -->
+            <nav id="day-nav" class="day-nav">
+                <div id="day-nav-scroll" class="day-nav-scroll">
+                    <!-- Day tabs rendered by JS -->
+                </div>
+            </nav>
+
+            <!-- Day Content -->
+            <main id="day-content" class="day-content">
+                <!-- Timeline, cards, etc. rendered by JS -->
+            </main>
+
+            <!-- Trip Not Found -->
+            <div id="trip-not-found" class="empty-state" style="display:none;">
+                <span class="empty-icon">🔍</span>
+                <h2>המסלול לא נמצא</h2>
+                <p>הקישור שקיבלתם אינו תקין או שהמסלול הוסר</p>
+            </div>
+        </div>
+
+        <!-- AI Panel Modal -->
+        <div id="ai-panel-modal" class="ai-modal hidden"></div>
+    </div>
+
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+
+    <!-- App Scripts -->
+    <script src="js/ai-config.js?v=3"></script>
+    <script src="js/supabase-config.js?v=3"></script>
+    <script src="js/utils.js?v=3"></script>
+    <script src="js/router.js?v=3"></script>
+    <script src="js/checklist.js?v=3"></script>
+    <script src="js/sakura.js?v=3"></script>
+    <script src="js/admin-dashboard.js?v=4"></script>
+    <script src="js/admin-attractions.js?v=4"></script>
+    <script src="js/ai-panel.js?v=4"></script>
+    <script src="js/admin-form.js?v=4"></script>
+    <script src="js/client-view.js?v=3"></script>
+</body>
+</html>

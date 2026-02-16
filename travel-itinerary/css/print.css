@@ -1,0 +1,138 @@
+/* ================================================
+   PRINT STYLES - Clean printable itinerary
+   ================================================ */
+
+@media print {
+    /* Hide interactive & decorative elements */
+    .sakura-container,
+    .sakura-banner,
+    .day-nav,
+    .trip-header-actions,
+    .trip-progress,
+    .card-checkbox,
+    .day-progress,
+    .appendix-toggle,
+    .loading-screen,
+    #view-login,
+    #view-dashboard,
+    #view-editor {
+        display: none !important;
+    }
+
+    /* Reset backgrounds */
+    body {
+        background: white;
+        color: black;
+        font-size: 11pt;
+    }
+
+    .trip-header {
+        background: none !important;
+        color: black;
+        padding: 0 0 12pt 0;
+        border-bottom: 2pt solid black;
+        margin-bottom: 12pt;
+    }
+
+    .trip-title {
+        color: black;
+        text-shadow: none;
+        font-size: 18pt;
+    }
+
+    .trip-subtitle {
+        color: #333;
+    }
+
+    /* Show all days */
+    .day-content {
+        max-width: 100%;
+        padding: 0;
+    }
+
+    /* City banner - simplified */
+    .city-banner {
+        background: none !important;
+        color: black;
+        border: 2pt solid #333;
+        border-radius: 0;
+        padding: 8pt 12pt;
+        margin-bottom: 12pt;
+        page-break-after: avoid;
+    }
+
+    .city-banner::before {
+        display: none;
+    }
+
+    .city-banner-title {
+        font-size: 16pt;
+        color: black;
+    }
+
+    /* Cards */
+    .timeline-card {
+        box-shadow: none;
+        border: 1pt solid #CCC;
+        border-radius: 4pt;
+        padding: 8pt;
+        page-break-inside: avoid;
+    }
+
+    .timeline-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Show URLs for links */
+    .card-title a::after {
+        content: ' (' attr(href) ')' !important;
+        opacity: 1 !important;
+        font-size: 8pt;
+        color: #666;
+        word-break: break-all;
+    }
+
+    /* Timeline */
+    .timeline::before {
+        background: #999;
+    }
+
+    .timeline-dot {
+        border-color: #999;
+    }
+
+    /* Hotel card */
+    .hotel-card {
+        box-shadow: none;
+        border: 1pt solid #CCC;
+    }
+
+    /* Show appendix content */
+    .appendix-content {
+        display: block !important;
+    }
+
+    /* Cost summary */
+    .cost-summary {
+        box-shadow: none;
+        border: 1pt solid #CCC;
+    }
+
+    /* Tips */
+    .tip-card {
+        border: 1pt solid #CCC;
+        background: none;
+    }
+
+    /* Page breaks per day */
+    .day-page-break {
+        page-break-before: always;
+    }
+
+    /* Badges */
+    .badge {
+        border: 1pt solid currentColor;
+        background: none !important;
+    }
+}
