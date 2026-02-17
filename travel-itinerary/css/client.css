@@ -830,3 +830,50 @@
 .route-summary-dot {
     color: #9FA8DA;
 }
+
+/* ================================================
+   ENHANCED CARD ELEMENTS
+   ================================================ */
+
+.card-why-visit {
+    font-size: 0.82rem;
+    color: #F57F17;
+    margin: 6px 0;
+    padding: 6px 10px;
+    background: #FFF8E1;
+    border-radius: var(--radius-md);
+    line-height: 1.5;
+}
+
+.card-route-note {
+    font-size: 0.8rem;
+    color: #1565C0;
+    margin: 8px 0 0;
+    padding: 6px 10px;
+    background: #E3F2FD;
+    border-radius: var(--radius-md);
+    font-style: italic;
+}
+
+.card-booking-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: #7C4DFF;
+    text-decoration: none;
+    margin-top: 6px;
+    padding: 4px 10px;
+    background: #EDE7F6;
+    border-radius: var(--radius-md);
+    transition: background 0.2s;
+}
+
+.card-booking-link:hover {
+    background: #D1C4E9;
+}
+
+.badge-duration {
+    background: #E8EAF6;
+    color: #3F51B5;
+}

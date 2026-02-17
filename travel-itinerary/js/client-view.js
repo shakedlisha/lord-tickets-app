@@ -367,7 +367,10 @@ const ClientView = {
                     </div>
                     ${detailsHtml}
                     ${item.description ? `<p class="card-description">${escapeHtml(item.description)}</p>` : ''}
+                    ${item.why_visit ? `<p class="card-why-visit"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;">star</span> ${escapeHtml(item.why_visit)}</p>` : ''}
                     ${badgesHtml}
+                    ${item.booking_url ? `<a href="${escapeHtml(item.booking_url)}" target="_blank" rel="noopener" class="card-booking-link"><span class="material-icons-round" style="font-size:14px;">open_in_new</span> הזמנה</a>` : ''}
+                    ${item.route_note ? `<p class="card-route-note"><span class="material-icons-round" style="font-size:14px;vertical-align:middle;">directions_walk</span> ${escapeHtml(item.route_note)}</p>` : ''}
                     ${item.transportNote ? `<p class="card-description" style="margin-top:8px;font-style:italic;">${escapeHtml(item.transportNote)}</p>` : ''}
                 </div>
             </div>
