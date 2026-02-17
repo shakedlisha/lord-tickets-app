@@ -1,0 +1,459 @@
+/* ================================================
+   DESTINATION PLANNER STYLES
+   ================================================ */
+
+.destination-planner {
+    background: var(--bg-card);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-light);
+}
+
+.dest-total-nights {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ---- Destination List ---- */
+
+.dest-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.dest-empty {
+    text-align: center;
+    padding: var(--space-xl);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.dest-row {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.dest-row:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dest-row-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.dest-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dest-row-fields {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex: 1;
+    flex-wrap: wrap;
+}
+
+.dest-input {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--bg-primary);
+    width: 140px;
+    transition: border-color 0.2s;
+}
+
+.dest-input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
+
+/* ---- Nights Control ---- */
+
+.dest-nights-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    padding: 4px 8px;
+}
+
+.dest-nights-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border-light);
+    background: var(--bg-card);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: all 0.15s;
+}
+
+.dest-nights-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.dest-nights-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 20px;
+    text-align: center;
+    color: var(--primary);
+}
+
+.dest-nights-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ---- Row Meta & Actions ---- */
+
+.dest-row-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 120px;
+}
+
+.dest-dates {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.dest-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ---- Travel Day ---- */
+
+.dest-travel-day {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px var(--space-lg);
+    background: #E3F2FD;
+    color: #1565C0;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.dest-travel-day .material-icons-round {
+    font-size: 16px;
+}
+
+.dest-travel-toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s;
+}
+
+.dest-travel-toggle:hover {
+    color: #1565C0;
+}
+
+.dest-travel-toggle input {
+    display: none;
+}
+
+.dest-travel-toggle input:checked + .material-icons-round {
+    color: #1565C0;
+}
+
+/* ---- Actions Bar ---- */
+
+.dest-actions {
+    display: flex;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-lg);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.btn-success:hover {
+    background: #388E3C;
+}
+
+/* ---- Preset Chips ---- */
+
+.dest-presets {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-light);
+}
+
+.dest-presets-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: var(--space-sm);
+}
+
+.dest-preset-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.dest-preset-chip {
+    padding: 4px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-primary);
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+}
+
+.dest-preset-chip:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+    .dest-row-main {
+        flex-wrap: wrap;
+        gap: var(--space-sm);
+    }
+
+    .dest-row-fields {
+        width: 100%;
+    }
+
+    .dest-input {
+        width: 100%;
+    }
+
+    .dest-row-meta {
+        min-width: auto;
+        width: 100%;
+    }
+
+    .dest-actions {
+        flex-direction: column;
+    }
+}
+
+/* ================================================
+   ATTRACTION PICKER STYLES
+   ================================================ */
+
+.attraction-picker {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-light);
+}
+
+.attraction-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+}
+
+.attraction-picker-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.attraction-picker-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-light);
+}
+
+.attraction-picker-count strong {
+    color: var(--primary);
+}
+
+/* ---- Area Groups ---- */
+
+.attraction-area-group {
+    margin-bottom: var(--space-md);
+}
+
+.attraction-area-header {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 8px;
+}
+
+.attraction-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 8px;
+}
+
+/* ---- Attraction Card ---- */
+
+.attraction-pick-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+}
+
+.attraction-pick-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(92, 107, 192, 0.1);
+}
+
+.attraction-pick-card.selected {
+    border-color: var(--primary);
+    background: rgba(92, 107, 192, 0.05);
+}
+
+.attraction-pick-card.used-other-day {
+    opacity: 0.5;
+}
+
+.attraction-pick-checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+    width: 18px;
+    height: 18px;
+}
+
+.attraction-pick-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.attraction-pick-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.attraction-pick-name .category-icon {
+    font-size: 16px;
+}
+
+.attraction-pick-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.attraction-pick-badges {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.attraction-pick-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    border: 1px solid var(--border-light);
+}
+
+.attraction-pick-used {
+    font-size: 0.7rem;
+    color: var(--danger);
+    font-style: italic;
+}
+
+/* ---- Arrange Button ---- */
+
+.btn-arrange-day {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-lg);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity 0.2s;
+    margin-top: var(--space-md);
+}
+
+.btn-arrange-day:hover {
+    opacity: 0.9;
+}
+
+.btn-arrange-day:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

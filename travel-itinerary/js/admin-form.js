@@ -32,6 +32,12 @@ const AdminForm = {
                 Router.navigate('#/admin');
                 return;
             }
+
+            // Load destinations from ai_preferences
+            if (this.tripData.ai_preferences?.destinations) {
+                this.tripData.destinations = this.tripData.ai_preferences.destinations;
+            }
+
             document.getElementById('editor-trip-name').textContent = this.tripData.name || 'עריכת מסלול';
             this.render();
             this.bindEvents();
@@ -45,6 +51,7 @@ const AdminForm = {
         const container = document.getElementById('editor-content');
         container.innerHTML = `
             ${this.renderTripInfo()}
+            ${typeof DestinationPlanner !== 'undefined' ? DestinationPlanner.render(this.tripData) : ''}
             ${this.renderDaysList()}
             <button class="btn btn-primary" id="btn-add-day" style="width:100%;justify-content:center;margin-top:16px;">
                 <span class="material-icons-round">add</span>
@@ -195,6 +202,8 @@ const AdminForm = {
                         </button>
                     </div>
 
+                    ${typeof AttractionPicker !== 'undefined' ? AttractionPicker.render(day, index, this.tripData) : ''}
+
                     <h4 style="margin:24px 0 8px;">טיפים</h4>
                     <div id="tips-container-${index}">
                         ${tipsHtml}
@@ -311,6 +320,28 @@ const AdminForm = {
         });
 
         container.addEventListener('change', (e) => {
+            // Handle attraction picker checkboxes
+            if (e.target.dataset.action === 'toggle-attraction') {
+                const dayIdx = parseInt(e.target.dataset.day);
+                const attrId = e.target.dataset.attractionId;
+                if (typeof AttractionPicker !== 'undefined' && attrId) {
+                    AttractionPicker.toggleAttraction(this.tripData, dayIdx, attrId);
+                    this.hasUnsavedChanges = true;
+                    // Re-render just the picker count
+                    const countEl = e.target.closest('.attraction-picker')?.querySelector('.attraction-picker-count');
+                    if (countEl) {
+                        const day = this.tripData.days[dayIdx];
+                        const count = (day._selectedAttractions || []).length;
+                        countEl.innerHTML = `<strong>${count}</strong> נבחרו`;
+                    }
+                    // Toggle card selected class
+                    const card = e.target.closest('.attraction-pick-card');
+                    if (card) card.classList.toggle('selected', e.target.checked);
+                    this.saveDebounced();
+                }
+                return;
+            }
+
             this.handleFieldChange(e.target);
             this.hasUnsavedChanges = true;
             this.saveDebounced();
@@ -348,6 +379,17 @@ const AdminForm = {
                         this.undoLastMerge(dayIdx);
                     }
                     break;
+                case 'load-attractions':
+                    e.stopPropagation();
+                    this.loadAttractions(dayIdx);
+                    break;
+                case 'toggle-attraction':
+                    this.toggleAttraction(dayIdx, btn.dataset.attractionId || e.target.dataset.attractionId);
+                    break;
+                case 'arrange-day':
+                    e.stopPropagation();
+                    this.arrangeDay(dayIdx);
+                    break;
                 case 'add-item':
                     this.addItem(dayIdx, btn.dataset.type);
                     break;
@@ -379,6 +421,16 @@ const AdminForm = {
         });
 
         document.getElementById('btn-add-day').onclick = () => this.addDay();
+
+        // Bind destination planner events
+        if (typeof DestinationPlanner !== 'undefined') {
+            DestinationPlanner.bindEvents(this.tripData, () => {
+                this.hasUnsavedChanges = true;
+                this.render();
+                this.bindEvents();
+                this.saveDebounced();
+            });
+        }
 
         document.getElementById('btn-back-dashboard').onclick = () => {
             if (this.hasUnsavedChanges && !confirm('יש שינויים שלא נשמרו. לצאת בכל זאת?')) return;
@@ -654,6 +706,85 @@ const AdminForm = {
         await this.save();
     },
 
+    async loadAttractions(dayIndex) {
+        const day = this.tripData.days[dayIndex];
+        if (!day) return;
+
+        const city = day.cityEn || day.city;
+        if (!city) {
+            showToast('הגדירו עיר ליום זה', 'error');
+            return;
+        }
+
+        showToast('טוען אטרקציות...', 'info');
+
+        try {
+            const attractions = await AttractionPicker.loadForCity(city);
+            if (attractions.length === 0) {
+                showToast(`לא נמצאו אטרקציות ל${city}. הוסיפו דרך מנהל האטרקציות.`, 'error');
+            } else {
+                showToast(`נטענו ${attractions.length} אטרקציות`, 'success');
+            }
+            this.render();
+            this.bindEvents();
+            // Re-open the day
+            const body = document.getElementById(`day-body-${dayIndex}`);
+            if (body) body.classList.add('open');
+        } catch (e) {
+            console.error('Failed to load attractions:', e);
+            showToast('שגיאה בטעינת אטרקציות', 'error');
+        }
+    },
+
+    async arrangeDay(dayIndex) {
+        const day = this.tripData.days[dayIndex];
+        if (!day) return;
+
+        const selectedIds = day._selectedAttractions || [];
+        if (selectedIds.length < 2) {
+            showToast('בחרו לפחות 2 אטרקציות', 'error');
+            return;
+        }
+
+        // Build items from selected attractions
+        const items = AttractionPicker.buildDayItems(this.tripData, dayIndex);
+
+        if (items.length === 0) {
+            showToast('לא נמצאו אטרקציות תואמות', 'error');
+            return;
+        }
+
+        // Save snapshot for undo
+        day._snapshotBeforeMerge = {
+            items: JSON.parse(JSON.stringify(day.items || [])),
+            tips: day.tips ? [...day.tips] : [],
+        };
+
+        // Set the items
+        day.items = items;
+
+        // Try to optimize route if available
+        if (typeof RouteOptimizer !== 'undefined' && items.length >= 3) {
+            const result = RouteOptimizer.optimize(day);
+            if (result.optimized) {
+                day.items = result.items;
+                showToast(`סודר! ${result.stats.totalDistanceKm} ק"מ הליכה`, 'success');
+            } else {
+                showToast('הפעילויות נוספו. סדרו ידנית או הוסיפו שמות באנגלית לאופטימיזציה.', 'info');
+            }
+        } else {
+            showToast(`${items.length} פעילויות נוספו ליום`, 'success');
+        }
+
+        this.hasUnsavedChanges = true;
+        this.render();
+        this.bindEvents();
+        this.saveDebounced();
+
+        const body = document.getElementById(`day-body-${dayIndex}`);
+        if (body) body.classList.add('open');
+    },
+
     optimizeRoute(dayIndex) {
         const day = this.tripData.days[dayIndex];
         if (!day) return;
@@ -727,12 +858,22 @@ const AdminForm = {
         }
 
         try {
+            // Clean internal fields before saving
+            const daysToSave = (this.tripData.days || []).map(day => {
+                const { _snapshotBeforeMerge, ...cleanDay } = day;
+                return cleanDay;
+            });
+
             await updateTrip(this.tripId, {
                 name: this.tripData.name,
                 customers: this.tripData.customers,
                 start_date: this.tripData.start_date || null,
                 end_date: this.tripData.end_date || null,
-                days: this.tripData.days || []
+                days: daysToSave,
+                ai_preferences: {
+                    ...(this.tripData.ai_preferences || {}),
+                    destinations: this.tripData.destinations || [],
+                },
             });
 
             this.hasUnsavedChanges = false;
