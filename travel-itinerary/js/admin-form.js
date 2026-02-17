@@ -763,18 +763,24 @@ const AdminForm = {
         // Set the items
         day.items = items;
 
-        // Try to optimize route if available
+        // Optimize route if available
         if (typeof RouteOptimizer !== 'undefined' && items.length >= 3) {
             const result = RouteOptimizer.optimize(day);
             if (result.optimized) {
                 day.items = result.items;
-                showToast(`סודר! ${result.stats.totalDistanceKm} ק"מ הליכה`, 'success');
-            } else {
-                showToast('הפעילויות נוספו. סדרו ידנית או הוסיפו שמות באנגלית לאופטימיזציה.', 'info');
             }
-        } else {
-            showToast(`${items.length} פעילויות נוספו ליום`, 'success');
         }
+
+        // Assign time slots
+        this._assignTimeSlots(day);
+
+        // Insert transport items between distant stops
+        this._insertTransportItems(day);
+
+        // Insert meal breaks if missing
+        this._insertMealBreaks(day);
+
+        showToast(`${day.items.length} פעילויות סודרו ליום`, 'success');
 
         this.hasUnsavedChanges = true;
         this.render();
@@ -783,6 +789,154 @@ const AdminForm = {
 
         const body = document.getElementById(`day-body-${dayIndex}`);
         if (body) body.classList.add('open');
+    },
+
+    _assignTimeSlots(day) {
+        const prefs = this.tripData.ai_preferences || {};
+        let startHour = 9;
+        let startMin = 0;
+
+        if (prefs.startTime) {
+            const parts = prefs.startTime.split(':');
+            startHour = parseInt(parts[0]) || 9;
+            startMin = parseInt(parts[1]) || 0;
+        }
+
+        let currentMinutes = startHour * 60 + startMin;
+
+        day.items.forEach(item => {
+            const hours = Math.floor(currentMinutes / 60);
+            const mins = currentMinutes % 60;
+            item.time = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+
+            // Estimate duration for next slot
+            let durationMins = 60;
+            if (item.duration) {
+                const match = item.duration.match(/(\d+)/);
+                if (match) {
+                    const num = parseInt(match[1]);
+                    if (item.duration.includes('שעת') || item.duration.includes('hour')) {
+                        durationMins = num * 60;
+                    } else if (item.duration.includes('דק') || item.duration.includes('min')) {
+                        durationMins = num;
+                    } else {
+                        durationMins = num > 10 ? num : num * 60;
+                    }
+                }
+            } else if (item.type === 'restaurant' || item.type === 'cafe') {
+                durationMins = 45;
+            } else if (item.type === 'transport') {
+                durationMins = 30;
+            }
+
+            currentMinutes += durationMins + 15;
+        });
+    },
+
+    _insertTransportItems(day) {
+        if (typeof RouteOptimizer === 'undefined') return;
+
+        const newItems = [];
+        for (let i = 0; i < day.items.length; i++) {
+            newItems.push(day.items[i]);
+
+            if (i < day.items.length - 1) {
+                const current = day.items[i];
+                const next = day.items[i + 1];
+
+                // Skip if next is already transport
+                if (next.type === 'transport') continue;
+                if (current.type === 'transport') continue;
+
+                // Check distance
+                const coordsCurrent = RouteOptimizer._getCoords(current);
+                const coordsNext = RouteOptimizer._getCoords(next);
+
+                if (coordsCurrent && coordsNext) {
+                    const dist = RouteOptimizer._haversine(
+                        coordsCurrent.lat, coordsCurrent.lng,
+                        coordsNext.lat, coordsNext.lng
+                    );
+
+                    if (dist > 2) {
+                        const walkMins = Math.round(dist / 0.08);
+                        const trainMins = Math.round(dist / 0.5);
+
+                        newItems.push({
+                            id: generateId(),
+                            type: 'transport',
+                            emoji: dist > 5 ? '🚆' : '🚶',
+                            time: '',
+                            title: `${current.title || current.titleEn} → ${next.title || next.titleEn}`,
+                            titleEn: '',
+                            description: dist > 5
+                                ? `${dist.toFixed(1)} ק"מ - מומלץ רכבת/מטרו (כ-${trainMins} דקות)`
+                                : `${dist.toFixed(1)} ק"מ - הליכה כ-${walkMins} דקות`,
+                            mapsQuery: '',
+                            duration: dist > 5 ? `${trainMins} דקות` : `${walkMins} דקות`,
+                        });
+                    }
+                }
+            }
+        }
+
+        day.items = newItems;
+    },
+
+    _insertMealBreaks(day) {
+        const hasLunch = day.items.some(item =>
+            (item.type === 'restaurant' || item.type === 'food') &&
+            item.time && parseInt(item.time.split(':')[0]) >= 11 && parseInt(item.time.split(':')[0]) <= 14
+        );
+
+        const hasDinner = day.items.some(item =>
+            (item.type === 'restaurant' || item.type === 'food') &&
+            item.time && parseInt(item.time.split(':')[0]) >= 17 && parseInt(item.time.split(':')[0]) <= 21
+        );
+
+        if (!hasLunch) {
+            // Find a good spot for lunch (around 12:00-13:00)
+            let lunchIdx = -1;
+            for (let i = 0; i < day.items.length; i++) {
+                if (day.items[i].time) {
+                    const hour = parseInt(day.items[i].time.split(':')[0]);
+                    if (hour >= 12) {
+                        lunchIdx = i;
+                        break;
+                    }
+                }
+            }
+
+            if (lunchIdx >= 0) {
+                const city = day.city || day.cityEn || '';
+                day.items.splice(lunchIdx, 0, {
+                    id: generateId(),
+                    type: 'restaurant',
+                    emoji: '🍜',
+                    time: '12:00',
+                    title: `ארוחת צהריים - ${city}`,
+                    titleEn: `Lunch - ${day.cityEn || city}`,
+                    description: 'מומלץ לחפש מסעדה באזור',
+                    mapsQuery: '',
+                    duration: '45 דקות',
+                });
+            }
+        }
+
+        if (!hasDinner && day.items.length > 3) {
+            const city = day.city || day.cityEn || '';
+            day.items.push({
+                id: generateId(),
+                type: 'restaurant',
+                emoji: '🍱',
+                time: '19:00',
+                title: `ארוחת ערב - ${city}`,
+                titleEn: `Dinner - ${day.cityEn || city}`,
+                description: 'מומלץ לחפש מסעדה באזור',
+                mapsQuery: '',
+                duration: 'שעה',
+            });
+        }
     },
 
     optimizeRoute(dayIndex) {
