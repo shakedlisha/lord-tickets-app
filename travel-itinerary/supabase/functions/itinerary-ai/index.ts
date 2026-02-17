@@ -130,6 +130,64 @@ ${text.substring(0, 25000)}`;
 }
 
 /* ================================================
+   ACTION: suggestAttractions
+   ================================================ */
+
+async function handleSuggestAttractions(body: any, supabase: any, userId: string) {
+  const { city, city_en } = body;
+
+  const cityName = city_en || city;
+  if (!cityName) {
+    return errorResponse("validation_failed", "city or city_en is required");
+  }
+
+  const prompt = `You are a Japan travel expert. Generate a comprehensive list of 20-25 popular attractions, restaurants, and points of interest in ${cityName}, Japan.
+
+For EACH place, provide ALL of these fields:
+- "name": Hebrew name
+- "name_en": English name (official/common name)
+- "city": "${city || cityName}" (Hebrew city name)
+- "city_en": "${city_en || cityName}" (English city name)
+- "area": neighborhood/district in English (e.g., "Shibuya", "Gion", "Dotonbori")
+- "category": one of "temple", "shrine", "museum", "park", "nature", "shopping", "market", "restaurant", "cafe", "food", "nightlife", "entertainment", "onsen", "viewpoint", "activity"
+- "description": 1-2 sentence Hebrew description
+- "emoji": relevant emoji
+- "why_visit": Hebrew explanation of why to visit (1-2 sentences)
+- "estimated_duration": visit time in Hebrew (e.g., "שעה", "שעתיים", "חצי שעה")
+- "estimated_cost": cost in Japanese Yen (number, 0 if free)
+- "best_time": best time to visit in Hebrew (e.g., "בוקר מוקדם", "אחר הצהריים")
+- "booking_url": null (unless well-known booking page)
+
+IMPORTANT RULES:
+- Include a MIX of categories: temples/shrines, viewpoints, parks, shopping areas, restaurants, cafes, markets, entertainment
+- Include both famous tourist spots AND local favorites
+- Group nearby attractions by area/neighborhood
+- Hebrew for description, why_visit, estimated_duration, best_time
+- English for name_en, city_en, area
+- Return ONLY a JSON object with an "attractions" array
+
+Return the JSON object.`;
+
+  try {
+    const raw = await callGemini(prompt);
+    const parsed = parseJsonSafe(raw) as any;
+
+    if (!parsed || !Array.isArray(parsed.attractions) || parsed.attractions.length < 5) {
+      return errorResponse("validation_failed", "Failed to generate attractions list");
+    }
+
+    return jsonResponse({
+      attractions: parsed.attractions,
+      count: parsed.attractions.length,
+      city: cityName,
+    });
+  } catch (e) {
+    console.error("suggestAttractions error:", e);
+    return errorResponse("generation_failed", (e as Error).message, 500);
+  }
+}
+
+/* ================================================
    ACTION: ingestAttraction
    ================================================ */
 
@@ -404,6 +462,10 @@ serve(async (req: Request) => {
     switch (action) {
       case "extractPdf":
         result = await handleExtractPdf(body, supabase, user.id);
+        break;
+
+      case "suggestAttractions":
+        result = await handleSuggestAttractions(body, supabase, user.id);
         break;
 
       case "ingestAttraction":

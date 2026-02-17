@@ -41,6 +41,12 @@ const AdminForm = {
             document.getElementById('editor-trip-name').textContent = this.tripData.name || 'עריכת מסלול';
             this.render();
             this.bindEvents();
+
+            // Auto-expand first day card
+            const firstDayBody = document.getElementById('day-body-0');
+            if (firstDayBody) {
+                firstDayBody.classList.add('open');
+            }
         } catch (e) {
             console.error('Failed to load trip:', e);
             showToast('שגיאה בטעינה', 'error');
@@ -111,6 +117,10 @@ const AdminForm = {
             </div>`
         ).join('');
 
+        const selectedCount = (day._selectedAttractions || []).length;
+        const itemCount = (day.items || []).length;
+        const hasCity = !!(day.cityEn || day.city);
+
         return `
             <div class="day-editor-card" data-day-index="${index}">
                 <div class="day-editor-header" data-toggle-day="${index}">
@@ -119,9 +129,17 @@ const AdminForm = {
                         <div>
                             <strong>${escapeHtml(day.title) || `יום ${index + 1}`}</strong>
                             <span style="color:var(--text-muted);font-size:13px;margin-right:8px;">${escapeHtml(day.date)} • ${escapeHtml(day.city)}</span>
+                            ${itemCount > 0 ? `<span class="day-header-badge day-header-badge-items">${itemCount} פעילויות</span>` : ''}
+                            ${selectedCount > 0 ? `<span class="day-header-badge day-header-badge-selected">${selectedCount} נבחרו</span>` : ''}
                         </div>
                     </div>
                     <div class="day-editor-header-left">
+                        ${hasCity ? `
+                        <button class="btn btn-sm btn-pick-attractions" data-action="pick-attractions" data-day="${index}" title="בחר אטרקציות">
+                            <span class="material-icons-round">place</span>
+                            <span class="btn-pick-text">בחר אטרקציות</span>
+                        </button>
+                        ` : ''}
                         <button class="btn btn-ai-suggest btn-sm" data-action="ai-suggest" data-day="${index}" title="${escapeHtml(AI_CONFIG.ui.suggestButton)}">
                             <span class="material-icons-round">auto_awesome</span>
                         </button>
@@ -378,6 +396,19 @@ const AdminForm = {
                     if (confirm('לשחזר את היום למצב שלפני שינויי ה-AI?')) {
                         this.undoLastMerge(dayIdx);
                     }
+                    break;
+                case 'pick-attractions':
+                    e.stopPropagation();
+                    // Expand the day card first
+                    const pickBody = document.getElementById(`day-body-${dayIdx}`);
+                    if (pickBody && !pickBody.classList.contains('open')) {
+                        pickBody.classList.add('open');
+                    }
+                    // Load attractions if not cached, then scroll to picker
+                    this.loadAttractions(dayIdx).then(() => {
+                        const picker = document.querySelector(`[data-day-index="${dayIdx}"] .attraction-picker`);
+                        if (picker) picker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    });
                     break;
                 case 'load-attractions':
                     e.stopPropagation();
@@ -719,12 +750,62 @@ const AdminForm = {
         showToast('טוען אטרקציות...', 'info');
 
         try {
-            const attractions = await AttractionPicker.loadForCity(city);
+            let attractions = await AttractionPicker.loadForCity(city);
+
+            // If database is empty for this city, auto-generate via AI
             if (attractions.length === 0) {
-                showToast(`לא נמצאו אטרקציות ל${city}. הוסיפו דרך מנהל האטרקציות.`, 'error');
+                showToast(`מייצר אטרקציות ל${city} עם AI... (זה יכול לקחת כמה שניות)`, 'info');
+
+                try {
+                    const cityHe = day.city || '';
+                    const result = await invokeAiFunction('suggestAttractions', {
+                        city: cityHe,
+                        city_en: city,
+                    });
+
+                    if (result.attractions && result.attractions.length > 0) {
+                        let savedCount = 0;
+                        for (const attr of result.attractions) {
+                            try {
+                                await createAttraction({
+                                    name: attr.name,
+                                    name_en: attr.name_en || null,
+                                    city: attr.city || cityHe || null,
+                                    city_en: attr.city_en || city || null,
+                                    area: attr.area || null,
+                                    category: attr.category || 'activity',
+                                    description: attr.description || null,
+                                    emoji: attr.emoji || '📍',
+                                    why_visit: attr.why_visit || null,
+                                    estimated_duration: attr.estimated_duration || null,
+                                    estimated_cost: attr.estimated_cost || null,
+                                    cost_currency: 'yen',
+                                    best_time: attr.best_time || null,
+                                    booking_url: attr.booking_url || null,
+                                    source_type: 'ai_generated',
+                                    status: 'approved',
+                                });
+                                savedCount++;
+                            } catch (saveErr) {
+                                console.warn('Failed to save attraction:', attr.name, saveErr);
+                            }
+                        }
+                        showToast(`נוצרו ${savedCount} אטרקציות ל${city}!`, 'success');
+
+                        // Reload from database to get the saved attractions with IDs
+                        AttractionPicker._cache[city.toLowerCase()] = [];
+                        attractions = await AttractionPicker.loadForCity(city);
+                    } else {
+                        showToast('AI לא הצליח ליצור אטרקציות. נסו שוב.', 'error');
+                    }
+                } catch (aiErr) {
+                    console.error('AI attraction generation failed:', aiErr);
+                    showToast('שגיאה ביצירת אטרקציות עם AI. נסו שוב.', 'error');
+                }
             } else {
                 showToast(`נטענו ${attractions.length} אטרקציות`, 'success');
             }
+
             this.render();
             this.bindEvents();
             // Re-open the day

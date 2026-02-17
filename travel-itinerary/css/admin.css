@@ -779,3 +779,63 @@
     background: rgba(33, 150, 243, 0.1) !important;
     color: #1565C0 !important;
 }
+
+/* ================================================
+   PICK ATTRACTIONS BUTTON (day header)
+   ================================================ */
+
+.btn-pick-attractions {
+    background: linear-gradient(135deg, #7C4DFF, #651FFF) !important;
+    color: white !important;
+    border: none !important;
+    padding: 4px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.78rem !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-pick-attractions:hover {
+    background: linear-gradient(135deg, #651FFF, #6200EA) !important;
+    transform: scale(1.05);
+}
+
+.btn-pick-attractions .material-icons-round {
+    font-size: 16px;
+}
+
+.btn-pick-text {
+    font-family: inherit;
+}
+
+/* ---- Day header badges ---- */
+
+.day-header-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-right: 6px;
+    font-weight: 500;
+    vertical-align: middle;
+}
+
+.day-header-badge-items {
+    background: #E8EAF6;
+    color: #3F51B5;
+}
+
+.day-header-badge-selected {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+@media (max-width: 768px) {
+    .btn-pick-text {
+        display: none;
+    }
+}

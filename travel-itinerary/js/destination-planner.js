@@ -59,6 +59,10 @@ const DestinationPlanner = {
                             <span class="material-icons-round">auto_fix_high</span>
                             צור ימים אוטומטית
                         </button>
+                        <button class="btn btn-sm" id="btn-generate-all-attractions" style="background:#7C4DFF;color:white;">
+                            <span class="material-icons-round">auto_awesome</span>
+                            ייצר אטרקציות לכל הערים
+                        </button>
                     ` : ''}
                 </div>
 
@@ -149,6 +153,11 @@ const DestinationPlanner = {
                 this.addDestination(tripData);
                 onChangeCallback();
             };
+        }
+
+        const generateAllBtn = document.getElementById('btn-generate-all-attractions');
+        if (generateAllBtn) {
+            generateAllBtn.onclick = () => this.generateAllAttractions(tripData, onChangeCallback);
         }
 
         const generateBtn = document.getElementById('btn-generate-days');
@@ -401,5 +410,103 @@ const DestinationPlanner = {
         const d = new Date(dateStr);
         d.setDate(d.getDate() + days);
         return d.toISOString().split('T')[0];
+    },
+
+    /* ---- Batch generate attractions for all cities ---- */
+
+    async generateAllAttractions(tripData, onChangeCallback) {
+        const destinations = tripData.destinations || [];
+        if (destinations.length === 0) {
+            showToast('הוסיפו יעדים קודם', 'error');
+            return;
+        }
+
+        // Get unique cities
+        const cities = [];
+        const seen = new Set();
+        destinations.forEach(d => {
+            const key = (d.cityEn || d.city || '').toLowerCase();
+            if (key && !seen.has(key)) {
+                seen.add(key);
+                cities.push({ city: d.city, cityEn: d.cityEn });
+            }
+        });
+
+        if (cities.length === 0) {
+            showToast('הגדירו שמות ערים ביעדים', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btn-generate-all-attractions');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-icons-round">hourglass_top</span> מייצר...';
+        }
+
+        let totalSaved = 0;
+
+        for (let i = 0; i < cities.length; i++) {
+            const c = cities[i];
+            const cityLabel = c.cityEn || c.city;
+            showToast(`מייצר אטרקציות ל${cityLabel} (${i + 1}/${cities.length})...`, 'info');
+
+            try {
+                // Check if already have attractions for this city
+                const existing = await fetchAttractions({ city_en: c.cityEn || c.city, status: 'approved' });
+                if (existing && existing.length > 5) {
+                    showToast(`${cityLabel} - כבר יש ${existing.length} אטרקציות, מדלג`, 'info');
+                    continue;
+                }
+
+                const result = await invokeAiFunction('suggestAttractions', {
+                    city: c.city || '',
+                    city_en: c.cityEn || '',
+                });
+
+                if (result.attractions && result.attractions.length > 0) {
+                    for (const attr of result.attractions) {
+                        try {
+                            await createAttraction({
+                                name: attr.name,
+                                name_en: attr.name_en || null,
+                                city: attr.city || c.city || null,
+                                city_en: attr.city_en || c.cityEn || null,
+                                area: attr.area || null,
+                                category: attr.category || 'activity',
+                                description: attr.description || null,
+                                emoji: attr.emoji || '📍',
+                                why_visit: attr.why_visit || null,
+                                estimated_duration: attr.estimated_duration || null,
+                                estimated_cost: attr.estimated_cost || null,
+                                cost_currency: 'yen',
+                                best_time: attr.best_time || null,
+                                booking_url: attr.booking_url || null,
+                                source_type: 'ai_generated',
+                                status: 'approved',
+                            });
+                            totalSaved++;
+                        } catch (saveErr) {
+                            console.warn('Failed to save:', attr.name, saveErr);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to generate for ${cityLabel}:`, e);
+                showToast(`שגיאה ביצירת אטרקציות ל${cityLabel}`, 'error');
+            }
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-icons-round">auto_awesome</span> ייצר אטרקציות לכל הערים';
+        }
+
+        if (totalSaved > 0) {
+            showToast(`נוצרו ${totalSaved} אטרקציות לכל הערים!`, 'success');
+        } else {
+            showToast('לא נוצרו אטרקציות חדשות', 'info');
+        }
+
+        onChangeCallback();
     },
 };
