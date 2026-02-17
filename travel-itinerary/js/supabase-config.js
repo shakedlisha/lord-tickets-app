@@ -176,7 +176,7 @@ async function fetchAttractions(filters = {}) {
         .order('created_at', { ascending: false });
 
     if (filters.status) query = query.eq('status', filters.status);
-    if (filters.city_en) query = query.eq('city_en', filters.city_en);
+    if (filters.city_en) query = query.ilike('city_en', filters.city_en);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -187,13 +187,60 @@ async function createAttraction(attractionData) {
     const session = await getSession();
     if (!session) throw new Error('Not authenticated');
 
+    // Deduplication: check if attraction with same name_en + city_en already exists
+    const nameEn = (attractionData.name_en || '').trim().toLowerCase();
+    const nameHe = (attractionData.name || '').trim();
+    const cityEn = (attractionData.city_en || '').trim();
+
+    if (nameEn && cityEn) {
+        const { data: existing } = await supabase
+            .from('attractions')
+            .select('id, name, status')
+            .eq('user_id', session.user.id)
+            .ilike('name_en', nameEn)
+            .ilike('city_en', cityEn)
+            .limit(1)
+            .maybeSingle();
+
+        if (existing) {
+            return existing;
+        }
+    } else if (nameHe && cityEn) {
+        const { data: existing } = await supabase
+            .from('attractions')
+            .select('id, name, status')
+            .eq('user_id', session.user.id)
+            .eq('name', nameHe)
+            .ilike('city_en', cityEn)
+            .limit(1)
+            .maybeSingle();
+
+        if (existing) {
+            return existing;
+        }
+    }
+
     const { data, error } = await supabase
         .from('attractions')
         .insert({ ...attractionData, user_id: session.user.id })
         .select()
         .single();
 
-    if (error) throw error;
+    if (error) {
+        // If unique constraint violation, find and return the existing row
+        if (error.code === '23505') {
+            const { data: dup } = await supabase
+                .from('attractions')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .ilike('name_en', (attractionData.name_en || '').trim())
+                .ilike('city_en', (attractionData.city_en || '').trim())
+                .limit(1)
+                .maybeSingle();
+            if (dup) return dup;
+        }
+        throw error;
+    }
     return data;
 }
 
