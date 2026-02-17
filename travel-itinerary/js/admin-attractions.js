@@ -74,10 +74,15 @@ const AdminAttractions = {
                             ${cities.map(c => `<option value="${escapeHtml(c)}" ${this.cityFilter === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
                         </select>
                     ` : ''}
+                    <button class="btn btn-sm" id="btn-import-pdf" style="background:#7C4DFF;color:white;">
+                        <span class="material-icons-round">upload_file</span>
+                        ייבוא מ-PDF
+                    </button>
                     <button class="btn btn-primary btn-sm" id="btn-add-attraction">
                         <span class="material-icons-round">add_location</span>
                         הוסף אטרקציה
                     </button>
+                    <input type="file" id="pdf-file-input" accept=".pdf,.txt" style="display:none;">
                 </div>
             </div>
 
@@ -212,6 +217,17 @@ const AdminAttractions = {
         const addBtn = document.getElementById('btn-add-attraction');
         if (addBtn) {
             addBtn.onclick = () => this._showAddModal();
+        }
+
+        const importBtn = document.getElementById('btn-import-pdf');
+        const fileInput = document.getElementById('pdf-file-input');
+        if (importBtn && fileInput) {
+            importBtn.onclick = () => fileInput.click();
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) this._importPdf(file);
+                fileInput.value = '';
+            };
         }
 
         document.querySelectorAll('.attraction-card-actions button[data-action]').forEach(btn => {
@@ -378,5 +394,92 @@ const AdminAttractions = {
                 saveBtn.innerHTML = '<span class="material-icons-round">add_location</span> הוסף אטרקציה';
             }
         };
+    },
+
+    async _importPdf(file) {
+        showToast('קורא את הקובץ...', 'info');
+
+        try {
+            let text = '';
+
+            if (file.type === 'application/pdf') {
+                // Load pdf.js library lazily
+                if (!window.pdfjsLib) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    const pageText = content.items.map(item => item.str).join(' ');
+                    text += pageText + '\n\n';
+                }
+            } else {
+                text = await file.text();
+            }
+
+            if (!text || text.trim().length < 50) {
+                showToast('הקובץ ריק או קצר מדי', 'error');
+                return;
+            }
+
+            showToast('מחלץ אטרקציות עם AI...', 'info');
+
+            // Send to edge function for extraction
+            const result = await invokeAiFunction('extractPdf', {
+                text: text.substring(0, 30000),
+                fileName: file.name,
+            });
+
+            if (result.attractions && result.attractions.length > 0) {
+                // Save each attraction to the database
+                let savedCount = 0;
+                for (const attr of result.attractions) {
+                    try {
+                        const saved = await createAttraction({
+                            name: attr.name,
+                            name_en: attr.name_en || null,
+                            city: attr.city || null,
+                            city_en: attr.city_en || null,
+                            area: attr.area || null,
+                            category: attr.category || 'activity',
+                            description: attr.description || null,
+                            emoji: attr.emoji || '📍',
+                            why_visit: attr.why_visit || null,
+                            estimated_duration: attr.estimated_duration || null,
+                            estimated_cost: attr.estimated_cost || null,
+                            cost_currency: 'yen',
+                            best_time: attr.best_time || null,
+                            booking_url: attr.booking_url || null,
+                            source_type: 'pdf',
+                            source_note: file.name,
+                            status: 'approved',
+                        });
+                        this.attractions.unshift(saved);
+                        savedCount++;
+                    } catch (e) {
+                        console.warn('Failed to save attraction:', attr.name, e);
+                    }
+                }
+
+                this.render();
+                showToast(`יובאו ${savedCount} אטרקציות מ-${file.name}!`, 'success');
+            } else {
+                showToast('לא נמצאו אטרקציות בקובץ', 'error');
+            }
+        } catch (e) {
+            console.error('PDF import failed:', e);
+            showToast('שגיאה בייבוא: ' + (e.message || 'נסו שוב'), 'error');
+        }
     },
 };

@@ -72,6 +72,64 @@ function parseJsonSafe(text: string): unknown {
 }
 
 /* ================================================
+   ACTION: extractPdf
+   ================================================ */
+
+async function handleExtractPdf(body: any, supabase: any, userId: string) {
+  const { text, fileName } = body;
+
+  if (!text || text.length < 50) {
+    return errorResponse("validation_failed", "Text content is too short");
+  }
+
+  const prompt = `You are a travel data extraction expert. Extract ALL attractions, restaurants, activities, temples, shrines, markets, and points of interest from the following travel document text.
+
+For EACH attraction found, provide:
+- "name": Hebrew name (or original name if Hebrew not available)
+- "name_en": English name
+- "city": Hebrew city name
+- "city_en": English city name
+- "area": neighborhood/district name in English (e.g., "Shibuya", "Gion", "Dotonbori")
+- "category": one of "temple", "shrine", "museum", "park", "nature", "shopping", "market", "restaurant", "cafe", "food", "nightlife", "entertainment", "onsen", "viewpoint", "activity"
+- "description": 1-2 sentence Hebrew description of what this place is
+- "emoji": relevant emoji
+- "why_visit": Hebrew explanation of why to visit (1-2 sentences)
+- "estimated_duration": estimated visit time in Hebrew (e.g., "שעה", "שעתיים", "חצי שעה")
+- "estimated_cost": estimated cost in Japanese Yen (number, 0 if free)
+- "best_time": best time to visit in Hebrew (e.g., "בוקר מוקדם", "אחר הצהריים")
+- "booking_url": URL if mentioned, null otherwise
+
+IMPORTANT RULES:
+- Extract EVERY distinct place/attraction mentioned, even briefly
+- Hebrew text for description, why_visit, estimated_duration, best_time
+- English for name_en, city_en, area
+- If a place appears multiple times, include it only once
+- Be thorough - extract restaurants, cafes, shops, not just tourist attractions
+- Return ONLY a JSON object with an "attractions" array
+
+Document text:
+${text.substring(0, 25000)}`;
+
+  try {
+    const raw = await callGemini(prompt);
+    const parsed = parseJsonSafe(raw) as any;
+
+    if (!parsed || !Array.isArray(parsed.attractions)) {
+      return errorResponse("validation_failed", "Failed to parse extracted attractions");
+    }
+
+    return jsonResponse({
+      attractions: parsed.attractions,
+      count: parsed.attractions.length,
+      source: fileName || "uploaded document",
+    });
+  } catch (e) {
+    console.error("extractPdf error:", e);
+    return errorResponse("generation_failed", (e as Error).message, 500);
+  }
+}
+
+/* ================================================
    ACTION: ingestAttraction
    ================================================ */
 
@@ -344,6 +402,10 @@ serve(async (req: Request) => {
     let result: Response;
 
     switch (action) {
+      case "extractPdf":
+        result = await handleExtractPdf(body, supabase, user.id);
+        break;
+
       case "ingestAttraction":
         result = await handleIngestAttraction(body, supabase, user.id);
         break;
