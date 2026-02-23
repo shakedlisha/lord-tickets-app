@@ -3082,17 +3082,21 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 const supabaseKey = localStorage.getItem('supabaseKey');
                 
                 if (supabaseUrl && supabaseKey) {
-                    // Delete all selected flights
                     const deleteToken = await getAccessToken() || supabaseKey;
+                    const authHeaders = {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${deleteToken}`
+                    };
                     for (const id of selectedIds) {
+                        // Delete associated deposit milestones first
+                        await fetch(`${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${id}`, {
+                            method: 'DELETE',
+                            headers: authHeaders
+                        });
                         const response = await fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${id}`, {
                             method: 'DELETE',
-                            headers: {
-                                'apikey': supabaseKey,
-                                'Authorization': `Bearer ${deleteToken}`
-                            }
+                            headers: authHeaders
                         });
-                        
                         if (!response.ok) {
                             console.error(`Failed to delete flight ${id}`);
                         }
@@ -3117,13 +3121,13 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
         }
         
         async function deleteFlight(id) {
-            // Check for active deposit milestones
-            if (flightMilestoneStatus[id] && flightMilestoneStatus[id].level !== 'none') {
-                const hasActive = flightMilestoneStatus[id].level !== 'green' || true; // any milestones exist
-                if (hasActive && !confirm('לטיסה זו יש לוח תשלומים פעיל. המחיקה תיכשל אם קיימים תשלומים.\nהאם להמשיך?')) return;
+            const hasMilestones = flightMilestoneStatus[id] && flightMilestoneStatus[id].level !== 'none';
+
+            if (hasMilestones) {
+                if (!confirm('לטיסה זו יש לוח תשלומים. המחיקה תסיר גם את כל התשלומים.\nהאם להמשיך?')) return;
+            } else {
+                if (!confirm('האם למחוק את הטיסה?')) return;
             }
-            
-            if (!confirm('האם למחוק את הטיסה?')) return;
             
             showLoading(true);
             
@@ -3133,19 +3137,26 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 
                 if (supabaseUrl && supabaseKey) {
                     const delToken = await getAccessToken() || supabaseKey;
+                    const authHeaders = {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${delToken}`
+                    };
+
+                    // Delete associated deposit milestones first to satisfy FK constraint
+                    await fetch(`${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${id}`, {
+                        method: 'DELETE',
+                        headers: authHeaders
+                    });
+
                     const response = await fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${id}`, {
                         method: 'DELETE',
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${delToken}`
-                        }
+                        headers: authHeaders
                     });
                     
                     if (!response.ok) {
-                        // Check if it's a RESTRICT violation
                         const errText = await response.text();
                         if (errText.includes('violates foreign key') || errText.includes('RESTRICT')) {
-                            showToast('לא ניתן למחוק טיסה עם לוח תשלומים פעיל. יש למחוק את התשלומים תחילה.', 'error');
+                            showToast('לא ניתן למחוק טיסה – קיימים רשומות תלויות. נסה שוב.', 'error');
                             return;
                         }
                         throw new Error('Failed to delete');
