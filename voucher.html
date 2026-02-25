@@ -2158,7 +2158,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
             email: isHe ? 'דוא"ל' : 'Email'
         };
 
-        const guestNames = (data.guests||[]).map(g => (g.title ? g.title + ' ' : '') + g.firstName + ' ' + g.lastName).join(', ');
+        const guestNamesHtml = (data.guests||[]).map(g => esc((g.title ? g.title + ' ' : '') + g.firstName + ' ' + g.lastName)).join('<br>');
         const paxCount = (data.guests||[]).length;
         const today = new Date();
         const issueDate = fmtDate(today.toISOString().split('T')[0], lang);
@@ -2205,10 +2205,10 @@ body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0
 .content{padding:40px;}
 .section-title{display:flex;align-items:center;color:#002B5B;border-bottom:2px solid #e0e0e0;padding-bottom:10px;margin-top:40px;margin-bottom:25px;}
 .section-title:first-child{margin-top:0;}
-.section-title h2{margin:0;font-family:'Rubik',sans-serif;font-size:22px;margin-${isHe?'right':'left'}:15px;}
-.icon{font-size:24px;}
+.section-title h2{margin:0;font-family:'Rubik',sans-serif;font-size:22px;margin-${isHe?'right':'left'}:15px;min-width:0;word-wrap:break-word;overflow-wrap:break-word;}
+.icon{font-size:24px;flex-shrink:0;}
 .card-box{background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:15px;padding:20px;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.03);page-break-inside:avoid;}
-.card-header{background:#f4f8fb;color:#002B5B;padding:8px 15px;border-radius:5px;font-size:14px;font-weight:bold;margin-bottom:15px;display:inline-block;}
+.card-header{background:#f4f8fb;color:#002B5B;padding:8px 15px;border-radius:5px;font-size:14px;font-weight:bold;margin-bottom:15px;display:inline-block;max-width:100%;word-wrap:break-word;overflow-wrap:break-word;}
 .details-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .big-text{font-size:18px;font-weight:700;color:#333;}
 .small-text{font-size:14px;color:#666;}
@@ -2241,7 +2241,7 @@ body{padding:0;background:white;}
 </div>
 </div>
 <div class="client-info">
-<div><strong>${L.passengers}:</strong><br>${esc(guestNames)}</div>
+<div><strong>${L.passengers}:</strong><br>${guestNamesHtml}</div>
 <div style="text-align:${isHe?'left':'right'};"><strong>${L.composition}:</strong> ${paxCount} ${L.pax}</div>
 </div>
 <div class="content">
