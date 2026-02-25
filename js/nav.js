@@ -71,6 +71,12 @@
                     <span class="material-icons">receipt_long</span>
                     מחולל הצעות
                 </a>
+                ${!isGuest ? `
+                    <a href="voucher.html" class="nav-link ${currentPage === 'voucher' ? 'active' : ''}">
+                        <span class="material-icons">description</span>
+                        שובר נסיעה
+                    </a>
+                ` : ''}
                 ${showAdminLinks ? `
                     <a href="analytics.html" class="nav-link ${currentPage === 'analytics' ? 'active' : ''}">
                         <span class="material-icons">analytics</span>
@@ -103,6 +109,12 @@
                     <span class="material-icons">point_of_sale</span>
                     מכירות
                 </a>
+                ${!isGuest ? `
+                    <a href="voucher.html" class="nav-link ${currentPage === 'voucher' ? 'active' : ''}">
+                        <span class="material-icons">description</span>
+                        שובר נסיעה
+                    </a>
+                ` : ''}
                 ${showAdminLinks ? `
                     <a href="tickets-analytics.html" class="nav-link ${currentPage === 'tickets-analytics' ? 'active' : ''}">
                         <span class="material-icons">analytics</span>

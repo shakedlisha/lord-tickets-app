@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>שובר נסיעה - Lord Tickets</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+    <style>
+        :root {
+            --gold: #D4AF37; --gold-light: #E8C547; --gold-dark: #B8960C;
+            --navy: #1B365D; --navy-light: #2A4A7A; --navy-dark: #0F1F3A;
+            --white: #FFFFFF; --gray-light: #F5F5F5; --gray: #E0E0E0; --gray-dark: #666666;
+            --success: #28A745; --error: #DC3545; --warning: #FFC107; --info: #17a2b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: linear-gradient(135deg, var(--gray-light) 0%, var(--white) 100%);
+            min-height: 100vh;
+            direction: rtl;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Page Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+        }
+        .page-title .material-icons {
+            font-size: 2rem;
+            color: var(--gold);
+        }
+        .header-fields {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .header-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--white);
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.9rem;
+        }
+        .header-field label {
+            color: var(--gray-dark);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .header-field input {
+            border: none;
+            background: transparent;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            width: 140px;
+            color: var(--navy-dark);
+            font-weight: 600;
+        }
+        .header-field input[readonly] {
+            color: var(--gold-dark);
+            cursor: default;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            gap: 0;
+            background: var(--white);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+            border: 1px solid var(--gray);
+        }
+        .mode-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 20px;
+            border: none;
+            background: var(--white);
+            color: var(--navy);
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .mode-btn:hover {
+            background: var(--gray-light);
+        }
+        .mode-btn.active {
+            background: var(--gold);
+            color: var(--white);
+        }
+        .mode-btn .material-icons {
+            font-size: 1.3rem;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        @media (min-width: 1024px) {
+            .main-layout.with-preview {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--gray);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--white);
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .upload-zone:hover {
+            border-color: var(--navy-light);
+            background: rgba(27,54,93,0.02);
+        }
+        .upload-zone.drag-over {
+            border-color: var(--gold);
+            background: rgba(212,175,55,0.05);
+            box-shadow: 0 0 0 3px rgba(212,175,55,0.15);
+        }
+        .upload-zone .upload-icon {
+            font-size: 64px;
+            color: var(--navy);
+            opacity: 0.6;
+        }
+        .upload-zone .upload-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--navy);
+        }
+        .upload-zone .upload-subtext {
+            font-size: 0.9rem;
+            color: var(--gray-dark);
+        }
+        .upload-zone .upload-types {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+            background: var(--gray-light);
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-top: 4px;
+        }
+
+        /* File List */
+        .file-list {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .file-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--white);
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            padding: 10px 14px;
+            transition: box-shadow 0.2s;
+        }
+        .file-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .file-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .file-icon.pdf { background: rgba(220,53,69,0.1); color: var(--error); }
+        .file-icon.image { background: rgba(99,102,241,0.1); color: #6366F1; }
+        .file-icon.text { background: rgba(27,54,93,0.1); color: var(--navy); }
+        .file-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-size {
+            font-size: 0.8rem;
+            color: var(--gray-dark);
+        }
+        .file-remove {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-dark);
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .file-remove:hover {
+            background: rgba(220,53,69,0.1);
+            color: var(--error);
+        }
+
+        /* Extract Button */
+        .extract-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px 20px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: var(--white);
+            font-family: 'Heebo', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(212,175,55,0.3);
+        }
+        .extract-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(212,175,55,0.4);
+        }
+        .extract-btn:active {
+            transform: translateY(0);
+        }
+        .extract-btn .material-icons {
+            font-size: 1.3rem;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(27,54,93,0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .loading-overlay.show {
+            display: flex;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(212,175,55,0.3);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            color: var(--white);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            color: var(--white);
+            font-weight: 500;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+        .toast.warning { background: #e67e22; }
+        .toast.info { background: var(--info); }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+        }
+
+        /* Partial Recovery Banner */
+        .partial-banner {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        .partial-banner.show {
+            display: block;
+        }
+        .partial-banner .banner-title {
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .partial-sections {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .partial-section {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .partial-section .material-icons {
+            font-size: 1.1rem;
+        }
+        .partial-section.ok .material-icons { color: var(--success); }
+        .partial-section.fail .material-icons { color: var(--error); }
+
+        /* Retry UI */
+        .retry-bar {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(220,53,69,0.06);
+            border-radius: 10px;
+        }
+        .retry-bar.show {
+            display: flex;
+        }
+        .retry-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border: 2px solid var(--navy);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--navy);
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .retry-btn:hover {
+            background: var(--navy);
+            color: var(--white);
+        }
+        .manual-link {
+            color: var(--gold-dark);
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9rem;
+        }
+        .manual-link:hover {
+            color: var(--navy);
+        }
+
+        /* Past Vouchers Panel */
+        .past-panel {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .past-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--navy);
+            transition: background 0.2s;
+        }
+        .past-panel-header:hover { background: var(--gray-light); }
+        .past-panel-body { display: none; padding: 0 20px 15px; }
+        .past-panel-body.show { display: block; }
+        .past-search {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            outline: none;
+        }
+        .past-search:focus { border-color: var(--gold); }
+        .voucher-list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .voucher-list-item:hover { background: var(--gray-light); border-color: var(--gold); }
+        .vli-main { flex: 1; min-width: 0; }
+        .vli-main strong { font-size: 0.9rem; color: var(--navy-dark); }
+        .vli-main .vli-sub { font-size: 0.8rem; color: var(--gray-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .vli-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .vli-actions button {
+            width: 28px; height: 28px; border: none; background: transparent;
+            border-radius: 6px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; color: var(--gray-dark); transition: all 0.2s;
+        }
+        .vli-actions button:hover { background: rgba(220,53,69,0.1); color: var(--error); }
+        .vli-actions button.dup:hover { background: rgba(99,102,241,0.1); color: #6366F1; }
+
+        /* Edit Mode Banner */
+        .edit-mode-banner {
+            display: none;
+            background: rgba(27,54,93,0.08);
+            border: 1px solid var(--navy-light);
+            color: var(--navy);
+            border-radius: 10px;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        /* Form Sections */
+        #formContainer { display: none; }
+        .form-section {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--gray-light);
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .section-header:hover { background: var(--gray); }
+        .section-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--navy-dark);
+        }
+        .section-header-right .material-icons { color: var(--gold); font-size: 1.3rem; }
+        .section-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .section-badge.ai { background: rgba(40,167,69,0.15); color: var(--success); }
+        .section-badge.manual { background: rgba(102,102,102,0.12); color: var(--gray-dark); }
+        .section-expand { color: var(--gray-dark); transition: transform 0.2s; }
+        .section-expand.collapsed { transform: rotate(180deg); }
+        .section-body { padding: 20px; }
+        .section-body.collapsed { display: none; }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 140px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--gray-dark);
+            margin-bottom: 4px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            color: var(--navy-dark);
+            background: var(--white);
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px rgba(212,175,55,0.15);
+        }
+        .form-group input.invalid, .form-group select.invalid {
+            border-color: var(--error);
+        }
+        .form-group input[readonly] {
+            background: var(--gray-light);
+            color: var(--gray-dark);
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+
+        .sub-card {
+            border: 1px solid var(--gray);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            position: relative;
+            background: #fafbfc;
+        }
+        .sub-card-remove {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 28px; height: 28px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-dark);
+            transition: all 0.2s;
+        }
+        .sub-card-remove:hover { background: rgba(220,53,69,0.1); color: var(--error); }
+
+        .add-row-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 2px dashed var(--gray);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--navy);
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            justify-content: center;
+        }
+        .add-row-btn:hover { border-color: var(--gold); color: var(--gold-dark); background: rgba(212,175,55,0.04); }
+
+        /* Generate Button */
+        .generate-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+            color: var(--white);
+            font-family: 'Heebo', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(27,54,93,0.3);
+        }
+        .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(27,54,93,0.4); }
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .generate-btn .material-icons { font-size: 1.3rem; }
+
+        .save-as-new-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px 20px;
+            margin-top: 8px;
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--gold-dark);
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .save-as-new-btn:hover { background: var(--gold); color: var(--white); }
+
+        /* Preview Section */
+        #previewSection { display: none; }
+        #previewSection.show { display: block; }
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .preview-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--navy-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--navy);
+            font-family: 'Heebo', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            background: var(--navy);
+            color: var(--white);
+            border-color: var(--navy);
+        }
+        .action-btn .material-icons { font-size: 1.1rem; }
+        #voucherPreview {
+            width: 100%;
+            border: 1px solid var(--gray);
+            border-radius: 10px;
+            background: var(--white);
+            min-height: 400px;
+        }
+        @media (max-width: 768px) {
+            .action-buttons { width: 100%; }
+            .action-btn { flex: 1 1 45%; justify-content: center; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .header-fields {
+                width: 100%;
+            }
+            .header-field {
+                flex: 1;
+            }
+            .header-field input {
+                width: 100px;
+            }
+            .mode-btn {
+                padding: 12px 10px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">...מחלץ נתונים מהקבצים</div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="main-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="page-title">
+                <span class="material-icons">description</span>
+                מחולל שוברי נסיעה
+            </div>
+            <div class="header-fields">
+                <div class="header-field">
+                    <label>הזמנה:</label>
+                    <input type="text" id="resNumber" placeholder="מספר הזמנה">
+                </div>
+                <div class="header-field">
+                    <label>שובר:</label>
+                    <input type="text" id="voucherNumber" readonly>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="modeAI" onclick="setMode('ai')">
+                <span class="material-icons">auto_awesome</span>
+                חילוץ מקובץ
+            </button>
+            <button class="mode-btn" id="modeManual" onclick="setMode('manual')">
+                <span class="material-icons">edit_note</span>
+                הזנה ידנית
+            </button>
+        </div>
+
+        <!-- Past Vouchers Panel -->
+        <div class="past-panel">
+            <div class="past-panel-header" onclick="togglePastVouchers()">
+                <span class="material-icons">history</span>
+                שוברים קודמים
+                <span class="material-icons" id="pastExpandIcon">expand_more</span>
+            </div>
+            <div class="past-panel-body" id="pastPanelBody">
+                <input type="text" class="past-search" id="voucherSearch" placeholder="חפש לפי שם נוסע או מספר הזמנה..." oninput="filterVouchers(this.value)">
+                <div id="vouchersList"></div>
+            </div>
+        </div>
+
+        <!-- Partial Recovery Banner -->
+        <div class="partial-banner" id="partialBanner">
+            <div class="banner-title">
+                <span class="material-icons">warning</span>
+                חלק מהנתונים חולצו בהצלחה -- השלם את השאר ידנית
+            </div>
+            <div class="partial-sections" id="partialSections"></div>
+        </div>
+
+        <!-- Edit Mode Banner -->
+        <div class="edit-mode-banner" id="editModeBanner"></div>
+
+        <!-- Main Layout -->
+        <div class="main-layout" id="mainLayout">
+            <div id="mainContent">
+                <!-- Upload Zone (AI mode) -->
+                <div id="uploadSection">
+                    <div class="upload-zone" id="dropZone">
+                        <span class="material-icons upload-icon">cloud_upload</span>
+                        <div class="upload-text">גרור קבצים לכאן</div>
+                        <div class="upload-subtext">או לחץ לבחירת קבצים</div>
+                        <div class="upload-types">PDF, תמונות (JPG/PNG), טקסט</div>
+                    </div>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.txt" hidden>
+
+                    <!-- File List -->
+                    <div class="file-list" id="fileList"></div>
+
+                    <!-- Extract Button -->
+                    <button class="extract-btn" id="extractBtn" style="display: none;" onclick="extractWithAI()">
+                        <span class="material-icons">auto_awesome</span>
+                        חלץ נתונים עם AI
+                    </button>
+
+                    <!-- Retry Bar -->
+                    <div class="retry-bar" id="retryBar">
+                        <button class="retry-btn" onclick="extractWithAI()">
+                            <span class="material-icons">refresh</span>
+                            נסה שוב
+                        </button>
+                        <span class="manual-link" onclick="setMode('manual')">עבור להזנה ידנית</span>
+                    </div>
+                </div>
+
+                <!-- Form Container (Phase 3) -->
+                <div id="formContainer">
+
+                    <!-- 3A: General Info -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">info</span>
+                                פרטים כלליים
+                                <span class="section-badge manual" id="badgeGeneral">ידני</span>
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>מספר הזמנה</label>
+                                    <input type="text" id="formResNumber" placeholder="מספר הזמנה">
+                                </div>
+                                <div class="form-group">
+                                    <label>מספר שובר</label>
+                                    <input type="text" id="formVoucherNumber" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>שם סוכן</label>
+                                    <input type="text" id="formAgentName" placeholder="שם הסוכן">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>תאריך התחלה</label>
+                                    <input type="date" id="formTripFrom">
+                                </div>
+                                <div class="form-group">
+                                    <label>תאריך סיום</label>
+                                    <input type="date" id="formTripTo">
+                                </div>
+                                <div class="form-group">
+                                    <label>שפת השובר</label>
+                                    <select id="formLanguage">
+                                        <option value="he" selected>עברית</option>
+                                        <option value="en">English</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3B: Guests -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">people</span>
+                                <span>נוסעים (<span id="guestCount">0</span>)</span>
+                                <span class="section-badge manual" id="badgeGuests">ידני</span>
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div id="guestsContainer"></div>
+                            <button class="add-row-btn" onclick="addGuestRow()">
+                                <span class="material-icons">person_add</span>
+                                הוסף נוסע
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3C: Flights -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">flight</span>
+                                <span>טיסות (<span id="flightCount">0</span>)</span>
+                                <span class="section-badge manual" id="badgeFlights">ידני</span>
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div id="flightsContainer"></div>
+                            <button class="add-row-btn" onclick="addFlightCard()">
+                                <span class="material-icons">flight</span>
+                                הוסף טיסה
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3D: Hotels -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">hotel</span>
+                                <span>מלונות (<span id="hotelCount">0</span>)</span>
+                                <span class="section-badge manual" id="badgeHotels">ידני</span>
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div id="hotelsContainer"></div>
+                            <button class="add-row-btn" onclick="addHotelCard()">
+                                <span class="material-icons">hotel</span>
+                                הוסף מלון
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3E: Transfers -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">directions_car</span>
+                                <span>העברות (<span id="transferCount">0</span>)</span>
+                                <span class="section-badge manual" id="badgeTransfers">ידני</span>
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div id="transfersContainer"></div>
+                            <button class="add-row-btn" onclick="addTransferRow()">
+                                <span class="material-icons">directions_car</span>
+                                הוסף העברה
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3F: Notes + Travel Tips -->
+                    <div class="form-section">
+                        <div class="section-header" onclick="toggleSection(this)">
+                            <div class="section-header-right">
+                                <span class="material-icons">notes</span>
+                                הערות ומידע נוסף
+                            </div>
+                            <span class="material-icons section-expand">expand_less</span>
+                        </div>
+                        <div class="section-body">
+                            <div class="form-group" style="margin-bottom:15px;">
+                                <label>הערות נוספות</label>
+                                <textarea id="formNotes" rows="3" placeholder="הערות נוספות..."></textarea>
+                            </div>
+                            <div style="border-top:1px solid var(--gray);padding-top:15px;">
+                                <div style="font-weight:600;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+                                    <span class="material-icons" style="font-size:1.1rem;">tips_and_updates</span>
+                                    טיפים ליעד
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>דרישות ויזה</label>
+                                        <textarea id="formVisa" rows="2" placeholder="דרישות ויזה"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>מטבע מקומי</label>
+                                        <input type="text" id="formCurrency" placeholder="מטבע מקומי">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>מספרי חירום</label>
+                                        <input type="text" id="formEmergency" placeholder="מספרי חירום">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>מידע נוסף</label>
+                                        <textarea id="formCustomTips" rows="2" placeholder="מידע נוסף ליעד"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button class="generate-btn" id="generateBtn" onclick="handleGenerate()">
+                        <span class="material-icons">auto_awesome</span>
+                        צור שובר
+                    </button>
+                    <button class="save-as-new-btn" id="saveAsNewBtn" onclick="saveAsNew()">
+                        <span class="material-icons">content_copy</span>
+                        שמור כשובר חדש
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Preview Section -->
+            <div id="previewSection">
+                <div class="preview-header">
+                    <div class="preview-title">
+                        <span class="material-icons">visibility</span>
+                        תצוגה מקדימה
+                    </div>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="printVoucher()"><span class="material-icons">print</span>הדפס</button>
+                        <button class="action-btn" onclick="downloadHTML()"><span class="material-icons">download</span>HTML</button>
+                        <button class="action-btn" onclick="downloadPDF()"><span class="material-icons">picture_as_pdf</span>PDF</button>
+                        <button class="action-btn" onclick="copyToClipboard()"><span class="material-icons">content_copy</span>העתק</button>
+                    </div>
+                </div>
+                <iframe id="voucherPreview" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/nav.js"></script>
+
+    <script>
+    'use strict';
+
+    // ============================================================
+    // State
+    // ============================================================
+    let uploadedFiles = [];
+    let currentMode = 'ai';
+    let currentEditId = null;
+    let currentEditVoucherNumber = null;
+    let currentVoucherHTML = '';
+
+    // ============================================================
+    // Init
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        LordNav.init('voucher');
+        generateVoucherNumber();
+        initUploadZone();
+    });
+
+    // ============================================================
+    // Voucher Number Generator
+    // ============================================================
+    function generateVoucherNumber() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = (now.getMonth() + 1).toString().padStart(2, '0');
+        const d = now.getDate().toString().padStart(2, '0');
+        const n = Math.floor(Math.random() * 900 + 100);
+        const num = `VCH-${y}${m}${d}-${n}`;
+        document.getElementById('voucherNumber').value = num;
+        return num;
+    }
+
+    // ============================================================
+    // Mode Toggle
+    // ============================================================
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('modeAI').classList.toggle('active', mode === 'ai');
+        document.getElementById('modeManual').classList.toggle('active', mode === 'manual');
+        document.getElementById('uploadSection').style.display = mode === 'ai' ? 'block' : 'none';
+        document.getElementById('formContainer').style.display = mode === 'manual' ? 'block' : 'none';
+    }
+
+    // ============================================================
+    // Upload Zone
+    // ============================================================
+    function initUploadZone() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragenter', e => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            addFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', () => {
+            addFiles(fileInput.files);
+            fileInput.value = '';
+        });
+    }
+
+    function addFiles(fileListObj) {
+        const allowed = [
+            'application/pdf',
+            'image/jpeg', 'image/jpg', 'image/png',
+            'text/plain'
+        ];
+        const allowedExt = ['.pdf', '.jpg', '.jpeg', '.png', '.txt'];
+
+        for (const file of fileListObj) {
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+            if (allowed.includes(file.type) || allowedExt.includes(ext)) {
+                const alreadyAdded = uploadedFiles.some(f => f.name === file.name && f.size === file.size);
+                if (!alreadyAdded) {
+                    uploadedFiles.push(file);
+                }
+            } else {
+                showToast(`סוג קובץ לא נתמך: ${file.name}`, 'warning');
+            }
+        }
+        renderFileList();
+    }
+
+    function removeFile(index) {
+        uploadedFiles.splice(index, 1);
+        renderFileList();
+    }
+
+    function renderFileList() {
+        const container = document.getElementById('fileList');
+        const extractBtn = document.getElementById('extractBtn');
+
+        if (uploadedFiles.length === 0) {
+            container.innerHTML = '';
+            extractBtn.style.display = 'none';
+            return;
+        }
+
+        extractBtn.style.display = 'flex';
+        container.innerHTML = uploadedFiles.map((file, i) => {
+            const icon = getFileIcon(file);
+            const size = formatFileSize(file.size);
+            const name = file.name.length > 35 ? file.name.substring(0, 32) + '...' : file.name;
+            return `
+                <div class="file-card">
+                    <div class="file-icon ${icon.cls}">
+                        <span class="material-icons">${icon.name}</span>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">${escapeHTML(name)}</div>
+                        <div class="file-size">${size}</div>
+                    </div>
+                    <button class="file-remove" onclick="removeFile(${i})" title="הסר">
+                        <span class="material-icons">close</span>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function getFileIcon(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'pdf') return { name: 'picture_as_pdf', cls: 'pdf' };
+        if (['jpg', 'jpeg', 'png'].includes(ext)) return { name: 'image', cls: 'image' };
+        return { name: 'description', cls: 'text' };
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // ============================================================
+    // Loading Overlay
+    // ============================================================
+    function showLoading(show) {
+        document.getElementById('loadingOverlay').classList.toggle('show', show);
+    }
+
+    // ============================================================
+    // Toast System
+    // ============================================================
+    function showToast(message, type) {
+        type = type || 'info';
+        const container = document.getElementById('toastContainer');
+        const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span class="material-icons">${icons[type] || 'info'}</span>${escapeHTML(message)}`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-in forwards';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // ============================================================
+    // Partial Recovery Banner
+    // ============================================================
+    function showPartialRecovery(results) {
+        const banner = document.getElementById('partialBanner');
+        const sections = document.getElementById('partialSections');
+        const labels = {
+            guests: 'נוסעים',
+            flights: 'טיסות',
+            hotels: 'מלונות',
+            transfers: 'העברות'
+        };
+        sections.innerHTML = Object.entries(results).map(([key, ok]) => `
+            <span class="partial-section ${ok ? 'ok' : 'fail'}">
+                <span class="material-icons">${ok ? 'check_circle' : 'cancel'}</span>
+                ${labels[key] || key}
+            </span>
+        `).join('');
+        banner.classList.add('show');
+    }
+
+    function hidePartialRecovery() {
+        document.getElementById('partialBanner').classList.remove('show');
+    }
+
+    // ============================================================
+    // Retry UI
+    // ============================================================
+    function showRetryUI() {
+        document.getElementById('retryBar').classList.add('show');
+    }
+
+    function hideRetryUI() {
+        document.getElementById('retryBar').classList.remove('show');
+    }
+
+    // ============================================================
+    // Helpers
+    // ============================================================
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function getResNumber() {
+        return document.getElementById('resNumber').value || 'no-ref';
+    }
+
+    function getUserId() {
+        return localStorage.getItem('userId') || '';
+    }
+
+    function scrollToForm() {
+        const el = document.getElementById('formContainer');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ============================================================
+    // Phase 2: AI Extraction
+    // ============================================================
+
+    const EXTRACTION_PROMPT = `You are a Travel Documentation Specialist working for "Lord Tickets" agency.
+
+Analyze the uploaded travel documents and extract ALL booking details into the following JSON structure.
+
+CRITICAL RULES:
+1. REMOVE all prices, costs, VAT, taxes, commissions, and payment details. The output must contain ZERO monetary values.
+2. REMOVE all supplier/platform branding: Booking.com, Agoda, Expedia, Hotelbeds, ODYSSEA, pelegisr.com, "ELAL SUNDOR", "Powered by..." etc. Only "Lord Tickets" branding should remain.
+3. Translate room types and board basis to Hebrew (e.g., "Standard Double Room" -> "חדר זוגי סטנדרטי", "Bed and Breakfast" -> "לינה וארוחת בוקר").
+4. Format all dates as ISO strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+5. If a field is not found in the document, return an empty string "" (never null or undefined).
+6. If multiple documents are provided, merge them into a single booking.
+7. Arrange flights chronologically (outbound first, then return).
+
+Return ONLY valid JSON matching this exact schema (no markdown, no explanation, just the JSON):
+
+{
+  "reservationNumber": "",
+  "tripDates": { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" },
+  "guests": [
+    { "title": "MR/MS/MRS/CHILD/INFANT", "firstName": "", "lastName": "", "dob": "YYYY-MM-DD" }
+  ],
+  "flights": [
+    {
+      "direction": "outbound or return",
+      "airline": "",
+      "flightNumber": "",
+      "aircraft": "",
+      "from": { "city": "", "airport": "IATA", "terminal": "" },
+      "to": { "city": "", "airport": "IATA", "terminal": "" },
+      "departure": "YYYY-MM-DDTHH:mm",
+      "arrival": "YYYY-MM-DDTHH:mm",
+      "baggage": { "checked": "", "hand": "", "trolley": "" },
+      "meal": "",
+      "via": "",
+      "remarks": "",
+      "status": "CONFIRMED/PENDING/CANCELLED"
+    }
+  ],
+  "hotels": [
+    {
+      "name": "",
+      "address": "",
+      "city": "",
+      "phone": "",
+      "fax": "",
+      "confirmationNumber": "",
+      "checkIn": "YYYY-MM-DD",
+      "checkInTime": "HH:mm",
+      "checkOut": "YYYY-MM-DD",
+      "checkOutTime": "HH:mm",
+      "nights": 0,
+      "rooms": 1,
+      "roomType": "",
+      "boardBasis": "",
+      "status": "CONFIRMED/PENDING/CANCELLED",
+      "remarks": ""
+    }
+  ],
+  "transfers": [
+    {
+      "type": "",
+      "location": "",
+      "from": "YYYY-MM-DD",
+      "to": "YYYY-MM-DD",
+      "pickupTime": "HH:mm",
+      "status": "CONFIRMED/PENDING/CANCELLED"
+    }
+  ],
+  "notes": [],
+  "travelTips": {
+    "visa": "",
+    "currency": "",
+    "emergencyNumbers": "",
+    "custom": ""
+  }
+}`;
+
+    // 2B: File readers
+    function detectMimeType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const map = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', txt: 'text/plain' };
+        return map[ext] || 'application/octet-stream';
+    }
+
+    async function readFileAsBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result.split(',')[1];
+                resolve({ mimeType: file.type || detectMimeType(file.name), base64Data: base64 });
+            };
+            reader.onerror = () => reject(new Error('Failed to read file: ' + file.name));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Failed to read file: ' + file.name));
+            reader.readAsText(file);
+        });
+    }
+
+    // 2C: Gemini API call
+    async function extractWithAI() {
+        hideRetryUI();
+        hidePartialRecovery();
+        if (uploadedFiles.length === 0) {
+            showToast('יש להעלות קבצים תחילה', 'warning');
+            return;
+        }
+        showLoading(true);
+
+        try {
+            const parts = [];
+            parts.push({ text: EXTRACTION_PROMPT });
+
+            for (const file of uploadedFiles) {
+                if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+                    const text = await readFileAsText(file);
+                    parts.push({ text: '[File: ' + file.name + ']\n' + text });
+                } else {
+                    const { mimeType, base64Data } = await readFileAsBase64(file);
+                    parts.push({ inlineData: { mimeType: mimeType, data: base64Data } });
+                }
+            }
+
+            const token = localStorage.getItem('access_token');
+            const anonKey = LordConfig.SUPABASE_ANON_KEY;
+
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 60000);
+
+            const response = await fetch(
+                LordConfig.SUPABASE_URL + '/functions/v1/gemini-proxy',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token,
+                        'apikey': anonKey
+                    },
+                    body: JSON.stringify({ contents: [{ parts: parts }] }),
+                    signal: controller.signal
+                }
+            );
+
+            clearTimeout(timeout);
+
+            if (!response.ok) {
+                const errBody = await response.text().catch(() => '');
+                throw new Error('API error ' + response.status + (errBody ? ': ' + errBody.substring(0, 200) : ''));
+            }
+
+            const data = await response.json();
+            parseGeminiResponse(data);
+
+        } catch (error) {
+            showLoading(false);
+            if (error.name === 'AbortError') {
+                showToast('הזמן הקצוב עבר (60 שניות). נסה שוב.', 'error');
+            } else {
+                showToast('שגיאה: ' + error.message, 'error');
+            }
+            showRetryUI();
+        }
+    }
+
+    // 2D: Parse Gemini response
+    function parseGeminiResponse(data) {
+        try {
+            let text = data.candidates[0].content.parts[0].text;
+            text = text.replace(/^```json?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+            const parsed = JSON.parse(text);
+
+            const results = { guests: false, flights: false, hotels: false, transfers: false };
+            const extractedData = {};
+
+            if (Array.isArray(parsed.guests) && parsed.guests.length > 0) {
+                extractedData.guests = parsed.guests;
+                results.guests = true;
+            }
+            if (Array.isArray(parsed.flights) && parsed.flights.length > 0) {
+                extractedData.flights = parsed.flights;
+                results.flights = true;
+            }
+            if (Array.isArray(parsed.hotels) && parsed.hotels.length > 0) {
+                extractedData.hotels = parsed.hotels;
+                results.hotels = true;
+            }
+            if (Array.isArray(parsed.transfers) && parsed.transfers.length > 0) {
+                extractedData.transfers = parsed.transfers;
+                results.transfers = true;
+            }
+
+            extractedData.reservationNumber = parsed.reservationNumber || '';
+            extractedData.tripDates = parsed.tripDates || { from: '', to: '' };
+            extractedData.notes = parsed.notes || [];
+            extractedData.travelTips = parsed.travelTips || { visa: '', currency: '', emergencyNumbers: '', custom: '' };
+
+            showLoading(false);
+
+            const allSuccess = Object.values(results).every(v => v);
+            const anySuccess = Object.values(results).some(v => v);
+
+            if (allSuccess) {
+                showToast('כל הנתונים חולצו בהצלחה!', 'success');
+            } else if (anySuccess) {
+                showPartialRecovery(results);
+            } else {
+                showToast('לא נמצאו נתונים בקבצים. נסה קבצים אחרים.', 'warning');
+            }
+
+            if (extractedData.reservationNumber) {
+                document.getElementById('resNumber').value = extractedData.reservationNumber;
+            }
+
+            populateFormFromJSON(extractedData);
+
+        } catch (e) {
+            showLoading(false);
+            showToast('שגיאה בפענוח התשובה. נסה שוב.', 'error');
+            showRetryUI();
+        }
+    }
+
+    // ============================================================
+    // Phase 3: Editable Review Form
+    // ============================================================
+
+    // Section toggle
+    function toggleSection(header) {
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.section-expand');
+        body.classList.toggle('collapsed');
+        icon.classList.toggle('collapsed');
+    }
+
+    // Mark section as AI-extracted
+    function markSectionExtracted(section) {
+        const badge = document.getElementById('badge' + section.charAt(0).toUpperCase() + section.slice(1));
+        if (badge) { badge.textContent = 'AI'; badge.className = 'section-badge ai'; }
+    }
+
+    // ---- 3B: Guests ----
+    let guestIndex = 0;
+    function addGuestRow(data) {
+        const d = data || {};
+        const id = guestIndex++;
+        const container = document.getElementById('guestsContainer');
+        const div = document.createElement('div');
+        div.className = 'sub-card';
+        div.id = 'guest-' + id;
+        div.innerHTML = `
+            <button class="sub-card-remove" onclick="removeSubCard('guest-${id}','guestCount')" title="הסר"><span class="material-icons">close</span></button>
+            <div class="form-row">
+                <div class="form-group" style="max-width:110px;">
+                    <label>תואר</label>
+                    <select data-field="title">
+                        <option value="MR" ${d.title==='MR'?'selected':''}>Mr</option>
+                        <option value="MRS" ${d.title==='MRS'?'selected':''}>Mrs</option>
+                        <option value="MS" ${d.title==='MS'?'selected':''}>Ms</option>
+                        <option value="CHILD" ${d.title==='CHILD'?'selected':''}>Child</option>
+                        <option value="INFANT" ${d.title==='INFANT'?'selected':''}>Infant</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>שם פרטי</label>
+                    <input type="text" data-field="firstName" value="${escapeHTML(d.firstName||'')}" placeholder="שם פרטי">
+                </div>
+                <div class="form-group">
+                    <label>שם משפחה</label>
+                    <input type="text" data-field="lastName" value="${escapeHTML(d.lastName||'')}" placeholder="שם משפחה">
+                </div>
+                <div class="form-group" style="max-width:160px;">
+                    <label>תאריך לידה</label>
+                    <input type="date" data-field="dob" value="${d.dob||''}">
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        updateCount('guestsContainer', 'guestCount');
+    }
+
+    // ---- 3C: Flights ----
+    let flightIndex = 0;
+    function addFlightCard(data) {
+        const d = data || {};
+        const f = d.from || {}; const t = d.to || {}; const b = d.baggage || {};
+        const id = flightIndex++;
+        const container = document.getElementById('flightsContainer');
+        const div = document.createElement('div');
+        div.className = 'sub-card';
+        div.id = 'flight-' + id;
+        div.innerHTML = `
+            <button class="sub-card-remove" onclick="removeSubCard('flight-${id}','flightCount')" title="הסר"><span class="material-icons">close</span></button>
+            <div class="form-row">
+                <div class="form-group" style="max-width:130px;">
+                    <label>כיוון</label>
+                    <select data-field="direction">
+                        <option value="outbound" ${d.direction==='outbound'?'selected':''}>הלוך</option>
+                        <option value="return" ${d.direction==='return'?'selected':''}>חזור</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>חברת תעופה</label><input type="text" data-field="airline" value="${escapeHTML(d.airline||'')}" placeholder="חברת תעופה"></div>
+                <div class="form-group" style="max-width:130px;"><label>מספר טיסה</label><input type="text" data-field="flightNumber" value="${escapeHTML(d.flightNumber||'')}" placeholder="LY5113"></div>
+                <div class="form-group"><label>סוג מטוס</label><input type="text" data-field="aircraft" value="${escapeHTML(d.aircraft||'')}" placeholder="Boeing 737-900"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>עיר מוצא</label><input type="text" data-field="fromCity" value="${escapeHTML(f.city||'')}" placeholder="עיר מוצא"></div>
+                <div class="form-group" style="max-width:90px;"><label>IATA</label><input type="text" data-field="fromAirport" maxlength="3" value="${escapeHTML(f.airport||'')}" placeholder="TLV"></div>
+                <div class="form-group" style="max-width:90px;"><label>טרמינל</label><input type="text" data-field="fromTerminal" value="${escapeHTML(f.terminal||'')}" placeholder="3"></div>
+                <div class="form-group"><label>המראה</label><input type="datetime-local" data-field="departure" value="${formatDTLocal(d.departure)}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>עיר יעד</label><input type="text" data-field="toCity" value="${escapeHTML(t.city||'')}" placeholder="עיר יעד"></div>
+                <div class="form-group" style="max-width:90px;"><label>IATA</label><input type="text" data-field="toAirport" maxlength="3" value="${escapeHTML(t.airport||'')}" placeholder="BUS"></div>
+                <div class="form-group" style="max-width:90px;"><label>טרמינל</label><input type="text" data-field="toTerminal" value="${escapeHTML(t.terminal||'')}" placeholder=""></div>
+                <div class="form-group"><label>נחיתה</label><input type="datetime-local" data-field="arrival" value="${formatDTLocal(d.arrival)}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>כבודה רשומה</label><input type="text" data-field="baggageChecked" value="${escapeHTML(b.checked||'')}" placeholder="23Kg"></div>
+                <div class="form-group"><label>יד</label><input type="text" data-field="baggageHand" value="${escapeHTML(b.hand||'')}" placeholder="5Kg"></div>
+                <div class="form-group"><label>טרולי</label><input type="text" data-field="baggageTrolley" value="${escapeHTML(b.trolley||'')}" placeholder="7Kg"></div>
+                <div class="form-group"><label>ארוחה</label><input type="text" data-field="meal" value="${escapeHTML(d.meal||'')}" placeholder="ארוחה"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>עצירת ביניים</label><input type="text" data-field="via" value="${escapeHTML(d.via||'')}" placeholder="עצירת ביניים"></div>
+                <div class="form-group" style="max-width:160px;">
+                    <label>סטטוס</label>
+                    <select data-field="status">
+                        <option value="CONFIRMED" ${d.status==='CONFIRMED'?'selected':''}>CONFIRMED</option>
+                        <option value="PENDING" ${d.status==='PENDING'?'selected':''}>PENDING</option>
+                        <option value="CANCELLED" ${d.status==='CANCELLED'?'selected':''}>CANCELLED</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>הערות טיסה</label><textarea data-field="remarks" rows="2" placeholder="הערות טיסה">${escapeHTML(d.remarks||'')}</textarea></div>
+            </div>
+        `;
+        container.appendChild(div);
+        updateCount('flightsContainer', 'flightCount');
+    }
+
+    // ---- 3D: Hotels ----
+    let hotelIndex = 0;
+    function addHotelCard(data) {
+        const d = data || {};
+        const id = hotelIndex++;
+        const container = document.getElementById('hotelsContainer');
+        const div = document.createElement('div');
+        div.className = 'sub-card';
+        div.id = 'hotel-' + id;
+        div.innerHTML = `
+            <button class="sub-card-remove" onclick="removeSubCard('hotel-${id}','hotelCount')" title="הסר"><span class="material-icons">close</span></button>
+            <div class="form-row">
+                <div class="form-group"><label>שם המלון</label><input type="text" data-field="name" value="${escapeHTML(d.name||'')}" placeholder="שם המלון"></div>
+                <div class="form-group" style="max-width:180px;"><label>מספר אישור</label><input type="text" data-field="confirmationNumber" value="${escapeHTML(d.confirmationNumber||'')}" placeholder="מספר אישור"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>כתובת</label><input type="text" data-field="address" value="${escapeHTML(d.address||'')}" placeholder="כתובת"></div>
+                <div class="form-group" style="max-width:150px;"><label>עיר</label><input type="text" data-field="city" value="${escapeHTML(d.city||'')}" placeholder="עיר"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>טלפון</label><input type="text" data-field="phone" value="${escapeHTML(d.phone||'')}" placeholder="טלפון"></div>
+                <div class="form-group"><label>פקס</label><input type="text" data-field="fax" value="${escapeHTML(d.fax||'')}" placeholder="פקס"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>כניסה</label><input type="date" data-field="checkIn" value="${d.checkIn||''}" onchange="calcNightsForCard(this)"></div>
+                <div class="form-group" style="max-width:110px;"><label>שעת כניסה</label><input type="time" data-field="checkInTime" value="${d.checkInTime||'15:00'}"></div>
+                <div class="form-group"><label>יציאה</label><input type="date" data-field="checkOut" value="${d.checkOut||''}" onchange="calcNightsForCard(this)"></div>
+                <div class="form-group" style="max-width:110px;"><label>שעת יציאה</label><input type="time" data-field="checkOutTime" value="${d.checkOutTime||'11:00'}"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="max-width:90px;"><label>לילות</label><input type="number" data-field="nights" value="${d.nights||0}" readonly></div>
+                <div class="form-group" style="max-width:90px;"><label>חדרים</label><input type="number" data-field="rooms" value="${d.rooms||1}" min="1"></div>
+                <div class="form-group"><label>סוג חדר</label><input type="text" data-field="roomType" value="${escapeHTML(d.roomType||'')}" placeholder="סוג חדר"></div>
+                <div class="form-group"><label>בסיס אירוח</label><input type="text" data-field="boardBasis" value="${escapeHTML(d.boardBasis||'')}" placeholder="בסיס אירוח"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="max-width:160px;">
+                    <label>סטטוס</label>
+                    <select data-field="status">
+                        <option value="CONFIRMED" ${d.status==='CONFIRMED'?'selected':''}>CONFIRMED</option>
+                        <option value="PENDING" ${d.status==='PENDING'?'selected':''}>PENDING</option>
+                        <option value="CANCELLED" ${d.status==='CANCELLED'?'selected':''}>CANCELLED</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>הערות מלון</label><textarea data-field="remarks" rows="2" placeholder="הערות מלון (אזהרות, שיפוצים...)">${escapeHTML(d.remarks||'')}</textarea></div>
+            </div>
+        `;
+        container.appendChild(div);
+        updateCount('hotelsContainer', 'hotelCount');
+        if (d.checkIn && d.checkOut) {
+            const nightsInput = div.querySelector('[data-field="nights"]');
+            nightsInput.value = calcNights(d.checkIn, d.checkOut);
+        }
+    }
+
+    function calcNights(checkIn, checkOut) {
+        if (!checkIn || !checkOut) return 0;
+        const diff = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
+        return diff > 0 ? diff : 0;
+    }
+
+    function calcNightsForCard(el) {
+        const card = el.closest('.sub-card');
+        const ci = card.querySelector('[data-field="checkIn"]').value;
+        const co = card.querySelector('[data-field="checkOut"]').value;
+        card.querySelector('[data-field="nights"]').value = calcNights(ci, co);
+    }
+
+    // ---- 3E: Transfers ----
+    let transferIndex = 0;
+    function addTransferRow(data) {
+        const d = data || {};
+        const id = transferIndex++;
+        const container = document.getElementById('transfersContainer');
+        const div = document.createElement('div');
+        div.className = 'sub-card';
+        div.id = 'transfer-' + id;
+        div.innerHTML = `
+            <button class="sub-card-remove" onclick="removeSubCard('transfer-${id}','transferCount')" title="הסר"><span class="material-icons">close</span></button>
+            <div class="form-row">
+                <div class="form-group"><label>סוג</label><input type="text" data-field="type" value="${escapeHTML(d.type||'')}" placeholder="העברה משדה תעופה, רכב פרטי..."></div>
+                <div class="form-group"><label>מיקום</label><input type="text" data-field="location" value="${escapeHTML(d.location||'')}" placeholder="מיקום"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>מתאריך</label><input type="date" data-field="from" value="${d.from||''}"></div>
+                <div class="form-group"><label>עד תאריך</label><input type="date" data-field="to" value="${d.to||''}"></div>
+                <div class="form-group" style="max-width:130px;"><label>שעת איסוף</label><input type="time" data-field="pickupTime" value="${d.pickupTime||''}"></div>
+                <div class="form-group" style="max-width:160px;">
+                    <label>סטטוס</label>
+                    <select data-field="status">
+                        <option value="CONFIRMED" ${d.status==='CONFIRMED'?'selected':''}>CONFIRMED</option>
+                        <option value="PENDING" ${d.status==='PENDING'?'selected':''}>PENDING</option>
+                        <option value="CANCELLED" ${d.status==='CANCELLED'?'selected':''}>CANCELLED</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+        updateCount('transfersContainer', 'transferCount');
+    }
+
+    // ---- Shared helpers ----
+    function removeSubCard(id, countId) {
+        const el = document.getElementById(id);
+        if (el) {
+            const container = el.parentElement;
+            if (container.children.length <= 1 && (countId === 'guestCount')) {
+                showToast('חייב להיות לפחות נוסע אחד', 'warning');
+                return;
+            }
+            el.remove();
+            const cid = { guestCount: 'guestsContainer', flightCount: 'flightsContainer', hotelCount: 'hotelsContainer', transferCount: 'transfersContainer' };
+            updateCount(cid[countId], countId);
+        }
+    }
+
+    function updateCount(containerId, countId) {
+        const count = document.getElementById(containerId).querySelectorAll('.sub-card').length;
+        document.getElementById(countId).textContent = count;
+    }
+
+    function formatDTLocal(val) {
+        if (!val) return '';
+        if (val.length === 16) return val;
+        if (val.length > 16) return val.substring(0, 16);
+        return val;
+    }
+
+    // ---- 3G: Validation ----
+    function validateForm() {
+        let valid = true;
+        document.querySelectorAll('.form-group input.invalid, .form-group select.invalid').forEach(el => el.classList.remove('invalid'));
+
+        const guests = document.getElementById('guestsContainer').querySelectorAll('.sub-card');
+        if (guests.length === 0) {
+            showToast('יש להוסיף לפחות נוסע אחד', 'error');
+            valid = false;
+        } else {
+            guests.forEach(g => {
+                const fn = g.querySelector('[data-field="firstName"]');
+                const ln = g.querySelector('[data-field="lastName"]');
+                if (!fn.value.trim()) { fn.classList.add('invalid'); valid = false; }
+                if (!ln.value.trim()) { ln.classList.add('invalid'); valid = false; }
+            });
+        }
+
+        const tripFrom = document.getElementById('formTripFrom');
+        const tripTo = document.getElementById('formTripTo');
+        if (!tripFrom.value) { tripFrom.classList.add('invalid'); valid = false; }
+        if (!tripTo.value) { tripTo.classList.add('invalid'); valid = false; }
+        if (tripFrom.value && tripTo.value && tripFrom.value > tripTo.value) {
+            tripTo.classList.add('invalid');
+            valid = false;
+        }
+
+        if (!valid) {
+            showToast('יש לתקן שדות חובה', 'error');
+            const first = document.querySelector('.invalid');
+            if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return valid;
+    }
+
+    // ---- Collect form data ----
+    function collectFormData() {
+        const data = {};
+        data.reservationNumber = document.getElementById('formResNumber').value.trim();
+        data.voucherNumber = document.getElementById('formVoucherNumber').value.trim();
+        data.agentName = document.getElementById('formAgentName').value.trim();
+        data.tripDates = {
+            from: document.getElementById('formTripFrom').value,
+            to: document.getElementById('formTripTo').value
+        };
+        data.language = document.getElementById('formLanguage').value;
+
+        data.guests = [];
+        document.getElementById('guestsContainer').querySelectorAll('.sub-card').forEach(card => {
+            data.guests.push({
+                title: card.querySelector('[data-field="title"]').value,
+                firstName: card.querySelector('[data-field="firstName"]').value.trim(),
+                lastName: card.querySelector('[data-field="lastName"]').value.trim(),
+                dob: card.querySelector('[data-field="dob"]').value
+            });
+        });
+
+        data.flights = [];
+        document.getElementById('flightsContainer').querySelectorAll('.sub-card').forEach(card => {
+            data.flights.push({
+                direction: card.querySelector('[data-field="direction"]').value,
+                airline: card.querySelector('[data-field="airline"]').value.trim(),
+                flightNumber: card.querySelector('[data-field="flightNumber"]').value.trim(),
+                aircraft: card.querySelector('[data-field="aircraft"]').value.trim(),
+                from: {
+                    city: card.querySelector('[data-field="fromCity"]').value.trim(),
+                    airport: card.querySelector('[data-field="fromAirport"]').value.trim().toUpperCase(),
+                    terminal: card.querySelector('[data-field="fromTerminal"]').value.trim()
+                },
+                to: {
+                    city: card.querySelector('[data-field="toCity"]').value.trim(),
+                    airport: card.querySelector('[data-field="toAirport"]').value.trim().toUpperCase(),
+                    terminal: card.querySelector('[data-field="toTerminal"]').value.trim()
+                },
+                departure: card.querySelector('[data-field="departure"]').value,
+                arrival: card.querySelector('[data-field="arrival"]').value,
+                baggage: {
+                    checked: card.querySelector('[data-field="baggageChecked"]').value.trim(),
+                    hand: card.querySelector('[data-field="baggageHand"]').value.trim(),
+                    trolley: card.querySelector('[data-field="baggageTrolley"]').value.trim()
+                },
+                meal: card.querySelector('[data-field="meal"]').value.trim(),
+                via: card.querySelector('[data-field="via"]').value.trim(),
+                remarks: card.querySelector('[data-field="remarks"]').value.trim(),
+                status: card.querySelector('[data-field="status"]').value
+            });
+        });
+
+        data.hotels = [];
+        document.getElementById('hotelsContainer').querySelectorAll('.sub-card').forEach(card => {
+            data.hotels.push({
+                name: card.querySelector('[data-field="name"]').value.trim(),
+                confirmationNumber: card.querySelector('[data-field="confirmationNumber"]').value.trim(),
+                address: card.querySelector('[data-field="address"]').value.trim(),
+                city: card.querySelector('[data-field="city"]').value.trim(),
+                phone: card.querySelector('[data-field="phone"]').value.trim(),
+                fax: card.querySelector('[data-field="fax"]').value.trim(),
+                checkIn: card.querySelector('[data-field="checkIn"]').value,
+                checkInTime: card.querySelector('[data-field="checkInTime"]').value,
+                checkOut: card.querySelector('[data-field="checkOut"]').value,
+                checkOutTime: card.querySelector('[data-field="checkOutTime"]').value,
+                nights: parseInt(card.querySelector('[data-field="nights"]').value) || 0,
+                rooms: parseInt(card.querySelector('[data-field="rooms"]').value) || 1,
+                roomType: card.querySelector('[data-field="roomType"]').value.trim(),
+                boardBasis: card.querySelector('[data-field="boardBasis"]').value.trim(),
+                status: card.querySelector('[data-field="status"]').value,
+                remarks: card.querySelector('[data-field="remarks"]').value.trim()
+            });
+        });
+
+        data.transfers = [];
+        document.getElementById('transfersContainer').querySelectorAll('.sub-card').forEach(card => {
+            data.transfers.push({
+                type: card.querySelector('[data-field="type"]').value.trim(),
+                location: card.querySelector('[data-field="location"]').value.trim(),
+                from: card.querySelector('[data-field="from"]').value,
+                to: card.querySelector('[data-field="to"]').value,
+                pickupTime: card.querySelector('[data-field="pickupTime"]').value,
+                status: card.querySelector('[data-field="status"]').value
+            });
+        });
+
+        data.notes = document.getElementById('formNotes').value.trim() ? [document.getElementById('formNotes').value.trim()] : [];
+        data.travelTips = {
+            visa: document.getElementById('formVisa').value.trim(),
+            currency: document.getElementById('formCurrency').value.trim(),
+            emergencyNumbers: document.getElementById('formEmergency').value.trim(),
+            custom: document.getElementById('formCustomTips').value.trim()
+        };
+
+        return data;
+    }
+
+    // ---- 3H: Populate form from JSON ----
+    function populateFormFromJSON(data) {
+        if (!data) return;
+
+        document.getElementById('formResNumber').value = data.reservationNumber || '';
+        document.getElementById('formVoucherNumber').value = document.getElementById('voucherNumber').value;
+        document.getElementById('formAgentName').value = data.agentName || localStorage.getItem('userName') || '';
+        document.getElementById('formTripFrom').value = data.tripDates?.from || '';
+        document.getElementById('formTripTo').value = data.tripDates?.to || '';
+
+        // Guests
+        document.getElementById('guestsContainer').innerHTML = '';
+        guestIndex = 0;
+        if (data.guests && data.guests.length > 0) {
+            data.guests.forEach(g => addGuestRow(g));
+            markSectionExtracted('guests');
+        } else {
+            addGuestRow();
+        }
+
+        // Flights
+        document.getElementById('flightsContainer').innerHTML = '';
+        flightIndex = 0;
+        if (data.flights && data.flights.length > 0) {
+            data.flights.forEach(f => addFlightCard(f));
+            markSectionExtracted('flights');
+        }
+
+        // Hotels
+        document.getElementById('hotelsContainer').innerHTML = '';
+        hotelIndex = 0;
+        if (data.hotels && data.hotels.length > 0) {
+            data.hotels.forEach(h => addHotelCard(h));
+            markSectionExtracted('hotels');
+        }
+
+        // Transfers
+        document.getElementById('transfersContainer').innerHTML = '';
+        transferIndex = 0;
+        if (data.transfers && data.transfers.length > 0) {
+            data.transfers.forEach(t => addTransferRow(t));
+            markSectionExtracted('transfers');
+        }
+
+        // Notes
+        document.getElementById('formNotes').value = (data.notes || []).join('\n');
+
+        // Travel tips
+        const tips = data.travelTips || {};
+        document.getElementById('formVisa').value = tips.visa || '';
+        document.getElementById('formCurrency').value = tips.currency || '';
+        document.getElementById('formEmergency').value = tips.emergencyNumbers || '';
+        document.getElementById('formCustomTips').value = tips.custom || '';
+
+        // Sync header reservation number
+        document.getElementById('resNumber').value = data.reservationNumber || '';
+
+        setMode('manual');
+        scrollToForm();
+    }
+
+    // ============================================================
+    // Phase 4: Voucher Generation & Output
+    // ============================================================
+
+    const HEBREW_DAYS = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+    const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+    const ENGLISH_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const ENGLISH_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    function formatHebrewDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        return 'יום ' + HEBREW_DAYS[d.getDay()] + ', ' + d.getDate().toString().padStart(2,'0') + ' ' + HEBREW_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    function formatEnglishDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d)) return dateStr;
+        return ENGLISH_DAYS[d.getDay()] + ', ' + d.getDate().toString().padStart(2,'0') + ' ' + ENGLISH_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+    }
+    function formatDateTime(dtStr, lang) {
+        if (!dtStr) return '';
+        const d = new Date(dtStr);
+        if (isNaN(d)) return dtStr;
+        const datePart = lang === 'en' ? formatEnglishDate(dtStr) : formatHebrewDate(dtStr);
+        return datePart + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    }
+    function fmtDate(dateStr, lang) { return lang === 'en' ? formatEnglishDate(dateStr) : formatHebrewDate(dateStr); }
+
+    function sortChronologically(data) {
+        const items = [];
+        (data.flights || []).forEach(f => items.push({ type:'flight', date: (f.departure||'').split('T')[0]||'9999', data:f }));
+        (data.hotels || []).forEach(h => items.push({ type:'hotel', date: h.checkIn||'9999', data:h }));
+        (data.transfers || []).forEach(t => items.push({ type:'transfer', date: t.from||'9999', data:t }));
+        items.sort((a,b) => a.date.localeCompare(b.date));
+        return items;
+    }
+
+    function he(lang) { return lang !== 'en'; }
+
+    function generateVoucherHTML(data) {
+        const lang = data.language || 'he';
+        const isHe = he(lang);
+        const dir = isHe ? 'rtl' : 'ltr';
+        const L = {
+            title: isHe ? 'מסמך נסיעה ושוברים' : 'Travel Document & Vouchers',
+            issueDate: isHe ? 'תאריך הנפקה' : 'Issue Date',
+            voucherNum: isHe ? 'מספר שובר' : 'Voucher No.',
+            issuedBy: isHe ? 'הונפק ע״י' : 'Issued by',
+            passengers: isHe ? 'נוסעים' : 'Passengers',
+            composition: isHe ? 'הרכב' : 'Composition',
+            pax: isHe ? 'נוסעים' : 'passengers',
+            outbound: isHe ? 'טיסת הלוך' : 'Outbound Flight',
+            returnFl: isHe ? 'טיסת חזור' : 'Return Flight',
+            terminal: isHe ? 'טרמינל' : 'Terminal',
+            baggage: isHe ? 'כבודה' : 'Baggage',
+            hand: isHe ? 'יד' : 'Hand',
+            trolley: isHe ? 'טרולי' : 'Trolley',
+            meal: isHe ? 'ארוחה' : 'Meal',
+            via: isHe ? 'עצירת ביניים' : 'Via',
+            hotel: isHe ? 'מלון' : 'Hotel',
+            confirmation: isHe ? 'אישור' : 'Conf.',
+            phone: isHe ? 'טלפון' : 'Phone',
+            fax: isHe ? 'פקס' : 'Fax',
+            checkIn: isHe ? 'כניסה' : 'Check-in',
+            checkOut: isHe ? 'יציאה' : 'Check-out',
+            nights: isHe ? 'לילות' : 'nights',
+            rooms: isHe ? 'חדרים' : 'rooms',
+            roomType: isHe ? 'סוג חדר' : 'Room Type',
+            board: isHe ? 'בסיס' : 'Board',
+            attention: isHe ? 'שימו לב' : 'Attention',
+            transfer: isHe ? 'העברה' : 'Transfer',
+            location: isHe ? 'מיקום' : 'Location',
+            pickup: isHe ? 'שעת איסוף' : 'Pickup Time',
+            importantInfo: isHe ? 'מידע חשוב' : 'Important Information',
+            arriveEarly: isHe ? 'יש להגיע לשדה התעופה כ-3 שעות לפני ההמראה.' : 'Arrive at the airport approximately 3 hours before departure.',
+            passport: isHe ? 'חובה לוודא דרכון בתוקף ל-6 חודשים לפחות.' : 'Ensure your passport is valid for at least 6 months.',
+            onlineCheckin: isHe ? 'מומלץ לבצע צ\'ק-אין באתר חברת התעופה.' : 'Online check-in at the airline website is recommended.',
+            destInfo: isHe ? 'מידע על היעד' : 'Destination Information',
+            visaLabel: isHe ? 'ויזה' : 'Visa',
+            currencyLabel: isHe ? 'מטבע' : 'Currency',
+            emergencyLabel: isHe ? 'חירום' : 'Emergency',
+            termsTitle: isHe ? 'תנאים ומידע משפטי' : 'Terms & Legal Information',
+            term1: isHe ? '<strong>המחיר אינו כולל:</strong> מס עיר/לינה (City Tax) לתשלום במזומן במלון, ביטוח, וטיפים.' : '<strong>Price excludes:</strong> City Tax (payable at hotel), insurance, and tips.',
+            term2: isHe ? '<strong>אחריות:</strong> "Lord Tickets" משמשת כמתווך בלבד. אין אנו אחראים לשינויים מצד הספקים.' : '<strong>Liability:</strong> Lord Tickets acts as an intermediary only. We are not responsible for changes by suppliers.',
+            term3: isHe ? '<strong>שינויים בלו"ז:</strong> חובה להתעדכן בלוח הטיסות באתר חברת התעופה לפני ההגעה לשדה.' : '<strong>Schedule changes:</strong> Please verify flight times on the airline website before heading to the airport.',
+            emergency: isHe ? 'מוקד חירום' : 'Emergency',
+            email: isHe ? 'דוא"ל' : 'Email'
+        };
+
+        const guestNames = (data.guests||[]).map(g => (g.title ? g.title + ' ' : '') + g.firstName + ' ' + g.lastName).join(', ');
+        const paxCount = (data.guests||[]).length;
+        const today = new Date();
+        const issueDate = fmtDate(today.toISOString().split('T')[0], lang);
+
+        const sorted = sortChronologically(data);
+
+        let sectionsHTML = '';
+        sorted.forEach(item => {
+            if (item.type === 'flight') sectionsHTML += buildFlightCard(item.data, L, lang);
+            else if (item.type === 'hotel') sectionsHTML += buildHotelCard(item.data, L, lang);
+            else if (item.type === 'transfer') sectionsHTML += buildTransferCard(item.data, L, lang);
+        });
+
+        const tips = data.travelTips || {};
+        const hasTips = tips.visa || tips.currency || tips.emergencyNumbers || tips.custom;
+        let tipsHTML = '';
+        if (hasTips) {
+            let tipItems = '';
+            if (tips.visa) tipItems += '<li><strong>' + L.visaLabel + ':</strong> ' + esc(tips.visa) + '</li>';
+            if (tips.currency) tipItems += '<li><strong>' + L.currencyLabel + ':</strong> ' + esc(tips.currency) + '</li>';
+            if (tips.emergencyNumbers) tipItems += '<li><strong>' + L.emergencyLabel + ':</strong> ' + esc(tips.emergencyNumbers) + '</li>';
+            if (tips.custom) tipItems += '<li>' + esc(tips.custom) + '</li>';
+            tipsHTML = '<div class="info-box" style="background-color:#e8f4fd;border-color:#bee5eb;color:#0c5460;"><strong>&#127758; ' + L.destInfo + ':</strong><ul>' + tipItems + '</ul></div>';
+        }
+
+        const qrText = 'Lord Tickets | ' + (data.voucherNumber||'') + ' | Res: ' + (data.reservationNumber||'');
+
+        return `<!DOCTYPE html>
+<html lang="${lang}" dir="${dir}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${L.title} - Lord Tickets</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Rubik:wght@400;500;700&display=swap');
+body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0;padding:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.voucher-box{max-width:850px;margin:0 auto;background:white;box-shadow:0 5px 20px rgba(0,0,0,0.05);border-radius:8px;overflow:hidden;}
+.banner{width:100%;height:180px;background:linear-gradient(135deg,#002B5B 0%,#0F1F3A 60%,#1B365D 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.banner-text{font-family:'Rubik',sans-serif;font-size:48px;font-weight:700;color:rgba(212,175,55,0.15);letter-spacing:8px;text-transform:uppercase;}
+.banner-line{position:absolute;bottom:0;left:0;right:0;height:4px;background:#D4AF37;}
+.header{background-color:#002B5B;color:white;padding:25px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #D4AF37;}
+.agency-name{font-family:'Rubik',sans-serif;font-size:28px;font-weight:700;color:#D4AF37;text-transform:uppercase;letter-spacing:1px;}
+.client-info{background-color:#f8f9fa;padding:20px 40px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;font-size:15px;}
+.content{padding:40px;}
+.section-title{display:flex;align-items:center;color:#002B5B;border-bottom:2px solid #e0e0e0;padding-bottom:10px;margin-top:40px;margin-bottom:25px;}
+.section-title:first-child{margin-top:0;}
+.section-title h2{margin:0;font-family:'Rubik',sans-serif;font-size:22px;margin-${isHe?'right':'left'}:15px;}
+.icon{font-size:24px;}
+.card-box{background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:15px;padding:20px;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.03);page-break-inside:avoid;}
+.card-header{background:#f4f8fb;color:#002B5B;padding:8px 15px;border-radius:5px;font-size:14px;font-weight:bold;margin-bottom:15px;display:inline-block;}
+.details-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.big-text{font-size:18px;font-weight:700;color:#333;}
+.small-text{font-size:14px;color:#666;}
+.info-box{background-color:#fff3cd;color:#856404;padding:20px;border-radius:8px;margin-bottom:30px;font-size:14px;border:1px solid #ffeeba;page-break-inside:avoid;}
+.info-box ul{margin:8px 0 0 0;padding-${isHe?'right':'left'}:20px;}
+.info-box li{margin-bottom:4px;}
+.terms-section{background-color:#f8f9fa;padding:30px 40px;font-size:12px;color:#666;border-top:1px solid #eee;page-break-inside:avoid;}
+.terms-section ul{margin:8px 0 0 0;padding-${isHe?'right':'left'}:20px;}
+.terms-section li{margin-bottom:4px;}
+.footer{background-color:#002B5B;color:white;text-align:center;padding:20px 40px;font-size:13px;}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;}
+.arrow{margin:0 10px;color:#D4AF37;font-size:20px;}
+@media print{
+body{padding:0;background:white;}
+.voucher-box{box-shadow:none;max-width:100%;margin:0;}
+.section-title{page-break-after:avoid;}
+@page{size:A4;margin:15mm;}
+}
+</style>
+</head>
+<body>
+<div class="voucher-box">
+<div class="banner"><div class="banner-text">LORD TICKETS</div><div class="banner-line"></div></div>
+<div class="header">
+<div><div class="agency-name">Lord Tickets</div><div>${L.title}</div></div>
+<div style="text-align:${isHe?'left':'right'};font-size:14px;">
+<div>${L.issueDate}: ${issueDate}</div>
+<div>${L.voucherNum}: ${esc(data.voucherNumber||'')}</div>
+<div>${L.issuedBy}: ${esc(data.agentName||'')}</div>
+</div>
+</div>
+<div class="client-info">
+<div><strong>${L.passengers}:</strong><br>${esc(guestNames)}</div>
+<div style="text-align:${isHe?'left':'right'};"><strong>${L.composition}:</strong> ${paxCount} ${L.pax}</div>
+</div>
+<div class="content">
+<div class="info-box">
+<strong>&#9992; ${L.importantInfo}:</strong>
+<ul><li>${L.arriveEarly}</li><li>${L.passport}</li><li>${L.onlineCheckin}</li></ul>
+</div>
+${sectionsHTML}
+${tipsHTML}
+</div>
+<div class="terms-section">
+<strong>&#128221; ${L.termsTitle}:</strong>
+<ul><li>${L.term1}</li><li>${L.term2}</li><li>${L.term3}</li></ul>
+</div>
+<div class="footer">
+<div class="footer-inner">
+<div>
+<div style="font-size:16px;font-weight:bold;">Lord Tickets Agency</div>
+<div>${L.emergency}: 052-244-9096 | ${L.email}: support@lordtickets.com</div>
+</div>
+<div id="qrPlaceholder" style="width:80px;height:80px;"></div>
+</div>
+</div>
+</div>
+</body>
+</html>`;
+    }
+
+    function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function buildFlightCard(f, L, lang) {
+        const isHe = he(lang);
+        const dirLabel = f.direction === 'return' ? L.returnFl : L.outbound;
+        const from = f.from || {}; const to = f.to || {}; const bag = f.baggage || {};
+        let html = '<div class="section-title"><span class="icon">&#9992;</span><h2>' + dirLabel + '</h2></div>';
+        html += '<div class="card-box">';
+        html += '<div class="card-header">' + esc(f.airline) + ' | ' + esc(f.flightNumber) + (f.aircraft ? ' | ' + esc(f.aircraft) : '') + '</div>';
+        html += '<div class="details-row">';
+        html += '<div><div class="big-text">' + esc(from.city) + ' (' + esc(from.airport) + ')</div>';
+        if (from.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(from.terminal) + '</div>';
+        html += '<div class="small-text">' + formatDateTime(f.departure, lang) + '</div></div>';
+        html += '<div class="arrow">&#10132;</div>';
+        html += '<div><div class="big-text">' + esc(to.city) + ' (' + esc(to.airport) + ')</div>';
+        if (to.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(to.terminal) + '</div>';
+        html += '<div class="small-text">' + formatDateTime(f.arrival, lang) + '</div></div>';
+        html += '</div>';
+        const bagParts = [];
+        if (bag.checked) bagParts.push(L.baggage + ': ' + esc(bag.checked));
+        if (bag.hand) bagParts.push(L.hand + ': ' + esc(bag.hand));
+        if (bag.trolley) bagParts.push(L.trolley + ': ' + esc(bag.trolley));
+        if (bagParts.length) html += '<div class="small-text">' + bagParts.join(' | ') + '</div>';
+        if (f.meal) html += '<div class="small-text">' + L.meal + ': ' + esc(f.meal) + '</div>';
+        if (f.via) html += '<div class="small-text">' + L.via + ': ' + esc(f.via) + '</div>';
+        if (f.remarks) html += '<div class="small-text" style="font-style:italic;color:#888;margin-top:6px;">' + esc(f.remarks) + '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function buildHotelCard(h, L, lang) {
+        let html = '<div class="section-title"><span class="icon">&#127976;</span><h2>' + esc(h.name) + '</h2></div>';
+        html += '<div class="card-box">';
+        html += '<div class="card-header">' + esc(h.name);
+        if (h.confirmationNumber) html += ' | ' + L.confirmation + ': ' + esc(h.confirmationNumber);
+        html += '</div>';
+        html += '<div class="small-text">' + esc(h.address) + (h.city ? ', ' + esc(h.city) : '') + '</div>';
+        const contacts = [];
+        if (h.phone) contacts.push(L.phone + ': ' + esc(h.phone));
+        if (h.fax) contacts.push(L.fax + ': ' + esc(h.fax));
+        if (contacts.length) html += '<div class="small-text">' + contacts.join(' | ') + '</div>';
+        html += '<div class="details-row" style="margin-top:12px;">';
+        html += '<div><div class="big-text">' + L.checkIn + '</div><div class="small-text">' + fmtDate(h.checkIn, lang) + '</div>';
+        if (h.checkInTime) html += '<div class="small-text">' + (he(lang)?'החל מ-':'From ') + esc(h.checkInTime) + '</div>';
+        html += '</div>';
+        html += '<div style="text-align:center;"><div class="big-text">' + (h.nights||0) + ' ' + L.nights + '</div>';
+        if ((h.rooms||1) > 1) html += '<div class="small-text">' + h.rooms + ' ' + L.rooms + '</div>';
+        html += '</div>';
+        html += '<div><div class="big-text">' + L.checkOut + '</div><div class="small-text">' + fmtDate(h.checkOut, lang) + '</div>';
+        if (h.checkOutTime) html += '<div class="small-text">' + (he(lang)?'עד ':'Until ') + esc(h.checkOutTime) + '</div>';
+        html += '</div></div>';
+        html += '<div class="small-text">' + L.roomType + ': ' + esc(h.roomType) + ' | ' + L.board + ': ' + esc(h.boardBasis) + '</div>';
+        if (h.remarks) {
+            html += '<div class="info-box" style="margin-top:12px;margin-bottom:0;"><strong>&#9888; ' + L.attention + ':</strong> ' + esc(h.remarks) + '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function buildTransferCard(t, L, lang) {
+        let html = '<div class="section-title"><span class="icon">&#128656;</span><h2>' + L.transfer + '</h2></div>';
+        html += '<div class="card-box">';
+        html += '<div class="card-header">' + esc(t.type) + '</div>';
+        html += '<div class="small-text">' + L.location + ': ' + esc(t.location) + '</div>';
+        html += '<div class="small-text">' + fmtDate(t.from, lang) + ' - ' + fmtDate(t.to, lang) + '</div>';
+        if (t.pickupTime) html += '<div class="small-text">' + L.pickup + ': ' + esc(t.pickupTime) + '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    // ---- Generate handler ----
+    function handleGenerate() {
+        if (!validateForm()) return;
+        const data = collectFormData();
+        currentVoucherHTML = generateVoucherHTML(data);
+        showPreview(currentVoucherHTML);
+        showToast('השובר נוצר בהצלחה!', 'success');
+        saveVoucher(data, currentVoucherHTML);
+    }
+
+    function showPreview(html) {
+        const section = document.getElementById('previewSection');
+        const iframe = document.getElementById('voucherPreview');
+        section.classList.add('show');
+        document.getElementById('mainLayout').classList.add('with-preview');
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+
+        setTimeout(() => {
+            try {
+                iframe.style.height = (doc.body.scrollHeight + 40) + 'px';
+                injectQRCode(doc);
+            } catch(e) { iframe.style.height = '800px'; }
+        }, 500);
+
+        section.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function injectQRCode(doc) {
+        try {
+            const placeholder = doc.getElementById('qrPlaceholder');
+            if (!placeholder) return;
+            const qrText = placeholder.closest('.footer') ?
+                document.getElementById('voucherNumber').value + ' | ' + document.getElementById('resNumber').value :
+                '';
+            const tmpDiv = document.createElement('div');
+            tmpDiv.style.position = 'absolute';
+            tmpDiv.style.left = '-9999px';
+            document.body.appendChild(tmpDiv);
+            new QRCode(tmpDiv, { text: 'Lord Tickets | ' + (document.getElementById('formVoucherNumber').value||'') + ' | Res: ' + (document.getElementById('formResNumber').value||''), width: 80, height: 80, colorDark: '#002B5B', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+            setTimeout(() => {
+                const canvas = tmpDiv.querySelector('canvas');
+                if (canvas) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    placeholder.innerHTML = '<img src="' + dataUrl + '" width="80" height="80" style="border-radius:4px;">';
+                    currentVoucherHTML = currentVoucherHTML.replace(
+                        '<div id="qrPlaceholder" style="width:80px;height:80px;"></div>',
+                        '<img src="' + dataUrl + '" width="80" height="80" style="border-radius:4px;">'
+                    );
+                }
+                tmpDiv.remove();
+            }, 100);
+        } catch(e) {}
+    }
+
+    // ---- Export actions ----
+    function printVoucher() {
+        if (!currentVoucherHTML) { showToast('יש ליצור שובר תחילה', 'warning'); return; }
+        const win = window.open('', '_blank');
+        win.document.write(currentVoucherHTML);
+        win.document.close();
+        win.onload = function() { setTimeout(function() { win.print(); }, 500); };
+    }
+
+    function downloadHTML() {
+        if (!currentVoucherHTML) { showToast('יש ליצור שובר תחילה', 'warning'); return; }
+        const blob = new Blob([currentVoucherHTML], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'voucher-' + getResNumber() + '.html';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('הקובץ הורד בהצלחה', 'success');
+    }
+
+    async function downloadPDF() {
+        if (!currentVoucherHTML) { showToast('יש ליצור שובר תחילה', 'warning'); return; }
+        showToast('...מייצר PDF', 'info');
+        try {
+            const iframe = document.getElementById('voucherPreview');
+            const element = iframe.contentDocument.querySelector('.voucher-box');
+            const opt = {
+                margin: 10,
+                filename: 'voucher-' + getResNumber() + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            await html2pdf().set(opt).from(element).save();
+            showToast('PDF הורד בהצלחה', 'success');
+        } catch(e) {
+            showToast('שגיאה ביצירת PDF: ' + e.message, 'error');
+        }
+    }
+
+    async function copyToClipboard() {
+        if (!currentVoucherHTML) { showToast('יש ליצור שובר תחילה', 'warning'); return; }
+        try {
+            const blob = new Blob([currentVoucherHTML], { type: 'text/html' });
+            await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+            showToast('הועתק ללוח!', 'success');
+        } catch(e) {
+            try {
+                await navigator.clipboard.writeText(currentVoucherHTML);
+                showToast('הועתק כטקסט', 'success');
+            } catch(e2) {
+                showToast('שגיאה בהעתקה', 'error');
+            }
+        }
+    }
+
+    function saveAsNew() {
+        currentEditId = null;
+        currentEditVoucherNumber = null;
+        document.getElementById('formVoucherNumber').value = generateVoucherNumber();
+        document.getElementById('editModeBanner').style.display = 'none';
+        document.getElementById('generateBtn').innerHTML = '<span class="material-icons">auto_awesome</span> צור שובר';
+        document.getElementById('saveAsNewBtn').style.display = 'none';
+    }
+
+    // Init form defaults on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('formVoucherNumber').value = document.getElementById('voucherNumber').value;
+        document.getElementById('formAgentName').value = localStorage.getItem('userName') || '';
+        addGuestRow();
+    });
+
+    // ============================================================
+    // Phase 5: Supabase Storage
+    // ============================================================
+
+    let pastVouchersLoaded = false;
+    let pastVouchersData = [];
+
+    function getSupabase() {
+        return window.supabase.createClient(LordConfig.SUPABASE_URL, LordConfig.SUPABASE_ANON_KEY, {
+            global: { headers: { Authorization: 'Bearer ' + (localStorage.getItem('access_token') || '') } }
+        });
+    }
+
+    // Toggle past vouchers panel
+    function togglePastVouchers() {
+        const body = document.getElementById('pastPanelBody');
+        const icon = document.getElementById('pastExpandIcon');
+        const isOpen = body.classList.contains('show');
+        body.classList.toggle('show');
+        icon.textContent = isOpen ? 'expand_more' : 'expand_less';
+        if (!isOpen && !pastVouchersLoaded) {
+            loadPastVouchers();
+        }
+    }
+
+    async function loadPastVouchers() {
+        const sb = getSupabase();
+        const { data, error } = await sb
+            .from('vouchers')
+            .select('id, voucher_number, reservation_number, guest_names, trip_dates_from, trip_dates_to, created_at')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            showToast('שגיאה בטעינת שוברים: ' + error.message, 'error');
+            return;
+        }
+        pastVouchersData = data || [];
+        pastVouchersLoaded = true;
+        renderVouchersList(pastVouchersData);
+    }
+
+    function refreshPastVouchers() {
+        pastVouchersLoaded = false;
+        loadPastVouchers();
+    }
+
+    function renderVouchersList(list) {
+        const container = document.getElementById('vouchersList');
+        if (!list || list.length === 0) {
+            container.innerHTML = '<div style="text-align:center;color:var(--gray-dark);padding:15px;font-size:0.9rem;">אין שוברים שמורים</div>';
+            return;
+        }
+        container.innerHTML = list.map(v => {
+            const dates = (v.trip_dates_from && v.trip_dates_to) ? v.trip_dates_from + ' → ' + v.trip_dates_to : '';
+            return `
+            <div class="voucher-list-item" onclick="loadVoucher('${v.id}')">
+                <div class="vli-main">
+                    <strong>${esc(v.voucher_number||'')}</strong>
+                    ${v.reservation_number ? ' <span style="color:var(--gray-dark);font-size:0.8rem;">| הזמנה: ' + esc(v.reservation_number) + '</span>' : ''}
+                    <div class="vli-sub">${esc(v.guest_names||'')} ${dates ? '| ' + dates : ''}</div>
+                </div>
+                <div class="vli-actions">
+                    <button class="dup" onclick="event.stopPropagation();duplicateVoucher('${v.id}')" title="שכפל"><span class="material-icons" style="font-size:1rem;">content_copy</span></button>
+                    <button onclick="event.stopPropagation();deleteVoucher('${v.id}')" title="מחק"><span class="material-icons" style="font-size:1rem;">delete</span></button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function filterVouchers(query) {
+        if (!query) { renderVouchersList(pastVouchersData); return; }
+        const q = query.toLowerCase();
+        const filtered = pastVouchersData.filter(v =>
+            (v.guest_names || '').toLowerCase().includes(q) ||
+            (v.reservation_number || '').toLowerCase().includes(q) ||
+            (v.voucher_number || '').toLowerCase().includes(q)
+        );
+        renderVouchersList(filtered);
+    }
+
+    // Save voucher
+    async function saveVoucher(data, html) {
+        const sb = getSupabase();
+        const userId = getUserId();
+
+        if (data.reservationNumber && !currentEditId) {
+            const { data: existing } = await sb
+                .from('vouchers')
+                .select('id, voucher_number')
+                .eq('reservation_number', data.reservationNumber)
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            if (existing) {
+                if (!confirm('שובר למספר הזמנה ' + data.reservationNumber + ' כבר קיים (' + existing.voucher_number + ').\nלעדכן את השובר הקיים?')) {
+                    return;
+                }
+                return await updateVoucherRow(existing.id, data, html);
+            }
+        }
+
+        if (currentEditId) {
+            return await updateVoucherRow(currentEditId, data, html);
+        }
+
+        const guestNames = (data.guests || []).map(g => ((g.title||'') + ' ' + (g.firstName||'') + ' ' + (g.lastName||'')).trim()).join(', ');
+
+        const { error } = await sb.from('vouchers').insert({
+            user_id: userId,
+            reservation_number: data.reservationNumber || '',
+            voucher_number: data.voucherNumber,
+            agent_name: data.agentName || '',
+            guest_names: guestNames,
+            trip_dates_from: data.tripDates?.from || null,
+            trip_dates_to: data.tripDates?.to || null,
+            data_json: data,
+            voucher_html: html,
+            language: data.language || 'he'
+        });
+
+        if (error) {
+            showToast('שגיאה בשמירה: ' + error.message, 'error');
+        } else {
+            showToast('שובר ' + data.voucherNumber + ' נשמר בהצלחה', 'success');
+            refreshPastVouchers();
+        }
+    }
+
+    async function updateVoucherRow(id, data, html) {
+        const sb = getSupabase();
+        const guestNames = (data.guests || []).map(g => ((g.title||'') + ' ' + (g.firstName||'') + ' ' + (g.lastName||'')).trim()).join(', ');
+
+        const { error } = await sb.from('vouchers').update({
+            reservation_number: data.reservationNumber || '',
+            agent_name: data.agentName || '',
+            guest_names: guestNames,
+            trip_dates_from: data.tripDates?.from || null,
+            trip_dates_to: data.tripDates?.to || null,
+            data_json: data,
+            voucher_html: html,
+            language: data.language || 'he'
+        }).eq('id', id);
+
+        if (error) {
+            showToast('שגיאה בעדכון: ' + error.message, 'error');
+        } else {
+            showToast('השובר עודכן בהצלחה', 'success');
+            refreshPastVouchers();
+        }
+    }
+
+    // Load voucher into form
+    async function loadVoucher(id) {
+        const sb = getSupabase();
+        const { data, error } = await sb.from('vouchers').select('*').eq('id', id).single();
+        if (error) { showToast('שגיאה בטעינת שובר', 'error'); return; }
+
+        currentEditId = data.id;
+        currentEditVoucherNumber = data.voucher_number;
+
+        const formData = data.data_json || {};
+        formData.voucherNumber = data.voucher_number;
+        populateFormFromJSON(formData);
+
+        document.getElementById('formVoucherNumber').value = data.voucher_number;
+        document.getElementById('editModeBanner').style.display = 'block';
+        document.getElementById('editModeBanner').textContent = 'עריכת שובר: ' + data.voucher_number;
+        document.getElementById('generateBtn').innerHTML = '<span class="material-icons">update</span> עדכן שובר';
+        document.getElementById('saveAsNewBtn').style.display = 'flex';
+    }
+
+    // Duplicate
+    async function duplicateVoucher(id) {
+        const sb = getSupabase();
+        const { data, error } = await sb.from('vouchers').select('data_json').eq('id', id).single();
+        if (error) { showToast('שגיאה', 'error'); return; }
+
+        const cloned = Object.assign({}, data.data_json);
+        cloned.reservationNumber = '';
+        cloned.voucherNumber = generateVoucherNumber();
+
+        currentEditId = null;
+        currentEditVoucherNumber = null;
+        document.getElementById('editModeBanner').style.display = 'none';
+        document.getElementById('generateBtn').innerHTML = '<span class="material-icons">auto_awesome</span> צור שובר';
+        document.getElementById('saveAsNewBtn').style.display = 'none';
+
+        populateFormFromJSON(cloned);
+        showToast('הנתונים שוכפלו -- ערוך ושמור כשובר חדש', 'info');
+    }
+
+    // Delete
+    async function deleteVoucher(id) {
+        if (!confirm('האם למחוק את השובר? פעולה זו אינה הפיכה.')) return;
+        const sb = getSupabase();
+        const { error } = await sb.from('vouchers').delete().eq('id', id);
+        if (error) {
+            showToast('שגיאה במחיקה: ' + error.message, 'error');
+        } else {
+            showToast('השובר נמחק', 'success');
+            refreshPastVouchers();
+            if (currentEditId === id) {
+                currentEditId = null;
+                document.getElementById('editModeBanner').style.display = 'none';
+                document.getElementById('generateBtn').innerHTML = '<span class="material-icons">auto_awesome</span> צור שובר';
+                document.getElementById('saveAsNewBtn').style.display = 'none';
+            }
+        }
+    }
+
+    </script>
+</body>
+</html>
