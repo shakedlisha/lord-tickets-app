@@ -1339,7 +1339,9 @@ CRITICAL RULES:
 1. REMOVE all prices, costs, VAT, taxes, commissions, and payment details. The output must contain ZERO monetary values.
 2. REMOVE all supplier/platform/booking-system branding: Booking.com, Agoda, Expedia, Hotelbeds, ODYSSEA, pelegisr.com, "Powered by..." etc. Only "Lord Tickets" branding should remain.
 3. AIRLINE names: clean up booking-system suffixes and return the name in HEBREW. "ELAL SUNDOR" → "אל על", "TURKISH SUNDOR" → "טורקיש איירליינס", "WIZZ AIR" → "וויזאייר", "RYANAIR" → "ריינאייר", "AEGEAN" → "אג'יאן", "LUFTHANSA" → "לופטהנזה", etc.
-4. Room types and board basis: return BOTH Hebrew and English separated by " / ". Examples: "חדר זוגי סטנדרטי / Standard Double Room", "לינה וארוחת בוקר / Bed and Breakfast", "הכל כלול / All Inclusive".
+4. Room types and board basis: return BOTH Hebrew and English separated by " / ". NEVER return raw booking codes. Translate these common codes:
+   Room: REG/STD="חדר רגיל / Standard Room", SUP="חדר סופריור / Superior Room", FASD="חדר משפחתי סטנדרטי / Family Standard Room", DLX="חדר דלוקס / Deluxe Room", DBL="חדר זוגי / Double Room", SGL="חדר יחיד / Single Room", TWN="חדר טווין / Twin Room", TRP="חדר שלישייה / Triple Room", FMLY="חדר משפחתי / Family Room".
+   Board: AI="הכל כלול / All Inclusive", BB="לינה וארוחת בוקר / Bed and Breakfast", HB="חצי פנסיון / Half Board", FB="פנסיון מלא / Full Board", RO="לינה בלבד / Room Only", UAI="אולטרה הכל כלול / Ultra All Inclusive".
 5. Format all dates as ISO strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm). Convert DD/MM/YY or DD MMM YY formats to ISO.
 6. If a field is not found in the document, return an empty string "" (never null or undefined).
 7. If multiple documents are provided, merge them into a single booking.
@@ -1348,6 +1350,9 @@ CRITICAL RULES:
 10. Guest names: ALWAYS keep in ENGLISH exactly as they appear in the document. Do NOT translate names to Hebrew. Put the FAMILY name in lastName and GIVEN name(s) in firstName. "COHEN YAFIT RINA" with title MS → firstName: "YAFIT RINA", lastName: "COHEN".
 11. City names: return BOTH Hebrew (cityHe) and English (cityEn) for every city. Example: cityHe: "תל אביב", cityEn: "Tel Aviv". Airport codes stay as English IATA codes.
 12. Hotel names: ALWAYS keep in English exactly as they appear (e.g., "Sheraton Batumi", "Hilton Prague"). Do NOT translate hotel names.
+13. MERGE multiple rooms at the same hotel into ONE hotel entry. If the document shows 5 room bookings at the same hotel with the same dates, return ONE hotel object with "rooms": 5. If room types differ, list them in roomType (e.g., "3x חדר רגיל / Standard Room, 2x חדר משפחתי / Family Room").
+14. For hotel addresses: extract the FULL street address from the document. NEVER use an airport IATA code as an address or city name.
+15. Extract ALL available data. Pay special attention to: reservation/booking number, baggage allowance per passenger, hotel phone/fax numbers, hotel confirmation numbers. If the document contains these fields, they MUST appear in the output.
 
 Return ONLY valid JSON matching this exact schema (no markdown, no explanation, just the JSON):
 
@@ -1561,6 +1566,27 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
         }
     }
 
+    function mergeHotelDuplicates(hotels) {
+        const map = {};
+        hotels.forEach(h => {
+            const key = (h.name || '').trim().toLowerCase() + '|' + (h.checkIn || '') + '|' + (h.checkOut || '');
+            if (map[key]) {
+                map[key].rooms = (map[key].rooms || 1) + (h.rooms || 1);
+                if (h.roomType && h.roomType !== map[key].roomType) {
+                    map[key].roomType = map[key].roomType + ', ' + h.roomType;
+                }
+                if (h.remarks && !map[key].remarks) map[key].remarks = h.remarks;
+                if (h.address && !map[key].address) map[key].address = h.address;
+                if (h.phone && !map[key].phone) map[key].phone = h.phone;
+                if (h.fax && !map[key].fax) map[key].fax = h.fax;
+                if (h.confirmationNumber && !map[key].confirmationNumber) map[key].confirmationNumber = h.confirmationNumber;
+            } else {
+                map[key] = Object.assign({}, h, { rooms: h.rooms || 1 });
+            }
+        });
+        return Object.values(map);
+    }
+
     // 2D: Parse Gemini response
     function parseGeminiResponse(data) {
         try {
@@ -1581,7 +1607,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
                 results.flights = true;
             }
             if (Array.isArray(parsed.hotels) && parsed.hotels.length > 0) {
-                extractedData.hotels = parsed.hotels;
+                extractedData.hotels = mergeHotelDuplicates(parsed.hotels);
                 results.hotels = true;
             }
             if (Array.isArray(parsed.transfers) && parsed.transfers.length > 0) {
@@ -2195,7 +2221,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Rubik:wght@400;500;700&display=swap');
 body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0;padding:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-.voucher-box{max-width:850px;margin:0 auto;background:white;box-shadow:0 5px 20px rgba(0,0,0,0.05);border-radius:8px;overflow:hidden;}
+.voucher-box{max-width:850px;margin:0 auto;background:white;box-shadow:0 5px 20px rgba(0,0,0,0.05);border-radius:8px;overflow:clip;}
 .banner{width:100%;height:180px;background:linear-gradient(135deg,#002B5B 0%,#0F1F3A 60%,#1B365D 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
 .banner-text{font-family:'Rubik',sans-serif;font-size:48px;font-weight:700;color:rgba(212,175,55,0.15);letter-spacing:8px;text-transform:uppercase;}
 .banner-line{position:absolute;bottom:0;left:0;right:0;height:4px;background:#D4AF37;}
@@ -2273,15 +2299,16 @@ ${tipsHTML}
     function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     function cityName(loc, lang) {
-        if (he(lang)) return loc.cityHe || loc.cityEn || loc.city || '';
-        return loc.cityEn || loc.city || loc.cityHe || '';
+        if (he(lang)) return loc.cityHe || loc.cityEn || loc.city || loc.airport || '';
+        return loc.cityEn || loc.city || loc.cityHe || loc.airport || '';
     }
 
     function buildFlightCard(f, L, lang) {
         const isHe = he(lang);
         const dirLabel = f.direction === 'return' ? L.returnFl : L.outbound;
         const from = f.from || {}; const to = f.to || {}; const bag = f.baggage || {};
-        let html = '<div class="section-title"><span class="icon">&#9992;</span><h2>' + dirLabel + '</h2></div>';
+        let html = '<div style="page-break-inside:avoid;">';
+        html += '<div class="section-title"><span class="icon">&#9992;</span><h2>' + dirLabel + '</h2></div>';
         html += '<div class="card-box">';
         html += '<div class="card-header">' + esc(f.airline) + ' | ' + esc(f.flightNumber) + (f.aircraft ? ' | ' + esc(f.aircraft) : '') + '</div>';
         const dir = isHe ? 'rtl' : 'ltr';
@@ -2302,12 +2329,13 @@ ${tipsHTML}
         if (f.meal) html += '<div class="small-text">' + L.meal + ': ' + esc(f.meal) + '</div>';
         if (f.via) html += '<div class="small-text">' + L.via + ': ' + esc(f.via) + '</div>';
         if (f.remarks) html += '<div class="small-text" style="font-style:italic;color:#888;margin-top:6px;">' + esc(f.remarks) + '</div>';
-        html += '</div>';
+        html += '</div></div>';
         return html;
     }
 
     function buildHotelCard(h, L, lang) {
-        let html = '<div class="section-title"><span class="icon">&#127976;</span><h2>' + esc(h.name) + '</h2></div>';
+        let html = '<div style="page-break-inside:avoid;">';
+        html += '<div class="section-title"><span class="icon">&#127976;</span><h2>' + esc(h.name) + '</h2></div>';
         html += '<div class="card-box">';
         html += '<div class="card-header">' + esc(h.name);
         if (h.confirmationNumber) html += ' | ' + L.confirmation + ': ' + esc(h.confirmationNumber);
@@ -2333,24 +2361,39 @@ ${tipsHTML}
         if (h.remarks) {
             html += '<div class="info-box" style="margin-top:12px;margin-bottom:0;"><strong>&#9888; ' + L.attention + ':</strong> ' + esc(h.remarks) + '</div>';
         }
-        html += '</div>';
+        html += '</div></div>';
         return html;
     }
 
     function buildTransferCard(t, L, lang) {
-        let html = '<div class="section-title"><span class="icon">&#128656;</span><h2>' + L.transfer + '</h2></div>';
+        let html = '<div style="page-break-inside:avoid;">';
+        html += '<div class="section-title"><span class="icon">&#128656;</span><h2>' + L.transfer + '</h2></div>';
         html += '<div class="card-box">';
         html += '<div class="card-header">' + esc(t.type) + '</div>';
         html += '<div class="small-text">' + L.location + ': ' + esc(t.location) + '</div>';
         html += '<div class="small-text">' + fmtDate(t.from, lang) + ' - ' + fmtDate(t.to, lang) + '</div>';
         if (t.pickupTime) html += '<div class="small-text">' + L.pickup + ': ' + esc(t.pickupTime) + '</div>';
-        html += '</div>';
+        html += '</div></div>';
         return html;
     }
 
     // ---- Generate handler ----
+    function refreshVoucherDate() {
+        const field = document.getElementById('formVoucherNumber');
+        const current = field.value || '';
+        const match = current.match(/^VCH-\d{8}-(\d{3})$/);
+        if (match) {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = (now.getMonth() + 1).toString().padStart(2, '0');
+            const d = now.getDate().toString().padStart(2, '0');
+            field.value = 'VCH-' + y + m + d + '-' + match[1];
+        }
+    }
+
     function handleGenerate() {
         if (!validateForm()) return;
+        refreshVoucherDate();
         const data = collectFormData();
         currentVoucherHTML = generateVoucherHTML(data);
         showPreview(currentVoucherHTML);
