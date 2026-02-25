@@ -1568,20 +1568,37 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
 
     function mergeHotelDuplicates(hotels) {
         const map = {};
+        const roomCounts = {};
         hotels.forEach(h => {
             const key = (h.name || '').trim().toLowerCase() + '|' + (h.checkIn || '') + '|' + (h.checkOut || '');
             if (map[key]) {
-                map[key].rooms = (map[key].rooms || 1) + (h.rooms || 1);
-                if (h.roomType && h.roomType !== map[key].roomType) {
-                    map[key].roomType = map[key].roomType + ', ' + h.roomType;
+                const addRooms = h.rooms || 1;
+                map[key].rooms = (map[key].rooms || 1) + addRooms;
+                const rt = (h.roomType || '').trim();
+                if (rt) {
+                    roomCounts[key] = roomCounts[key] || {};
+                    roomCounts[key][rt] = (roomCounts[key][rt] || 0) + addRooms;
                 }
                 if (h.remarks && !map[key].remarks) map[key].remarks = h.remarks;
                 if (h.address && !map[key].address) map[key].address = h.address;
                 if (h.phone && !map[key].phone) map[key].phone = h.phone;
                 if (h.fax && !map[key].fax) map[key].fax = h.fax;
+                if (h.cityHe && !map[key].cityHe) map[key].cityHe = h.cityHe;
+                if (h.city && !map[key].city) map[key].city = h.city;
                 if (h.confirmationNumber && !map[key].confirmationNumber) map[key].confirmationNumber = h.confirmationNumber;
             } else {
                 map[key] = Object.assign({}, h, { rooms: h.rooms || 1 });
+                const rt = (h.roomType || '').trim();
+                if (rt) {
+                    roomCounts[key] = {};
+                    roomCounts[key][rt] = h.rooms || 1;
+                }
+            }
+        });
+        Object.keys(map).forEach(key => {
+            const rc = roomCounts[key];
+            if (rc && Object.keys(rc).length > 1) {
+                map[key].roomType = Object.entries(rc).map(([t, n]) => n + 'x ' + t).join(', ');
             }
         });
         return Object.values(map);
@@ -2221,8 +2238,8 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700&family=Rubik:wght@400;500;700&display=swap');
 body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0;padding:20px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-.voucher-box{max-width:850px;margin:0 auto;background:white;box-shadow:0 5px 20px rgba(0,0,0,0.05);border-radius:8px;overflow:clip;}
-.banner{width:100%;height:180px;background:linear-gradient(135deg,#002B5B 0%,#0F1F3A 60%,#1B365D 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.voucher-box{max-width:850px;margin:0 auto;background:white;box-shadow:0 5px 20px rgba(0,0,0,0.05);border-radius:8px;}
+.banner{width:100%;height:180px;background:linear-gradient(135deg,#002B5B 0%,#0F1F3A 60%,#1B365D 100%);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-radius:8px 8px 0 0;}
 .banner-text{font-family:'Rubik',sans-serif;font-size:48px;font-weight:700;color:rgba(212,175,55,0.15);letter-spacing:8px;text-transform:uppercase;}
 .banner-line{position:absolute;bottom:0;left:0;right:0;height:4px;background:#D4AF37;}
 .header{background-color:#002B5B;color:white;padding:25px 40px;display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid #D4AF37;}
@@ -2244,13 +2261,16 @@ body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0
 .terms-section{background-color:#f8f9fa;padding:30px 40px;font-size:12px;color:#666;border-top:1px solid #eee;page-break-inside:avoid;}
 .terms-section ul{margin:8px 0 0 0;padding-${isHe?'right':'left'}:20px;}
 .terms-section li{margin-bottom:4px;}
-.footer{background-color:#002B5B;color:white;text-align:center;padding:20px 40px;font-size:13px;}
+.footer{background-color:#002B5B;color:white;text-align:center;padding:20px 40px;font-size:13px;border-radius:0 0 8px 8px;}
 .footer-inner{display:flex;justify-content:space-between;align-items:center;}
 .arrow{margin:0 10px;color:#D4AF37;font-size:20px;}
 @media print{
 body{padding:0;background:white;}
 .voucher-box{box-shadow:none;max-width:100%;margin:0;}
 .section-title{page-break-after:avoid;}
+.terms-section{page-break-inside:avoid;}
+.footer{page-break-inside:avoid;}
+.terms-section+.footer{page-break-before:avoid;}
 @page{size:A4;margin:15mm;}
 }
 </style>
@@ -2299,8 +2319,17 @@ ${tipsHTML}
     function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
     function cityName(loc, lang) {
-        if (he(lang)) return loc.cityHe || loc.cityEn || loc.city || loc.airport || '';
-        return loc.cityEn || loc.city || loc.cityHe || loc.airport || '';
+        if (he(lang)) return loc.cityHe || loc.cityEn || loc.city || '';
+        return loc.cityEn || loc.city || loc.cityHe || '';
+    }
+
+    function cityLabel(loc, lang) {
+        const name = cityName(loc, lang);
+        const code = loc.airport || '';
+        if (!name && !code) return '';
+        if (!name) return code;
+        if (!code || name.toUpperCase() === code.toUpperCase()) return name;
+        return name + ' (' + code + ')';
     }
 
     function buildFlightCard(f, L, lang) {
@@ -2313,11 +2342,11 @@ ${tipsHTML}
         html += '<div class="card-header">' + esc(f.airline) + ' | ' + esc(f.flightNumber) + (f.aircraft ? ' | ' + esc(f.aircraft) : '') + '</div>';
         const dir = isHe ? 'rtl' : 'ltr';
         html += '<div class="details-row">';
-        html += '<div style="direction:' + dir + ';"><div class="big-text">' + esc(cityName(from, lang)) + ' (' + esc(from.airport) + ')</div>';
+        html += '<div style="direction:' + dir + ';"><div class="big-text">' + esc(cityLabel(from, lang)) + '</div>';
         if (from.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(from.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.departure, lang) + '</div></div>';
         html += '<div class="arrow">&#10132;</div>';
-        html += '<div style="direction:' + dir + ';text-align:' + (isHe?'left':'right') + ';"><div class="big-text">' + esc(cityName(to, lang)) + ' (' + esc(to.airport) + ')</div>';
+        html += '<div style="direction:' + dir + ';text-align:' + (isHe?'left':'right') + ';"><div class="big-text">' + esc(cityLabel(to, lang)) + '</div>';
         if (to.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(to.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.arrival, lang) + '</div></div>';
         html += '</div>';
@@ -2357,7 +2386,8 @@ ${tipsHTML}
         html += '<div style="direction:' + hDir + ';text-align:' + (he(lang)?'left':'right') + ';"><div class="big-text">' + L.checkOut + '</div><div class="small-text">' + fmtDate(h.checkOut, lang) + '</div>';
         if (h.checkOutTime) html += '<div class="small-text">' + (he(lang)?'עד ':'Until ') + esc(h.checkOutTime) + '</div>';
         html += '</div></div>';
-        html += '<div class="small-text">' + L.roomType + ': ' + esc(h.roomType) + ' | ' + L.board + ': ' + esc(h.boardBasis) + '</div>';
+        html += '<div class="small-text">' + L.roomType + ': ' + esc(h.roomType) + '</div>';
+        html += '<div class="small-text">' + L.board + ': ' + esc(h.boardBasis) + '</div>';
         if (h.remarks) {
             html += '<div class="info-box" style="margin-top:12px;margin-bottom:0;"><strong>&#9888; ' + L.attention + ':</strong> ' + esc(h.remarks) + '</div>';
         }
