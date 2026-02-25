@@ -2209,7 +2209,7 @@ body{font-family:'Heebo',sans-serif;background-color:#f0f2f5;color:#333;margin:0
 .icon{font-size:24px;flex-shrink:0;}
 .card-box{background:#fff;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:15px;padding:20px;position:relative;box-shadow:0 2px 5px rgba(0,0,0,0.03);page-break-inside:avoid;}
 .card-header{background:#f4f8fb;color:#002B5B;padding:8px 15px;border-radius:5px;font-size:14px;font-weight:bold;margin-bottom:15px;display:inline-block;max-width:100%;word-wrap:break-word;overflow-wrap:break-word;}
-.details-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.details-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;direction:ltr;}
 .big-text{font-size:18px;font-weight:700;color:#333;}
 .small-text{font-size:14px;color:#666;}
 .info-box{background-color:#fff3cd;color:#856404;padding:20px;border-radius:8px;margin-bottom:30px;font-size:14px;border:1px solid #ffeeba;page-break-inside:avoid;}
@@ -2284,12 +2284,13 @@ ${tipsHTML}
         let html = '<div class="section-title"><span class="icon">&#9992;</span><h2>' + dirLabel + '</h2></div>';
         html += '<div class="card-box">';
         html += '<div class="card-header">' + esc(f.airline) + ' | ' + esc(f.flightNumber) + (f.aircraft ? ' | ' + esc(f.aircraft) : '') + '</div>';
+        const dir = isHe ? 'rtl' : 'ltr';
         html += '<div class="details-row">';
-        html += '<div><div class="big-text">' + esc(cityName(from, lang)) + ' (' + esc(from.airport) + ')</div>';
+        html += '<div style="direction:' + dir + ';"><div class="big-text">' + esc(cityName(from, lang)) + ' (' + esc(from.airport) + ')</div>';
         if (from.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(from.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.departure, lang) + '</div></div>';
         html += '<div class="arrow">&#10132;</div>';
-        html += '<div><div class="big-text">' + esc(cityName(to, lang)) + ' (' + esc(to.airport) + ')</div>';
+        html += '<div style="direction:' + dir + ';text-align:' + (isHe?'left':'right') + ';"><div class="big-text">' + esc(cityName(to, lang)) + ' (' + esc(to.airport) + ')</div>';
         if (to.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(to.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.arrival, lang) + '</div></div>';
         html += '</div>';
@@ -2317,14 +2318,15 @@ ${tipsHTML}
         if (h.phone) contacts.push(L.phone + ': ' + esc(h.phone));
         if (h.fax) contacts.push(L.fax + ': ' + esc(h.fax));
         if (contacts.length) html += '<div class="small-text">' + contacts.join(' | ') + '</div>';
+        const hDir = he(lang) ? 'rtl' : 'ltr';
         html += '<div class="details-row" style="margin-top:12px;">';
-        html += '<div><div class="big-text">' + L.checkIn + '</div><div class="small-text">' + fmtDate(h.checkIn, lang) + '</div>';
+        html += '<div style="direction:' + hDir + ';"><div class="big-text">' + L.checkIn + '</div><div class="small-text">' + fmtDate(h.checkIn, lang) + '</div>';
         if (h.checkInTime) html += '<div class="small-text">' + (he(lang)?'החל מ-':'From ') + esc(h.checkInTime) + '</div>';
         html += '</div>';
-        html += '<div style="text-align:center;"><div class="big-text">' + (h.nights||0) + ' ' + L.nights + '</div>';
+        html += '<div style="text-align:center;direction:' + hDir + ';"><div class="big-text">' + (h.nights||0) + ' ' + L.nights + '</div>';
         if ((h.rooms||1) > 1) html += '<div class="small-text">' + h.rooms + ' ' + L.rooms + '</div>';
         html += '</div>';
-        html += '<div><div class="big-text">' + L.checkOut + '</div><div class="small-text">' + fmtDate(h.checkOut, lang) + '</div>';
+        html += '<div style="direction:' + hDir + ';text-align:' + (he(lang)?'left':'right') + ';"><div class="big-text">' + L.checkOut + '</div><div class="small-text">' + fmtDate(h.checkOut, lang) + '</div>';
         if (h.checkOutTime) html += '<div class="small-text">' + (he(lang)?'עד ':'Until ') + esc(h.checkOutTime) + '</div>';
         html += '</div></div>';
         html += '<div class="small-text">' + L.roomType + ': ' + esc(h.roomType) + ' | ' + L.board + ': ' + esc(h.boardBasis) + '</div>';
