@@ -1338,14 +1338,16 @@ Analyze the uploaded travel documents and extract ALL booking details into the f
 CRITICAL RULES:
 1. REMOVE all prices, costs, VAT, taxes, commissions, and payment details. The output must contain ZERO monetary values.
 2. REMOVE all supplier/platform/booking-system branding: Booking.com, Agoda, Expedia, Hotelbeds, ODYSSEA, pelegisr.com, "Powered by..." etc. Only "Lord Tickets" branding should remain.
-3. For AIRLINE names: clean up booking-system suffixes. "ELAL SUNDOR" → "EL AL", "TURKISH SUNDOR" → "Turkish Airlines", etc. Keep the real airline name, remove the tour-operator suffix.
-4. Translate room types and board basis to Hebrew (e.g., "Standard Double Room" → "חדר זוגי סטנדרטי", "Bed and Breakfast" → "לינה וארוחת בוקר").
+3. AIRLINE names: clean up booking-system suffixes and return the name in HEBREW. "ELAL SUNDOR" → "אל על", "TURKISH SUNDOR" → "טורקיש איירליינס", "WIZZ AIR" → "וויזאייר", "RYANAIR" → "ריינאייר", "AEGEAN" → "אג'יאן", "LUFTHANSA" → "לופטהנזה", etc.
+4. Room types and board basis: return BOTH Hebrew and English separated by " / ". Examples: "חדר זוגי סטנדרטי / Standard Double Room", "לינה וארוחת בוקר / Bed and Breakfast", "הכל כלול / All Inclusive".
 5. Format all dates as ISO strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm). Convert DD/MM/YY or DD MMM YY formats to ISO.
 6. If a field is not found in the document, return an empty string "" (never null or undefined).
 7. If multiple documents are provided, merge them into a single booking.
 8. Arrange flights chronologically (outbound first, then return).
 9. PRESERVE all hotel warnings/remarks in Hebrew as-is (scaffolding notices, renovation alerts, city tax info, etc.) in the hotel "remarks" field.
-10. For guest names: put the FAMILY name in lastName and GIVEN name in firstName. "COHEN YAFIT RINA" with title MS → firstName: "יפית רינה", lastName: "כהן" (translate to Hebrew if possible, or keep original).
+10. Guest names: ALWAYS keep in ENGLISH exactly as they appear in the document. Do NOT translate names to Hebrew. Put the FAMILY name in lastName and GIVEN name(s) in firstName. "COHEN YAFIT RINA" with title MS → firstName: "YAFIT RINA", lastName: "COHEN".
+11. City names: return BOTH Hebrew (cityHe) and English (cityEn) for every city. Example: cityHe: "תל אביב", cityEn: "Tel Aviv". Airport codes stay as English IATA codes.
+12. Hotel names: ALWAYS keep in English exactly as they appear (e.g., "Sheraton Batumi", "Hilton Prague"). Do NOT translate hotel names.
 
 Return ONLY valid JSON matching this exact schema (no markdown, no explanation, just the JSON):
 
@@ -1361,8 +1363,8 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
       "airline": "",
       "flightNumber": "",
       "aircraft": "",
-      "from": { "city": "", "airport": "IATA", "terminal": "" },
-      "to": { "city": "", "airport": "IATA", "terminal": "" },
+      "from": { "cityHe": "", "cityEn": "", "airport": "IATA", "terminal": "" },
+      "to": { "cityHe": "", "cityEn": "", "airport": "IATA", "terminal": "" },
       "departure": "YYYY-MM-DDTHH:mm",
       "arrival": "YYYY-MM-DDTHH:mm",
       "baggage": { "checked": "", "hand": "", "trolley": "" },
@@ -1377,6 +1379,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
       "name": "",
       "address": "",
       "city": "",
+      "cityHe": "",
       "phone": "",
       "fax": "",
       "confirmationNumber": "",
@@ -1695,18 +1698,20 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
                         <option value="return" ${d.direction==='return'?'selected':''}>חזור</option>
                     </select>
                 </div>
-                <div class="form-group"><label>חברת תעופה</label><input type="text" data-field="airline" value="${escapeHTML(d.airline||'')}" placeholder="חברת תעופה"></div>
+                <div class="form-group"><label>חברת תעופה</label><input type="text" data-field="airline" value="${escapeHTML(d.airline||'')}" placeholder="אל על"></div>
                 <div class="form-group" style="max-width:130px;"><label>מספר טיסה</label><input type="text" data-field="flightNumber" value="${escapeHTML(d.flightNumber||'')}" placeholder="LY5113"></div>
                 <div class="form-group"><label>סוג מטוס</label><input type="text" data-field="aircraft" value="${escapeHTML(d.aircraft||'')}" placeholder="Boeing 737-900"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>עיר מוצא</label><input type="text" data-field="fromCity" value="${escapeHTML(f.city||'')}" placeholder="עיר מוצא"></div>
+                <div class="form-group"><label>עיר מוצא (עברית)</label><input type="text" data-field="fromCityHe" value="${escapeHTML(f.cityHe||f.city||'')}" placeholder="תל אביב"></div>
+                <div class="form-group"><label>Origin City (EN)</label><input type="text" data-field="fromCityEn" value="${escapeHTML(f.cityEn||f.city||'')}" placeholder="Tel Aviv"></div>
                 <div class="form-group" style="max-width:90px;"><label>IATA</label><input type="text" data-field="fromAirport" maxlength="3" value="${escapeHTML(f.airport||'')}" placeholder="TLV"></div>
                 <div class="form-group" style="max-width:90px;"><label>טרמינל</label><input type="text" data-field="fromTerminal" value="${escapeHTML(f.terminal||'')}" placeholder="3"></div>
                 <div class="form-group"><label>המראה</label><input type="datetime-local" data-field="departure" value="${formatDTLocal(d.departure)}"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>עיר יעד</label><input type="text" data-field="toCity" value="${escapeHTML(t.city||'')}" placeholder="עיר יעד"></div>
+                <div class="form-group"><label>עיר יעד (עברית)</label><input type="text" data-field="toCityHe" value="${escapeHTML(t.cityHe||t.city||'')}" placeholder="באטומי"></div>
+                <div class="form-group"><label>Dest. City (EN)</label><input type="text" data-field="toCityEn" value="${escapeHTML(t.cityEn||t.city||'')}" placeholder="Batumi"></div>
                 <div class="form-group" style="max-width:90px;"><label>IATA</label><input type="text" data-field="toAirport" maxlength="3" value="${escapeHTML(t.airport||'')}" placeholder="BUS"></div>
                 <div class="form-group" style="max-width:90px;"><label>טרמינל</label><input type="text" data-field="toTerminal" value="${escapeHTML(t.terminal||'')}" placeholder=""></div>
                 <div class="form-group"><label>נחיתה</label><input type="datetime-local" data-field="arrival" value="${formatDTLocal(d.arrival)}"></div>
@@ -1753,7 +1758,8 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
             </div>
             <div class="form-row">
                 <div class="form-group"><label>כתובת</label><input type="text" data-field="address" value="${escapeHTML(d.address||'')}" placeholder="כתובת"></div>
-                <div class="form-group" style="max-width:150px;"><label>עיר</label><input type="text" data-field="city" value="${escapeHTML(d.city||'')}" placeholder="עיר"></div>
+                <div class="form-group" style="max-width:150px;"><label>עיר (EN)</label><input type="text" data-field="city" value="${escapeHTML(d.city||'')}" placeholder="Batumi"></div>
+                <div class="form-group" style="max-width:150px;"><label>עיר (עברית)</label><input type="text" data-field="cityHe" value="${escapeHTML(d.cityHe||'')}" placeholder="באטומי"></div>
             </div>
             <div class="form-row">
                 <div class="form-group"><label>טלפון</label><input type="text" data-field="phone" value="${escapeHTML(d.phone||'')}" placeholder="טלפון"></div>
@@ -1929,12 +1935,14 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
                 flightNumber: card.querySelector('[data-field="flightNumber"]').value.trim(),
                 aircraft: card.querySelector('[data-field="aircraft"]').value.trim(),
                 from: {
-                    city: card.querySelector('[data-field="fromCity"]').value.trim(),
+                    cityHe: card.querySelector('[data-field="fromCityHe"]').value.trim(),
+                    cityEn: card.querySelector('[data-field="fromCityEn"]').value.trim(),
                     airport: card.querySelector('[data-field="fromAirport"]').value.trim().toUpperCase(),
                     terminal: card.querySelector('[data-field="fromTerminal"]').value.trim()
                 },
                 to: {
-                    city: card.querySelector('[data-field="toCity"]').value.trim(),
+                    cityHe: card.querySelector('[data-field="toCityHe"]').value.trim(),
+                    cityEn: card.querySelector('[data-field="toCityEn"]').value.trim(),
                     airport: card.querySelector('[data-field="toAirport"]').value.trim().toUpperCase(),
                     terminal: card.querySelector('[data-field="toTerminal"]').value.trim()
                 },
@@ -1959,6 +1967,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
                 confirmationNumber: card.querySelector('[data-field="confirmationNumber"]').value.trim(),
                 address: card.querySelector('[data-field="address"]').value.trim(),
                 city: card.querySelector('[data-field="city"]').value.trim(),
+                cityHe: card.querySelector('[data-field="cityHe"]').value.trim(),
                 phone: card.querySelector('[data-field="phone"]').value.trim(),
                 fax: card.querySelector('[data-field="fax"]').value.trim(),
                 checkIn: card.querySelector('[data-field="checkIn"]').value,
@@ -2071,7 +2080,7 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d)) return dateStr;
-        return 'יום ' + HEBREW_DAYS[d.getDay()] + ', ' + d.getDate().toString().padStart(2,'0') + ' ' + HEBREW_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+        return 'יום ' + HEBREW_DAYS[d.getDay()] + ', ' + d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getFullYear();
     }
     function formatEnglishDate(dateStr) {
         if (!dateStr) return '';
@@ -2263,6 +2272,11 @@ ${tipsHTML}
 
     function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
+    function cityName(loc, lang) {
+        if (he(lang)) return loc.cityHe || loc.cityEn || loc.city || '';
+        return loc.cityEn || loc.city || loc.cityHe || '';
+    }
+
     function buildFlightCard(f, L, lang) {
         const isHe = he(lang);
         const dirLabel = f.direction === 'return' ? L.returnFl : L.outbound;
@@ -2271,11 +2285,11 @@ ${tipsHTML}
         html += '<div class="card-box">';
         html += '<div class="card-header">' + esc(f.airline) + ' | ' + esc(f.flightNumber) + (f.aircraft ? ' | ' + esc(f.aircraft) : '') + '</div>';
         html += '<div class="details-row">';
-        html += '<div><div class="big-text">' + esc(from.city) + ' (' + esc(from.airport) + ')</div>';
+        html += '<div><div class="big-text">' + esc(cityName(from, lang)) + ' (' + esc(from.airport) + ')</div>';
         if (from.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(from.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.departure, lang) + '</div></div>';
         html += '<div class="arrow">&#10132;</div>';
-        html += '<div><div class="big-text">' + esc(to.city) + ' (' + esc(to.airport) + ')</div>';
+        html += '<div><div class="big-text">' + esc(cityName(to, lang)) + ' (' + esc(to.airport) + ')</div>';
         if (to.terminal) html += '<div class="small-text">' + L.terminal + ' ' + esc(to.terminal) + '</div>';
         html += '<div class="small-text">' + formatDateTime(f.arrival, lang) + '</div></div>';
         html += '</div>';
@@ -2297,7 +2311,8 @@ ${tipsHTML}
         html += '<div class="card-header">' + esc(h.name);
         if (h.confirmationNumber) html += ' | ' + L.confirmation + ': ' + esc(h.confirmationNumber);
         html += '</div>';
-        html += '<div class="small-text">' + esc(h.address) + (h.city ? ', ' + esc(h.city) : '') + '</div>';
+        const hCity = he(lang) ? (h.cityHe || h.city || '') : (h.city || h.cityHe || '');
+        html += '<div class="small-text">' + esc(h.address) + (hCity ? ', ' + esc(hCity) : '') + '</div>';
         const contacts = [];
         if (h.phone) contacts.push(L.phone + ': ' + esc(h.phone));
         if (h.fax) contacts.push(L.fax + ': ' + esc(h.fax));
