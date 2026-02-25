@@ -1766,10 +1766,10 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
                 <div class="form-group"><label>פקס</label><input type="text" data-field="fax" value="${escapeHTML(d.fax||'')}" placeholder="פקס"></div>
             </div>
             <div class="form-row">
-                <div class="form-group"><label>כניסה</label><input type="date" data-field="checkIn" value="${d.checkIn||''}" onchange="calcNightsForCard(this)"></div>
-                <div class="form-group" style="max-width:110px;"><label>שעת כניסה</label><input type="time" data-field="checkInTime" value="${d.checkInTime||'15:00'}"></div>
-                <div class="form-group"><label>יציאה</label><input type="date" data-field="checkOut" value="${d.checkOut||''}" onchange="calcNightsForCard(this)"></div>
-                <div class="form-group" style="max-width:110px;"><label>שעת יציאה</label><input type="time" data-field="checkOutTime" value="${d.checkOutTime||'11:00'}"></div>
+                <div class="form-group"><label>צ'ק אין</label><input type="date" data-field="checkIn" value="${d.checkIn||''}" onchange="calcNightsForCard(this)"></div>
+                <div class="form-group" style="max-width:110px;"><label>שעת צ'ק אין</label><input type="time" data-field="checkInTime" value="${d.checkInTime||'15:00'}"></div>
+                <div class="form-group"><label>צ'ק אאוט</label><input type="date" data-field="checkOut" value="${d.checkOut||''}" onchange="calcNightsForCard(this)"></div>
+                <div class="form-group" style="max-width:110px;"><label>שעת צ'ק אאוט</label><input type="time" data-field="checkOutTime" value="${d.checkOutTime||'11:00'}"></div>
             </div>
             <div class="form-row">
                 <div class="form-group" style="max-width:90px;"><label>לילות</label><input type="number" data-field="nights" value="${d.nights||0}" readonly></div>
@@ -2132,8 +2132,8 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
             confirmation: isHe ? 'אישור' : 'Conf.',
             phone: isHe ? 'טלפון' : 'Phone',
             fax: isHe ? 'פקס' : 'Fax',
-            checkIn: isHe ? 'כניסה' : 'Check-in',
-            checkOut: isHe ? 'יציאה' : 'Check-out',
+            checkIn: isHe ? "צ'ק אין" : 'Check-in',
+            checkOut: isHe ? "צ'ק אאוט" : 'Check-out',
             nights: isHe ? 'לילות' : 'nights',
             rooms: isHe ? 'חדרים' : 'rooms',
             roomType: isHe ? 'סוג חדר' : 'Room Type',
