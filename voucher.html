@@ -907,7 +907,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>מספר שובר</label>
-                                    <input type="text" id="formVoucherNumber" readonly>
+                                    <input type="text" id="formVoucherNumber" placeholder="VCH-XXXXXXXX-NNN">
                                 </div>
                                 <div class="form-group">
                                     <label>שם סוכן</label>
@@ -929,6 +929,26 @@
                                         <option value="he" selected>עברית</option>
                                         <option value="en">English</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="form-row" style="align-items:flex-end;">
+                                <div class="form-group" style="max-width:150px;">
+                                    <label>סה״כ לתשלום</label>
+                                    <input type="number" id="formPayTotal" min="0" step="0.01" placeholder="0.00" oninput="calcPayRemaining()">
+                                </div>
+                                <div class="form-group" style="max-width:150px;">
+                                    <label>שולם</label>
+                                    <input type="number" id="formPayPaid" min="0" step="0.01" placeholder="0.00" oninput="calcPayRemaining()">
+                                </div>
+                                <div class="form-group" style="max-width:150px;">
+                                    <label>יתרה</label>
+                                    <input type="number" id="formPayRemaining" readonly style="font-weight:bold;color:var(--navy);">
+                                </div>
+                                <div class="form-group" style="max-width:180px;">
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                        <input type="checkbox" id="formPayShow" style="width:auto;margin:0;">
+                                        הצג בשובר
+                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -1342,7 +1362,10 @@ CRITICAL RULES:
 4. Room types and board basis: return BOTH Hebrew and English separated by " / ". NEVER return raw booking codes. Translate these common codes:
    Room: REG/STD="חדר רגיל / Standard Room", SUP="חדר סופריור / Superior Room", FASD="חדר משפחתי סטנדרטי / Family Standard Room", DLX="חדר דלוקס / Deluxe Room", DBL="חדר זוגי / Double Room", SGL="חדר יחיד / Single Room", TWN="חדר טווין / Twin Room", TRP="חדר שלישייה / Triple Room", FMLY="חדר משפחתי / Family Room".
    Board: AI="הכל כלול / All Inclusive", BB="לינה וארוחת בוקר / Bed and Breakfast", HB="חצי פנסיון / Half Board", FB="פנסיון מלא / Full Board", RO="לינה בלבד / Room Only", UAI="אולטרה הכל כלול / Ultra All Inclusive".
-5. Format all dates as ISO strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm). Convert DD/MM/YY or DD MMM YY formats to ISO.
+5. Format all dates as ISO strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm).
+   IMPORTANT: All source documents use EUROPEAN/ISRAELI date format where DD/MM/YYYY (day first, then month).
+   Example: "05/07/2026" means 5th of July 2026, NOT May 7th. "10/05/2026" means 10th of May 2026.
+   Convert accordingly.
 6. If a field is not found in the document, return an empty string "" (never null or undefined).
 7. If multiple documents are provided, merge them into a single booking.
 8. Arrange flights chronologically (outbound first, then return).
@@ -1840,6 +1863,12 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
         }
     }
 
+    function calcPayRemaining() {
+        const total = parseFloat(document.getElementById('formPayTotal').value) || 0;
+        const paid = parseFloat(document.getElementById('formPayPaid').value) || 0;
+        document.getElementById('formPayRemaining').value = (total - paid).toFixed(2);
+    }
+
     function calcNights(checkIn, checkOut) {
         if (!checkIn || !checkOut) return 0;
         const diff = Math.round((new Date(checkOut) - new Date(checkIn)) / 86400000);
@@ -1959,6 +1988,11 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
             to: document.getElementById('formTripTo').value
         };
         data.language = document.getElementById('formLanguage').value;
+        data.payment = {
+            total: parseFloat(document.getElementById('formPayTotal').value) || 0,
+            paid: parseFloat(document.getElementById('formPayPaid').value) || 0,
+            showOnVoucher: document.getElementById('formPayShow').checked
+        };
 
         data.guests = [];
         document.getElementById('guestsContainer').querySelectorAll('.sub-card').forEach(card => {
@@ -2058,6 +2092,13 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
         document.getElementById('formAgentName').value = data.agentName || localStorage.getItem('userName') || '';
         document.getElementById('formTripFrom').value = data.tripDates?.from || '';
         document.getElementById('formTripTo').value = data.tripDates?.to || '';
+
+        if (data.payment) {
+            document.getElementById('formPayTotal').value = data.payment.total || '';
+            document.getElementById('formPayPaid').value = data.payment.paid || '';
+            document.getElementById('formPayShow').checked = !!data.payment.showOnVoucher;
+            calcPayRemaining();
+        }
 
         // Guests
         document.getElementById('guestsContainer').innerHTML = '';
@@ -2198,10 +2239,14 @@ Return ONLY valid JSON matching this exact schema (no markdown, no explanation, 
             term2: isHe ? '<strong>אחריות:</strong> "Lord Tickets" משמשת כמתווך בלבד. אין אנו אחראים לשינויים מצד הספקים.' : '<strong>Liability:</strong> Lord Tickets acts as an intermediary only. We are not responsible for changes by suppliers.',
             term3: isHe ? '<strong>שינויים בלו"ז:</strong> חובה להתעדכן בלוח הטיסות באתר חברת התעופה לפני ההגעה לשדה.' : '<strong>Schedule changes:</strong> Please verify flight times on the airline website before heading to the airport.',
             emergency: isHe ? 'מוקד חירום' : 'Emergency',
-            email: isHe ? 'דוא"ל' : 'Email'
+            email: isHe ? 'דוא"ל' : 'Email',
+            paymentSummary: isHe ? 'סיכום תשלום' : 'Payment Summary',
+            payTotal: isHe ? 'סה״כ לתשלום' : 'Total Amount',
+            payPaid: isHe ? 'שולם' : 'Amount Paid',
+            payRemaining: isHe ? 'יתרה לתשלום' : 'Remaining Balance'
         };
 
-        const guestNamesHtml = (data.guests||[]).map(g => esc((g.title ? g.title + ' ' : '') + g.firstName + ' ' + g.lastName)).join('<br>');
+        const guestNamesHtml = (data.guests||[]).map((g, i) => (i+1) + '. ' + esc((g.title ? g.title + ' ' : '') + g.firstName + ' ' + g.lastName)).join('<br>');
         const paxCount = (data.guests||[]).length;
         const today = new Date();
         const issueDate = fmtDate(today.toISOString().split('T')[0], lang);
@@ -2297,6 +2342,15 @@ body{padding:0;background:white;}
 </div>
 ${sectionsHTML}
 ${tipsHTML}
+${(data.payment && data.payment.showOnVoucher && data.payment.total > 0) ? `
+<div style="page-break-inside:avoid;margin-top:30px;">
+<div class="section-title"><span class="icon">&#128176;</span><h2>${L.paymentSummary}</h2></div>
+<div class="card-box" style="display:flex;gap:30px;flex-wrap:wrap;">
+<div><span class="small-text">${L.payTotal}</span><br><span class="big-text">${Number(data.payment.total).toLocaleString(isHe?'he-IL':'en-US',{minimumFractionDigits:2})}</span></div>
+<div><span class="small-text">${L.payPaid}</span><br><span class="big-text" style="color:#2e7d32;">${Number(data.payment.paid).toLocaleString(isHe?'he-IL':'en-US',{minimumFractionDigits:2})}</span></div>
+<div><span class="small-text">${L.payRemaining}</span><br><span class="big-text" style="color:${(data.payment.total - data.payment.paid) > 0 ? '#c62828' : '#2e7d32'};">${Number(data.payment.total - data.payment.paid).toLocaleString(isHe?'he-IL':'en-US',{minimumFractionDigits:2})}</span></div>
+</div>
+</div>` : ''}
 </div>
 <div class="terms-section">
 <strong>&#128221; ${L.termsTitle}:</strong>
