@@ -54,6 +54,8 @@ Manage your flight inventory:
 
 ## Quick Start
 
+> **Forgot how to use it?** See [USER_GUIDE.md](USER_GUIDE.md) for a page-by-page walkthrough.
+
 1. **Open in Browser**: Just open `index.html` or `inventory.html` directly
 2. **No Build Required**: Pure HTML/CSS/JS - no npm, no bundler
 3. **Navigation**: Click the header links to switch between systems
