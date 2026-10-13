@@ -3069,6 +3069,17 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             updateFlightSelection();
         }
         
+        // Flights with passengers can't be deleted (passengers FK is RESTRICT).
+        // Check first so we don't delete the payment schedule of a flight that stays.
+        async function flightHasPassengers(supabaseUrl, authHeaders, id) {
+            const res = await fetch(`${supabaseUrl}/rest/v1/passengers?flight_id=eq.${id}&select=id&limit=1`, {
+                headers: authHeaders
+            });
+            if (!res.ok) return false;
+            const rows = await res.json();
+            return rows.length > 0;
+        }
+        
         async function deleteSelectedFlights() {
             const selectedIds = getSelectedFlightIds();
             if (selectedIds.length === 0) return;
@@ -3076,6 +3087,7 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
             if (!confirm(`האם למחוק ${selectedIds.length} טיסות?`)) return;
             
             showLoading(true);
+            const failedIds = [];
             
             try {
                 const supabaseUrl = localStorage.getItem('supabaseUrl');
@@ -3088,6 +3100,10 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         'Authorization': `Bearer ${deleteToken}`
                     };
                     for (const id of selectedIds) {
+                        if (await flightHasPassengers(supabaseUrl, authHeaders, id)) {
+                            failedIds.push(id);
+                            continue;
+                        }
                         // Delete associated deposit milestones first
                         await fetch(`${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${id}`, {
                             method: 'DELETE',
@@ -3095,10 +3111,16 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         });
                         const response = await fetch(`${supabaseUrl}/rest/v1/flights?id=eq.${id}`, {
                             method: 'DELETE',
-                            headers: authHeaders
+                            headers: {
+                                ...authHeaders,
+                                'Prefer': 'return=representation'
+                            }
                         });
-                        if (!response.ok) {
-                            console.error(`Failed to delete flight ${id}`);
+                        // A blocked delete (FK/RLS) either errors or returns no rows
+                        const deletedRows = response.ok ? await response.json() : [];
+                        if (!response.ok || deletedRows.length === 0) {
+                            console.error(`Failed to delete flight ${id}`, response.ok ? 'no rows deleted' : await response.text());
+                            failedIds.push(id);
                         }
                     }
                     await loadFlights();
@@ -3111,7 +3133,12 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                 }
                 
                 clearSelection();
-                showToast(`${selectedIds.length} טיסות נמחקו בהצלחה`, 'success');
+                const deletedCount = selectedIds.length - failedIds.length;
+                if (failedIds.length === 0) {
+                    showToast(`${deletedCount} טיסות נמחקו בהצלחה`, 'success');
+                } else {
+                    showToast(`${failedIds.length} טיסות לא נמחקו – יש בהן נוסעים. יש למחוק או להעביר את הנוסעים קודם.`, 'error');
+                }
             } catch (error) {
                 console.error('Error deleting flights:', error);
                 showToast('שגיאה במחיקת טיסות', 'error');
@@ -3141,6 +3168,11 @@ ADD COLUMN suitcase_baggage NUMERIC DEFAULT NULL;`;
                         'apikey': supabaseKey,
                         'Authorization': `Bearer ${delToken}`
                     };
+
+                    if (await flightHasPassengers(supabaseUrl, authHeaders, id)) {
+                        showToast('לא ניתן למחוק טיסה עם נוסעים – יש למחוק או להעביר את הנוסעים קודם.', 'error');
+                        return;
+                    }
 
                     // Delete associated deposit milestones first to satisfy FK constraint
                     await fetch(`${supabaseUrl}/rest/v1/deposit_milestones?flight_id=eq.${id}`, {
