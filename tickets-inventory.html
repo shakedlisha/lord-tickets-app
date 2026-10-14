@@ -2336,13 +2336,30 @@
                 reader.readAsText(file);
             } else {
                 // Excel
+                if (typeof XLSX === 'undefined') {
+                    showToast('ספריית Excel לא נטענה - רענן את הדף ונסה שוב', 'error');
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    const workbook = XLSX.read(e.target.result, { type: 'array' });
-                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const data = XLSX.utils.sheet_to_csv(sheet);
-                    parseCSVData(data);
+                    try {
+                        const workbook = XLSX.read(e.target.result, { type: 'array' });
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        // Read as rows directly so cells containing commas don't shift columns
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false })
+                            .map(r => r.map(c => String(c).trim()));
+                        if (rows.length < 2) {
+                            showToast('הקובץ ריק או לא תקין', 'warning');
+                            return;
+                        }
+                        importParsedRows = rows.slice(1).filter(r => r.some(c => c));
+                        showImportPreview(rows[0], importParsedRows);
+                    } catch (err) {
+                        console.error('Excel parse error:', err);
+                        showToast('שגיאה בקריאת קובץ Excel: ' + err.message, 'error');
+                    }
                 };
+                reader.onerror = () => showToast('שגיאה בקריאת הקובץ', 'error');
                 reader.readAsArrayBuffer(file);
             }
         }
@@ -2417,7 +2434,7 @@
                 showToast('אין נתונים לייבוא', 'warning');
                 return;
             }
-            showLoading(true, 'מייבא כרטיסים...');
+            showLoading('מייבא כרטיסים...');
 
             try {
                 // Get headers from preview
@@ -2433,7 +2450,10 @@
                 const { supabaseUrl, supabaseKey, headers: apiHeaders } = getSupabaseConfig();
                 let imported = 0;
 
+                let processed = 0;
                 for (const row of importParsedRows) {
+                    document.getElementById('loadingText').textContent =
+                        `מייבא כרטיסים... ${++processed}/${importParsedRows.length}`;
                     const eventName = colMap.event >= 0 ? row[colMap.event] : '';
                     if (!eventName) continue;
                     
@@ -2475,7 +2495,7 @@
                 console.error('Import error:', err);
                 showToast('שגיאה בייבוא: ' + err.message, 'error');
             } finally {
-                showLoading(false);
+                hideLoading();
             }
         }
 
@@ -2553,7 +2573,7 @@
                 return;
             }
             showToast('מפענח תמונה עם AI...', 'info');
-            showLoading(true, 'מפענח תמונה...');
+            showLoading('מפענח תמונה...');
             
             try {
                 const base64 = await new Promise((resolve, reject) => {
@@ -2575,7 +2595,7 @@
                 console.error('AI image error:', err);
                 showToast('שגיאה בפענוח: ' + err.message, 'error');
             } finally {
-                showLoading(false);
+                hideLoading();
             }
         }
         
@@ -2587,7 +2607,7 @@
             if (!apiKey) { showToast('הגדר Gemini API Key בהגדרות', 'warning'); return; }
             
             closeModal('aiTextModal');
-            showLoading(true, 'מפענח טקסט...');
+            showLoading('מפענח טקסט...');
             
             try {
                 const results = await callTicketGeminiAPI(apiKey, text, false);
@@ -2602,7 +2622,7 @@
                 console.error('AI text error:', err);
                 showToast('שגיאה בפענוח: ' + err.message, 'error');
             } finally {
-                showLoading(false);
+                hideLoading();
             }
         }
 
@@ -2733,7 +2753,7 @@ RULES:
             
             const toImport = [...parsedAiTickets];
             closeModal('aiPreviewModal');
-            showLoading(true, 'מייבא כרטיסים...');
+            showLoading('מייבא כרטיסים...');
             
             try {
                 const { supabaseUrl, supabaseKey, headers: apiHeaders } = getSupabaseConfig();
@@ -2778,7 +2798,7 @@ RULES:
                 console.error('AI import error:', err);
                 showToast('שגיאה בייבוא: ' + err.message, 'error');
             } finally {
-                showLoading(false);
+                hideLoading();
             }
         }
 
